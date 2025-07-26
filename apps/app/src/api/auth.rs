@@ -2,12 +2,15 @@ use crate::api::Result;
 use chrono::{Duration, Utc};
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager, Runtime, UserAttentionType};
+use tauri_plugin_http::reqwest::Client;
 use theseus::prelude::*;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::<R>::new("auth")
         .invoke_handler(tauri::generate_handler![
             offline_login,
+            elyby_login,
+            elyby_auth_authenticate,
             login,
             remove_user,
             get_default_user,
@@ -17,12 +20,63 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
+/// ### AR • Feature
 /// Create new offline user
-/// This is custom function from Astralium Org.
 #[tauri::command]
 pub async fn offline_login(name: &str) -> Result<Credentials> {
     let credentials = minecraft_auth::offline_auth(name).await?;
     Ok(credentials)
+}
+
+/// ### AR • Feature
+/// Create new Ely.by user
+#[tauri::command]
+pub async fn elyby_login(
+    uuid: uuid::Uuid,
+    login: &str,
+    access_token: &str
+) -> Result<Credentials> {
+    let credentials = minecraft_auth::elyby_auth(uuid, login, access_token).await?;
+    Ok(credentials)
+}
+
+/// ### AR • Feature
+/// Authenticate Ely.by user
+#[tauri::command]
+pub async fn elyby_auth_authenticate(
+    login: &str,
+    password: &str,
+    client_token: &str,
+) -> Result<String> {
+    let client = Client::new();
+    let auth_body = serde_json::json!({
+        "username": login,
+        "password": password,
+        "clientToken": client_token,
+    });
+
+    let response = match client
+        .post("https://authserver.ely.by/auth/authenticate")
+        .header("Content-Type", "application/json")
+        .json(&auth_body)
+        .send()
+        .await
+    {
+        Ok(resp) => resp,
+        Err(e) => {
+            tracing::error!("[AR] • Failed to send request: {}", e);
+            return Ok("".to_string());
+        }
+    };
+
+    let text = match response.text().await {
+        Ok(body) => body,
+        Err(e) => {
+            tracing::error!("[AR] • Failed to read response text: {}", e);
+            return Ok("".to_string());
+        }
+    };
+    Ok(text)
 }
 
 /// Authenticate a user with Hydra - part 1
@@ -42,7 +96,7 @@ pub async fn login<R: Runtime>(
     let window = tauri::WebviewWindowBuilder::new(
         &app,
         "signin",
-        tauri::WebviewUrl::External(flow.redirect_uri.parse().map_err(
+        tauri::WebviewUrl::External(flow.auth_request_uri.parse().map_err(
             |_| {
                 theseus::ErrorKind::OtherError(
                     "Error parsing auth redirect URL".to_string(),
@@ -86,6 +140,7 @@ pub async fn login<R: Runtime>(
     window.close()?;
     Ok(None)
 }
+
 #[tauri::command]
 pub async fn remove_user(user: uuid::Uuid) -> Result<()> {
     Ok(minecraft_auth::remove_user(user).await?)

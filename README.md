@@ -1,76 +1,123 @@
-# Navigation in this README
-- [Install instructions](#install-instructions)
-- [Features](#features)
-- [Getting started](#getting-started)
-- [Disclaimer](#disclaimer)
-- [Donate](#support-our-project-crypto-wallets)
+# 📘 Navigation
+
+- [🔧 Install Instructions](#install-instructions)
+- [✨ Features](#features)
+- [🚀 Getting Started](#getting-started)
+- [⚠️ Disclaimer](#disclaimer)
+- [💰 Donate](#support-our-project-crypto-wallets)
+
+## Other languages
+> [Русский](readme/ru_ru/README.md)
+
+## Support channel
+> [Telegram](https://me.astralium.su/ref/telegram_channel)
+
+---
 
 # About Project
 
-## AstralRinth • Empowering Your Minecraft Adventure
-Welcome to AR • Fork of Modrinth, the ultimate game launcher designed to enhance your Minecraft experience through the Modrinth platform and their API. Whether you're a graphical interface enthusiast, or a developer integrating Modrinth projects, Theseus core is your gateway to a new level of Minecraft gaming.
+## **AstralRinth • Empowering Your Minecraft Adventure**
 
-## About Software
-Introducing AstralRinth, a specialized variant of Theseus dedicated to implementing offline authorization for an even more flexible and user-centric Minecraft Modrinth experience. Roam the Minecraft realms without the constraints of online authentication, thanks to AstralRinth.
+Welcome to **AstralRinth (AR)** — a powerful fork of Modrinth, reimagined to enhance your Minecraft journey. Whether you're a GUI enthusiast or a developer building with Modrinth’s API, **Theseus Core** is your launchpad into a new era of Minecraft gameplay.
 
-## AR • Unlocking Minecraft's Boundless Horizon
-Dive into the extraordinary world of AstralRinth, a fork of the original project with a unique focus on providing a free trial experience for Minecraft, all without the need for a license. Currently boasting:
+- *Recently, improved integration with the Git Astralium API has been added.*
 
-# Install instructions
-- To install our application, you need to download a file for your operating system from our available releases or development builds • [Download variants here](https://git.astralium.su/didirus/AstralRinth/releases)
-- After you have downloaded the required executable file or archive, then open it
+## **About the Software**
 
-### Downloadable file extensions
-- `.msi` format for Windows OS system _(Supported popular latest versions of Microsoft Windows)_
-- `.dmg` format for MacOS system _(Works on Macos Ventura / Sonoma / Sequoia, but it should be works on older OS builds)_
-- `.deb` format for Linux OS systems _(Since there are quite a few distributions, we do not guarantee 
+**AstralRinth** is a dedicated branch of the Theseus project, focused on **offline authentication**, offering you more flexibility and control. Play Minecraft without the need for constant online verification — a user-first approach to modern modded gaming.
 
-### Installation subjects
-- Builds in releases that are signed with the following prefixes are not recommended for installation and may contain errors:
-  - `dev`
-  - `nightly`
-  - `dirty`
-  - `dirty-dev`
-  - `dirty-nightly`
-  - `dirty_dev`
-  - `dirty_nightly`
-- Auto-updating takes place through parsing special versions from releases, so we also distribute clean types of `.msi, .dmg and .deb`
+## **AR • Unlocking Minecraft's Boundless Horizon**
+
+This unique fork introduces a **free trial Minecraft experience**, bypassing license checks while maintaining rich functionality. Currently includes:
+
+---
+
+# Install Instructions
+
+To install the launcher:
+
+1. Visit the [releases page](https://git.astralium.su/didirus/AstralRinth/releases) to download the correct version for your system.
+2. Run the downloaded file or extract and launch it, depending on the format.
+
+### Downloadable File Extensions
+
+| Extension | OS      | Notes                                                                 |
+| --------- | ------- | --------------------------------------------------------------------- |
+| `.msi`    | Windows | Supported on all recent Windows versions                              |
+| `.dmg`    | macOS   | Works on Ventura, Sonoma, Sequoia _(may also support older versions)_ |
+| `.deb`    | Linux   | Basic support; compatibility may vary by distribution                 |
+
+### Installation Warnings
+
+Avoid using builds with these prefixes — they may be unstable or experimental:
+
+- `dev`
+- `nightly`
+- `dirty`
+- `dirty-dev`
+- `dirty-nightly`
+- `dirty_dev`
+- `dirty_nightly`
+
+---
 
 # Features
 
-### Featured enhancement in AR
-- AstralRinth offers a range of authorization options, giving users the flexibility to log in with valid licenses or even a pirate account without auth credentials breaks (_Unlike MultiMC Cracked and similar software_). Experience Minecraft on your terms, breaking free from traditional licensing constraints (_Popular in Russian Federation_).
+> _The launcher provides an opportunity to use the well-known Modrinth, but with an improved user experience._
 
-### Easy to use
-- Using the launcher is intuitive, any user can figure it out.
+## Included exclusive features
 
-### Update notifies
-- We have implemented notifications about the release of new updates on our Git. The launcher can also download them for you and try to install them.
+- No ads in the entire launcher.
+- Custom `.svg` vector icons for a distinct UI.
+- Improved compatibility with both licensed and pirate accounts.
+  - Use **official microsoft accounts** or **offline/pirate accounts** — login won't break.
+  - Supports license-free access for testing or personal use.
+  - No dependence on official authentication services.
+- Discord Rich Presence integration:
+  - Dynamic status messages.
+  - In-game timer and AFK counter.
+- Strict disabling of statistics and other Modrinth metrics.
+- Optimized archive/package size.
+- Integrated update fetcher for seamless version management.
+  - Built-in update alerts for new versions posted on Git Astralium.
+  - Automatic download and installation capabilities.
+- Database migration fixes, when error occurred (Interactive Mode) (Modrinth issue)
+- ElyBy skin system integration (AuthLib / Java)
 
-### Enhancements
-- Custom .SVG vectors for a personalized touch.
-- Improved compatibility for both pirate and licensed accounts.
-- Beautiful Discord RPC with random messages while playing, along with an in-game timer and AFK counter.
-- Forced disabling of statistics collection (modrinch metrics) with a hard patch from AstralRinth, ensuring it remains deactivated regardless of the configuration setting.
-- Removal of advertisements from all launcher views.
-- Optimization of packages (archives).
-- Integrated update fetching feature
+---
 
 # Getting Started
-To begin your AstralRinth adventure, follow these steps:
-1. **Download Your OS Version**: Head over to our [releases page](https://git.astralium.su/didirus/AstralRinth/releases/) to find the right file for your operating system.
-   - **Choosing the Correct File**: Ensure you select the file that matches your OS requirements.
-   - [**How select file**](#downloadable-file-extensions)
-   - [**How select release**](#installation-subjects)
-2. **Authentication**: Log in with a valid license or, for testing, try using a pirate account to see AstralRinth in action.
-3. **Launch Minecraft**: Start your journey by launching Minecraft through AstralRinth and enjoy the adventures that await.
-   - **Choosing java installation**: The launcher will try to automatically detect the recommended JVM version for running the game, but you can configure everything in the launcher settings.
+
+To begin using AstralRinth:
+
+1. **Download Your OS Version**
+
+   - Go to the [releases page](https://git.astralium.su/didirus/AstralRinth/releases)
+   - [How to choose a file](#downloadable-file-extensions)
+   - [How to choose a release](#installation-warnings)
+
+2. **Log In**
+
+   - Use your official Mojang/Microsoft account, or test using a non-licensed account.
+
+3. **Launch Minecraft**
+   - Start Minecraft from the launcher.
+   - The launcher will auto-detect the recommended JVM version.
+   - You can also configure Java manually in the settings.
+
+---
 
 # Disclaimer
-- AstralRinth is a project intended for experimentation and educational purposes only. It does not endorse or support piracy, and users are encouraged to obtain valid licenses for a fully-supported Minecraft experience.
-- Users are reminded to respect licensing agreements and support the developers of Minecraft.
 
-# Support our Project (Crypto Wallets)
+- **AstralRinth** is intended **solely for educational and experimental use**.
+- We **do not condone piracy** — users are encouraged to purchase a legitimate Minecraft license.
+- Respect all relevant licensing agreements and support Minecraft developers.
+
+---
+
+# Support Our Project (Crypto Wallets)
+
+If you'd like to support development, you can donate via the following crypto wallets:
+
 - BTC (Telegram): 14g6asNYzcUoaQtB8B2QGKabgEvn55wfLj
-- USDT TRC20 (Telegram): TMSmv1D5Fdf4fipUpwBCdh16WevrV45vGr
 - TONCOIN (Telegram): UQAqUJ2_hVBI6k_gPyfp_jd-1K0OS61nIFPZuJWN9BwGAvKe

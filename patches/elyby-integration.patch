@@ -1,0 +1,675 @@
+diff --git a/apps/app-frontend/src/components/ui/AccountsCard.vue b/apps/app-frontend/src/components/ui/AccountsCard.vue
+index 7b03e1f39..69ee0e01e 100644
+--- a/apps/app-frontend/src/components/ui/AccountsCard.vue
++++ b/apps/app-frontend/src/components/ui/AccountsCard.vue
+@@ -50,9 +50,8 @@
+           color="primary"
+           @click="login()"
+         >
+-          <LogInIcon v-if="!loginDisabled" />
++          <MicrosoftIcon v-if="!loginDisabled"/>
+           <SpinnerIcon v-else class="animate-spin" />
+-          <MicrosoftIcon/>
+         </Button>
+         <Button v-tooltip="'Add offline'" icon-only @click="tryOfflineLogin()">
+           <PirateIcon />
+diff --git a/apps/app-frontend/src/components/ui/instance_settings/InstallationSettings.vue b/apps/app-frontend/src/components/ui/instance_settings/InstallationSettings.vue
+index 7810581a3..ff16faadb 100644
+--- a/apps/app-frontend/src/components/ui/instance_settings/InstallationSettings.vue
++++ b/apps/app-frontend/src/components/ui/instance_settings/InstallationSettings.vue
+@@ -26,6 +26,7 @@ import {
+   type Version,
+ } from '@modrinth/utils'
+ import ConfirmModalWrapper from '@/components/ui/modal/ConfirmModalWrapper.vue'
++import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
+ import { get_project, get_version_many } from '@/helpers/cache'
+ import ModpackVersionModal from '@/components/ui/ModpackVersionModal.vue'
+ import dayjs from 'dayjs'
+@@ -35,6 +36,11 @@ import type {
+   Manifest,
+ } from '../../../helpers/types'
+ 
++import { initAuthlibPatching } from '@/helpers/utils.js'
++const authLibPatchingModal = ref(null)
++const isAuthLibPatchedSuccess = ref(false)
++const isAuthLibPatching = ref(false)
++
+ const { formatMessage } = useVIntl()
+ 
+ const repairConfirmModal = ref()
+@@ -447,9 +453,43 @@ const messages = defineMessages({
+     defaultMessage: 'reinstall',
+   },
+ })
++
++async function handleInitAuthLibPatching(ismojang: boolean) {
++  isAuthLibPatching.value = true
++  let state = false
++  let instance_path =  props.instance.loader_version != null ? props.instance.game_version + "-" + props.instance.loader_version : props.instance.game_version
++  try {
++    state = await initAuthlibPatching(instance_path, ismojang)
++  } catch (err) {
++    console.error(err)
++  }
++  isAuthLibPatching.value = false
++  isAuthLibPatchedSuccess.value = state
++  authLibPatchingModal.value.show()
++}
+ </script>
+ 
+ <template>
++  <ModalWrapper
++    ref="authLibPatchingModal"
++    :header="'AuthLib installation report'"
++    :closable="true"
++    @close="authLibPatchingModal.hide()"
++  >
++    <div class="modal-body">
++      <h2 class="text-lg font-bold text-contrast space-y-2">
++        <p class="flex items-center gap-2 neon-text">
++          <span v-if="isAuthLibPatchedSuccess" class="neon-text">
++            AuthLib installation completed successfully! Now you can log in and play!
++          </span>
++          <span v-else class="neon-text">
++            Failed to install AuthLib. It's possible that no compatible AuthLib version was found for the selected game and/or mod loader version.
++            There may also be a problem with accessing resources behind CloudFlare.
++          </span>
++        </p>
++      </h2>
++    </div>
++  </ModalWrapper>
+   <ConfirmModalWrapper
+     ref="repairConfirmModal"
+     :title="formatMessage(messages.repairConfirmTitle)"
+@@ -720,6 +760,24 @@ const messages = defineMessages({
+           </button>
+         </ButtonStyled>
+       </div>
++      <h2 class="m-0 mt-4 text-lg font-extrabold text-contrast block">
++        <div v-if="isAuthLibPatching" class="w-6 h-6 cursor-pointer hover:brightness-75 neon-icon pulse">
++          <SpinnerIcon class="size-4 animate-spin" />
++        </div>
++        Auth system (Skins) <span class="text-sm font-bold px-2 bg-brand-highlight text-brand rounded-full">Beta</span>
++      </h2>
++      <div class="mt-4 flex gap-2">
++        <ButtonStyled class="neon-button neon">
++          <button :disabled="isAuthLibPatching" @click="handleInitAuthLibPatching(true)">
++            Install Microsoft
++          </button>
++        </ButtonStyled>
++        <ButtonStyled class="neon-button neon">
++          <button :disabled="isAuthLibPatching" @click="handleInitAuthLibPatching(false) ">
++            Install Ely.By
++          </button>
++        </ButtonStyled>
++      </div>
+     </template>
+     <template v-else>
+       <template v-if="instance.linked_data && instance.linked_data.locked">
+@@ -787,3 +845,9 @@ const messages = defineMessages({
+     </template>
+   </div>
+ </template>
++
++<style lang="scss" scoped>
++@import '../../../../../../packages/assets/styles/neon-button.scss';
++@import '../../../../../../packages/assets/styles/neon-text.scss';
++@import '../../../../../../packages/assets/styles/neon-icon.scss';
++</style>
+\ No newline at end of file
+diff --git a/apps/app-frontend/src/helpers/update.js b/apps/app-frontend/src/helpers/update.js
+index cea6c6bd4..f7033b7ac 100644
+--- a/apps/app-frontend/src/helpers/update.js
++++ b/apps/app-frontend/src/helpers/update.js
+@@ -1,6 +1,6 @@
+ import { ref } from 'vue'
+ import { getVersion } from '@tauri-apps/api/app'
+-import { getArtifact, getOS } from '@/helpers/utils.js'
++import { initUpdateLauncher, getOS } from '@/helpers/utils.js'
+ 
+ export const allowState = ref(false)
+ export const installState = ref(false)
+@@ -52,7 +52,7 @@ export async function getRemote(isDownloadState) {
+       installState.value = true;
+       const builds = remoteData.assets;
+       const fileName = getInstaller(getExtension(), builds);
+-      result = fileName ? await getArtifact(fileName[1], fileName[0], currentOS.value, true) : false;
++      result = fileName ? await initUpdateLauncher(fileName[1], fileName[0], currentOS.value, true) : false;
+       installState.value = false;
+     }
+ 
+diff --git a/apps/app-frontend/src/helpers/utils.js b/apps/app-frontend/src/helpers/utils.js
+index ac950e175..99cbde38f 100644
+--- a/apps/app-frontend/src/helpers/utils.js
++++ b/apps/app-frontend/src/helpers/utils.js
+@@ -11,9 +11,9 @@ export async function getOS() {
+ }
+ 
+ // [AR] Feature
+-export async function getArtifact(downloadurl, filename, ostype, autoupdatesupported) {
++export async function initUpdateLauncher(downloadurl, filename, ostype, autoupdatesupported) {
+   console.log('Downloading build', downloadurl, filename, ostype, autoupdatesupported)
+-  return await invoke('plugin:utils|get_artifact', { downloadurl, filename, ostype, autoupdatesupported })
++  return await invoke('plugin:utils|init_update_launcher', { downloadurl, filename, ostype, autoupdatesupported })
+ }
+ 
+ // [AR] Patch fix
+@@ -21,6 +21,11 @@ export async function applyMigrationFix(eol) {
+   return await invoke('plugin:utils|apply_migration_fix', { eol })
+ }
+ 
++// [AR] Feature
++export async function initAuthlibPatching(minecraftversion, ismojang) {
++  return await invoke('plugin:utils|init_authlib_patching', { minecraftversion, ismojang })
++}
++
+ export async function openPath(path) {
+   return await invoke('plugin:utils|open_path', { path })
+ }
+diff --git a/apps/app/build.rs b/apps/app/build.rs
+index 4942497aa..5a35c88df 100644
+--- a/apps/app/build.rs
++++ b/apps/app/build.rs
+@@ -218,8 +218,9 @@ fn main() {
+                 "utils",
+                 InlinedPlugin::new()
+                     .commands(&[
++                        "init_authlib_patching",
+                         "apply_migration_fix",
+-                        "get_artifact",
++                        "init_update_launcher",
+                         "get_os",
+                         "should_disable_mouseover",
+                         "highlight_in_folder",
+diff --git a/apps/app/src/api/utils.rs b/apps/app/src/api/utils.rs
+index 452079157..951affa63 100644
+--- a/apps/app/src/api/utils.rs
++++ b/apps/app/src/api/utils.rs
+@@ -10,14 +10,15 @@ use crate::api::{Result, TheseusSerializableError};
+ use dashmap::DashMap;
+ use std::path::{Path, PathBuf};
+ use theseus::prelude::canonicalize;
+-use url::Url;
+ use theseus::util::utils;
++use url::Url;
+ 
+ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+     tauri::plugin::Builder::new("utils")
+         .invoke_handler(tauri::generate_handler![
++            init_authlib_patching,
+             apply_migration_fix,
+-            get_artifact,
++            init_update_launcher,
+             get_os,
+             should_disable_mouseover,
+             highlight_in_folder,
+@@ -29,6 +30,17 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+         .build()
+ }
+ 
++/// [AR] Feature
++#[tauri::command]
++pub async fn init_authlib_patching(
++    minecraftversion: &str,
++    ismojang: bool,
++) -> Result<bool> {
++    let result =
++        utils::init_authlib_patching(minecraftversion, ismojang).await?;
++    Ok(result)
++}
++
+ /// [AR] Patch fix
+ #[tauri::command]
+ pub async fn apply_migration_fix(eol: &str) -> Result<bool> {
+@@ -38,8 +50,19 @@ pub async fn apply_migration_fix(eol: &str) -> Result<bool> {
+ 
+ /// [AR] Feature
+ #[tauri::command]
+-pub async fn get_artifact(downloadurl: &str, filename: &str, ostype: &str, autoupdatesupported: bool) -> Result<()> {
+-    let _ = utils::init_download(downloadurl, filename, ostype, autoupdatesupported).await;
++pub async fn init_update_launcher(
++    downloadurl: &str,
++    filename: &str,
++    ostype: &str,
++    autoupdatesupported: bool,
++) -> Result<()> {
++    let _ = utils::init_update_launcher(
++        downloadurl,
++        filename,
++        ostype,
++        autoupdatesupported,
++    )
++    .await;
+     Ok(())
+ }
+ 
+diff --git a/apps/app/tauri.conf.json b/apps/app/tauri.conf.json
+index 4ebb2aa5f..cfc271565 100644
+--- a/apps/app/tauri.conf.json
++++ b/apps/app/tauri.conf.json
+@@ -41,7 +41,7 @@
+     ]
+   },
+   "productName": "AstralRinth App",
+-  "version": "0.10.303",
++  "version": "0.10.304",
+   "mainBinaryName": "AstralRinth App",
+   "identifier": "AstralRinthApp",
+   "plugins": {
+diff --git a/packages/app-lib/src/error.rs b/packages/app-lib/src/error.rs
+index 75c144f55..360984efd 100644
+--- a/packages/app-lib/src/error.rs
++++ b/packages/app-lib/src/error.rs
+@@ -151,6 +151,41 @@ pub enum ErrorKind {
+         "A skin texture must have a dimension of either 64x64 or 64x32 pixels"
+     )]
+     InvalidSkinTexture,
++
++    #[error(
++        "[AR] Target minecraft {minecraft_version} version doesn't exist."
++    )]
++    InvalidMinecraftVersion {
++        minecraft_version: String,
++    },
++
++    #[error(
++        "[AR] Target metadata not found for minecraft version {minecraft_version}."
++    )]
++    MinecraftMetadataNotFound {
++        minecraft_version: String,
++    },
++
++    #[error(
++        "[AR] Network error: {error}"
++    )]
++    NetworkErrorOccurred {
++        error: String,
++    },
++
++    #[error(
++        "[AR] IO error: {error}"
++    )]
++    IOErrorOccurred {
++        error: String,
++    },
++
++    #[error(
++        "[AR] Parse error: {reason}"
++    )]
++    ParseError {
++        reason: String,
++    },
+ }
+ 
+ #[derive(Debug)]
+diff --git a/packages/app-lib/src/launcher/mod.rs b/packages/app-lib/src/launcher/mod.rs
+index f1b5deb85..a7d0708e3 100644
+--- a/packages/app-lib/src/launcher/mod.rs
++++ b/packages/app-lib/src/launcher/mod.rs
+@@ -633,6 +633,7 @@ pub async fn launch_minecraft(
+         command.arg("--add-opens=jdk.internal/jdk.internal.misc=ALL-UNNAMED");
+     }
+ 
++    // FIXME: Fix ElyBy integration with this patch.
+     // [AR] Patch
+     if credentials.access_token == "null" && credentials.refresh_token == "null" {
+         if version_jar == "1.16.4" || version_jar == "1.16.5" {
+diff --git a/packages/app-lib/src/util/utils.rs b/packages/app-lib/src/util/utils.rs
+index adebc3a67..e4d9a2ab1 100644
+--- a/packages/app-lib/src/util/utils.rs
++++ b/packages/app-lib/src/util/utils.rs
+@@ -1,12 +1,12 @@
+-///
+-/// [AR] Feature
+-///
+-use crate::Result;
+ use crate::api::update;
+ use crate::state::db;
++///
++/// [AR] Feature Utils
++///
++use crate::{Result, State};
+ use serde::{Deserialize, Serialize};
+ use std::process;
+-use tokio::io;
++use tokio::{fs, io};
+ 
+ const PACKAGE_JSON_CONTENT: &str =
+     // include_str!("../../../../apps/app-frontend/package.json");
+@@ -17,13 +17,311 @@ pub struct Launcher {
+     pub version: String,
+ }
+ 
++#[derive(Debug, Deserialize)]
++struct Artifact {
++    path: Option<String>,
++    sha1: Option<String>,
++    url: Option<String>,
++}
++
++#[derive(Debug, Deserialize)]
++struct Downloads {
++    artifact: Option<Artifact>,
++}
++
++#[derive(Debug, Deserialize)]
++struct Library {
++    name: String,
++    downloads: Option<Downloads>,
++}
++
++#[derive(Debug, Deserialize)]
++struct VersionJson {
++    libraries: Vec<Library>,
++}
++
++/// Deserialize the content of package.json into a Launcher struct
+ pub fn read_package_json() -> io::Result<Launcher> {
+-    // Deserialize the content of package.json into a Launcher struct
+     let launcher: Launcher = serde_json::from_str(PACKAGE_JSON_CONTENT)?;
+-
+     Ok(launcher)
+ }
+ 
++/// ### AR • Universal Write (IO) Function
++/// Saves the downloaded bytes to the `libraries` directory using the given relative path.
++async fn write_file_to_libraries(
++    relative_path: &str,
++    bytes: &bytes::Bytes,
++) -> Result<()> {
++    let state = State::get().await?;
++    let output_path = state.directories.libraries_dir().join(relative_path);
++
++    fs::write(&output_path, bytes).await.map_err(|e| {
++        tracing::error!("[AR] • Failed to save file: {:?}", e);
++        crate::ErrorKind::IOErrorOccurred {
++            error: format!("Failed to save file: {e}"),
++        }
++        .as_error()
++    })
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Initializes the AuthLib patching process.
++///
++/// Returns `true` if the authlib patched successfully.
++pub async fn init_authlib_patching(
++    minecraft_version: &str,
++    is_mojang: bool,
++) -> Result<bool> {
++    let minecraft_library_metadata = get_minecraft_library_metadata(minecraft_version).await?;
++    // Parses the AuthLib version from string
++    // Example output: "com.mojang:authlib:6.0.58" -> "6.0.58"
++    let authlib_version = minecraft_library_metadata.name.split(':').nth(2).unwrap_or("unknown");
++    
++    tracing::info!(
++        "[AR] • Attempting to download AuthLib {}.",
++        authlib_version
++    );
++
++    download_authlib(
++        &minecraft_library_metadata,
++        authlib_version,
++        minecraft_version,
++        is_mojang,
++    )
++    .await
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Downloads the AuthLib file from Mojang libraries or Git Astralium services.
++async fn download_authlib(
++    minecraft_library_metadata: &Library,
++    authlib_version: &str,
++    minecraft_version: &str,
++    is_mojang: bool,
++) -> Result<bool> {
++    let state = State::get().await?;
++    let (url, path) = extract_download_info(minecraft_library_metadata, minecraft_version)?;
++    let mut download_url = url.to_string();
++    let full_path = state.directories.libraries_dir().join(path);
++
++    if !is_mojang {
++        tracing::info!(
++            "[AR] • Attempting to download AuthLib from Git Astralium"
++        );
++        download_url = extract_ely_authlib_url(authlib_version).await?;
++    }
++    tracing::info!("[AR] • Downloading AuthLib from URL: {}", download_url);
++    let bytes = fetch_bytes_from_url(&download_url).await?;
++    tracing::info!("[AR] • Will save to path: {}", full_path.to_str().unwrap());
++    write_file_to_libraries(full_path.to_str().unwrap(), &bytes).await?;
++    tracing::info!("[AR] • Successfully saved AuthLib to {:?}", full_path);
++    Ok(true)
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Parses the ElyIntegration release JSON and returns the download URL for the given AuthLib version.
++async fn extract_ely_authlib_url(authlib_version: &str) -> Result<String> {
++    let url = "https://git.astralium.su/api/v1/repos/didirus/ElyIntegration/releases/latest";
++
++    let response = reqwest::get(url).await.map_err(|e| {
++        tracing::error!(
++            "[AR] • Failed to fetch ElyIntegration release JSON: {:?}",
++            e
++        );
++        crate::ErrorKind::NetworkErrorOccurred {
++            error: format!("Failed to fetch ElyIntegration release JSON: {}", e),
++        }
++        .as_error()
++    })?;
++
++    let json: serde_json::Value = response.json().await.map_err(|e| {
++        tracing::error!("[AR] • Failed to parse ElyIntegration JSON: {:?}", e);
++        crate::ErrorKind::ParseError {
++            reason: format!("Failed to parse ElyIntegration JSON: {}", e),
++        }
++        .as_error()
++    })?;
++
++    let assets =
++        json.get("assets")
++            .and_then(|v| v.as_array())
++            .ok_or_else(|| {
++                crate::ErrorKind::ParseError {
++                    reason: "Missing 'assets' array".into(),
++                }
++                .as_error()
++            })?;
++
++    let asset = assets
++        .iter()
++        .find(|a| {
++            a.get("name")
++                .and_then(|n| n.as_str())
++                .map(|n| n.contains(authlib_version))
++                .unwrap_or(false)
++        })
++        .ok_or_else(|| {
++            crate::ErrorKind::ParseError {
++                reason: format!(
++                    "No matching asset for authlib-{}.jar",
++                    authlib_version
++                ),
++            }
++            .as_error()
++        })?;
++
++    let download_url = asset
++        .get("browser_download_url")
++        .and_then(|u| u.as_str())
++        .ok_or_else(|| {
++            crate::ErrorKind::ParseError {
++                reason: "Missing 'browser_download_url'".into(),
++            }
++            .as_error()
++        })?;
++
++    Ok(download_url.to_string())
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Extracts the artifact URL and Path from the library structure.
++///
++/// Returns a tuple of references to the URL and path strings,
++/// or an error if the required metadata is missing.
++fn extract_download_info<'a>(
++    minecraft_library_metadata: &'a Library,
++    minecraft_version: &str,
++) -> Result<(&'a str, &'a str)> {
++    let artifact = minecraft_library_metadata
++        .downloads
++        .as_ref()
++        .and_then(|d| d.artifact.as_ref())
++        .ok_or_else(|| {
++            crate::ErrorKind::MinecraftMetadataNotFound {
++                minecraft_version: minecraft_version.to_string(),
++            }
++            .as_error()
++        })?;
++
++    let url = artifact.url.as_deref().ok_or_else(|| {
++        crate::ErrorKind::MinecraftMetadataNotFound {
++            minecraft_version: minecraft_version.to_string(),
++        }
++        .as_error()
++    })?;
++
++    let path = artifact.path.as_deref().ok_or_else(|| {
++        crate::ErrorKind::MinecraftMetadataNotFound {
++            minecraft_version: minecraft_version.to_string(),
++        }
++        .as_error()
++    })?;
++
++    Ok((url, path))
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Downloads bytes from the provided URL with a 15 second timeout.
++async fn fetch_bytes_from_url(url: &str) -> Result<bytes::Bytes> {
++    // Create client instance with request timeout.
++    let client = reqwest::Client::new();
++    const TIMEOUT_SECONDS: u64 = 15;
++
++    let response = tokio::time::timeout(
++        std::time::Duration::from_secs(TIMEOUT_SECONDS),
++        client.get(url).send(),
++    )
++    .await
++    .map_err(|_| {
++        tracing::error!("[AR] • Download timed out after {} seconds", TIMEOUT_SECONDS);
++        crate::ErrorKind::NetworkErrorOccurred {
++            error: format!("Download timed out after {TIMEOUT_SECONDS} seconds").to_string(),
++        }
++        .as_error()
++    })?
++    .map_err(|e| {
++        tracing::error!("[AR] • Request error: {:?}", e);
++        crate::ErrorKind::NetworkErrorOccurred {
++            error: format!("Request error: {e}"),
++        }
++        .as_error()
++    })?;
++
++    if !response.status().is_success() {
++        let status = response.status().to_string();
++        tracing::error!("[AR] • Failed to download authlib: HTTP {}", status);
++        return Err(crate::ErrorKind::NetworkErrorOccurred {
++            error: format!("Failed to download authlib: HTTP {status}"),
++        }
++        .as_error());
++    }
++
++    response.bytes().await.map_err(|e| {
++        tracing::error!("[AR] • Failed to read response bytes: {:?}", e);
++        crate::ErrorKind::NetworkErrorOccurred {
++            error: format!("Failed to read response bytes: {e}"),
++        }
++        .as_error()
++    })
++}
++
++/// ### AR • AuthLib (Ely By)
++/// Gets the Minecraft library metadata from the local libraries directory.
++async fn get_minecraft_library_metadata(minecraft_version: &str) -> Result<Library> {
++    let state = State::get().await?;
++
++    let path = state
++        .directories
++        .version_dir(minecraft_version)
++        .join(format!("{}.json", minecraft_version));
++    if !path.exists() {
++        tracing::error!("[AR] • File not found: {:#?}", path);
++        return Err(crate::ErrorKind::InvalidMinecraftVersion {
++            minecraft_version: minecraft_version.to_string(),
++        }
++        .as_error());
++    }
++
++    let content = fs::read_to_string(&path).await?;
++    let version_data: VersionJson = serde_json::from_str(&content)?;
++
++    for lib in version_data.libraries {
++        if lib.name.contains("com.mojang:authlib") {
++            if let Some(downloads) = &lib.downloads {
++                if let Some(artifact) = &downloads.artifact {
++                    if artifact.path.is_some()
++                        && artifact.url.is_some()
++                        && artifact.sha1.is_some()
++                    {
++                        tracing::info!("[AR] • Found AuthLib: {}", lib.name);
++                        tracing::info!(
++                            "[AR] • Path: {}",
++                            artifact.path.as_ref().unwrap()
++                        );
++                        tracing::info!(
++                            "[AR] • URL: {}",
++                            artifact.url.as_ref().unwrap()
++                        );
++                        tracing::info!(
++                            "[AR] • SHA1: {}",
++                            artifact.sha1.as_ref().unwrap()
++                        );
++
++                        return Ok(lib);
++                    }
++                }
++            }
++        }
++    }
++
++    Err(crate::ErrorKind::MinecraftMetadataNotFound {
++        minecraft_version: minecraft_version.to_string(),
++    }
++    .as_error())
++}
++
++/// ### AR • Migration
++/// Applying migration fix for SQLite database.
+ pub async fn apply_migration_fix(eol: &str) -> Result<bool> {
+     tracing::info!("[AR] • Attempting to apply migration fix");
+     let patched = db::apply_migration_fix(eol).await?;
+@@ -35,14 +333,19 @@ pub async fn apply_migration_fix(eol: &str) -> Result<bool> {
+     Ok(patched)
+ }
+ 
+-pub async fn init_download(
++/// ### AR • Updater
++/// Initialize the update launcher.
++pub async fn init_update_launcher(
+     download_url: &str,
+     local_filename: &str,
+     os_type: &str,
+     auto_update_supported: bool,
+ ) -> Result<()> {
+-    println!("[AR] • Initialize downloading from • {:?}", download_url);
+-    println!("[AR] • Save local file name • {:?}", local_filename);
++    tracing::info!("[AR] • Initialize downloading from • {:?}", download_url);
++    tracing::info!("[AR] • Save local file name • {:?}", local_filename);
++    tracing::info!("[AR] • OS type • {}", os_type);
++    tracing::info!("[AR] • Auto update supported • {}", auto_update_supported);
++
+     if let Err(e) = update::get_resource(
+         download_url,
+         local_filename,

@@ -13,6 +13,8 @@ fn main() {
                 InlinedPlugin::new()
                     .commands(&[
                         "offline_login",
+                        "elyby_login",
+                        "elyby_auth_authenticate",
                         "login",
                         "remove_user",
                         "get_default_user",
@@ -49,6 +51,8 @@ fn main() {
                 "import",
                 InlinedPlugin::new()
                     .commands(&[
+                        "fetch_curseforge_profile_metadata",
+                        "import_curseforge_profile",
                         "get_importable_instances",
                         "import_instance",
                         "is_valid_importable_instance",
@@ -121,7 +125,12 @@ fn main() {
             .plugin(
                 "mr-auth",
                 InlinedPlugin::new()
-                    .commands(&["modrinth_login", "logout", "get"])
+                    .commands(&[
+                        "modrinth_login",
+                        "logout",
+                        "get",
+                        "cancel_modrinth_login",
+                    ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,
                     ),
@@ -218,8 +227,9 @@ fn main() {
                 "utils",
                 InlinedPlugin::new()
                     .commands(&[
+                        "init_authlib_patching",
                         "apply_migration_fix",
-                        "get_artifact",
+                        "init_update_launcher",
                         "get_os",
                         "should_disable_mouseover",
                         "highlight_in_folder",

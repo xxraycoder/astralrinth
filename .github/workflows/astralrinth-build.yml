@@ -96,6 +96,11 @@ jobs:
             librsvg2-dev \
             xdg-utils \
             openjdk-11-jdk
+  
+      - name: ⚙️ Set application environment
+        shell: bash
+        run: |
+          cp packages/app-lib/.env.prod packages/app-lib/.env
 
       - name: 💨 Setup Turbo cache
         uses: rharkor/caching-for-turbo@v1.8

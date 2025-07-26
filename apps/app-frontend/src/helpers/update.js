@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { getVersion } from '@tauri-apps/api/app'
-import { getArtifact, getOS } from '@/helpers/utils.js'
+import { initUpdateLauncher, getOS } from '@/helpers/utils.js'
 
 export const allowState = ref(false)
 export const installState = ref(false)
@@ -52,7 +52,7 @@ export async function getRemote(isDownloadState) {
       installState.value = true;
       const builds = remoteData.assets;
       const fileName = getInstaller(getExtension(), builds);
-      result = fileName ? await getArtifact(fileName[1], fileName[0], currentOS.value, true) : false;
+      result = fileName ? await initUpdateLauncher(fileName[1], fileName[0], currentOS.value, true) : false;
       installState.value = false;
     }
 

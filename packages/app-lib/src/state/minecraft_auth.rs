@@ -85,21 +85,18 @@ pub struct MinecraftLoginFlow {
     pub verifier: String,
     pub challenge: String,
     pub session_id: String,
-    pub redirect_uri: String,
+    pub auth_request_uri: String,
 }
 
 #[tracing::instrument]
 pub async fn login_begin(
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
 ) -> crate::Result<MinecraftLoginFlow> {
-    let (pair, current_date, valid_date) =
-        DeviceTokenPair::refresh_and_get_device_token(Utc::now(), false, exec)
-            .await?;
+    let (pair, current_date) =
+        DeviceTokenPair::refresh_and_get_device_token(Utc::now(), exec).await?;
 
     let verifier = generate_oauth_challenge();
-    let mut hasher = sha2::Sha256::new();
-    hasher.update(&verifier);
-    let result = hasher.finalize();
+    let result = sha2::Sha256::digest(&verifier);
     let challenge = BASE64_URL_SAFE_NO_PAD.encode(result);
 
     match sisu_authenticate(
@@ -110,46 +107,15 @@ pub async fn login_begin(
     )
     .await
     {
-        Ok((session_id, redirect_uri)) => Ok(MinecraftLoginFlow {
-            verifier,
-            challenge,
-            session_id,
-            redirect_uri: redirect_uri.value.msa_oauth_redirect,
-        }),
-        Err(err) => {
-            if !valid_date {
-                let (pair, current_date, _) =
-                    DeviceTokenPair::refresh_and_get_device_token(
-                        Utc::now(),
-                        false,
-                        exec,
-                    )
-                    .await?;
-
-                let verifier = generate_oauth_challenge();
-                let mut hasher = sha2::Sha256::new();
-                hasher.update(&verifier);
-                let result = hasher.finalize();
-                let challenge = BASE64_URL_SAFE_NO_PAD.encode(result);
-
-                let (session_id, redirect_uri) = sisu_authenticate(
-                    &pair.token.token,
-                    &challenge,
-                    &pair.key,
-                    current_date,
-                )
-                .await?;
-
-                Ok(MinecraftLoginFlow {
-                    verifier,
-                    challenge,
-                    session_id,
-                    redirect_uri: redirect_uri.value.msa_oauth_redirect,
-                })
-            } else {
-                Err(crate::ErrorKind::from(err).into())
-            }
+        Ok((session_id, redirect_uri)) => {
+            return Ok(MinecraftLoginFlow {
+                verifier,
+                challenge,
+                session_id,
+                auth_request_uri: redirect_uri.value.msa_oauth_redirect,
+            });
         }
+        Err(err) => return Err(crate::ErrorKind::from(err).into()),
     }
 }
 
@@ -159,9 +125,8 @@ pub async fn login_finish(
     flow: MinecraftLoginFlow,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
 ) -> crate::Result<Credentials> {
-    let (pair, _, _) =
-        DeviceTokenPair::refresh_and_get_device_token(Utc::now(), false, exec)
-            .await?;
+    let (pair, _) =
+        DeviceTokenPair::refresh_and_get_device_token(Utc::now(), exec).await?;
 
     let oauth_token = oauth_token(code, &flow.verifier).await?;
     let sisu_authorize = sisu_authorize(
@@ -191,6 +156,7 @@ pub async fn login_finish(
         expires: oauth_token.date
             + Duration::seconds(oauth_token.value.expires_in as i64),
         active: true,
+        account_type: AccountType::Microsoft.as_lowercase_str(),
     };
 
     // During login, we need to fetch the online profile at least once to get the
@@ -229,6 +195,7 @@ pub async fn offline_auth(
         refresh_token: refresh_token,
         expires: Utc::now() + Duration::days(365 * 99),
         active: true,
+        account_type: AccountType::Pirate.as_lowercase_str(),
     };
 
     credentials.offline_profile = MinecraftProfile {
@@ -240,6 +207,58 @@ pub async fn offline_auth(
     credentials.upsert(exec).await?;
 
     Ok(credentials)
+}
+
+// [AR] Feature
+#[tracing::instrument]
+pub async fn elyby_auth(
+    uuid: Uuid,
+    username: &str,
+    access_token: &str,
+    exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
+) -> crate::Result<Credentials> {
+    let mut credentials = Credentials {
+        offline_profile: MinecraftProfile::default(),
+        access_token: access_token.to_string(),
+        refresh_token: "null".to_string(),
+        expires: Utc::now() + Duration::days(365 * 99),
+        active: true,
+        account_type: AccountType::ElyBy.as_lowercase_str(),
+    };
+
+    credentials.offline_profile = MinecraftProfile {
+        id: uuid,
+        name: username.to_string(),
+        ..credentials.offline_profile
+    };
+
+    credentials.upsert(exec).await?;
+
+    Ok(credentials)
+}
+
+/// [AR] • Feature
+#[derive(Deserialize, Debug)]
+pub enum AccountType {
+    Unknown,
+    Microsoft,
+    Pirate,
+    ElyBy,
+}
+
+impl AccountType {
+    fn as_str(&self) -> &'static str {
+        match self {
+            AccountType::Unknown => "Unknown",
+            AccountType::Microsoft => "Microsoft",
+            AccountType::Pirate => "Pirate",
+            AccountType::ElyBy => "ElyBy",
+        }
+    }
+
+    pub(crate) fn as_lowercase_str(&self) -> String {
+        self.as_str().to_lowercase()
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -255,6 +274,7 @@ pub struct Credentials {
     pub refresh_token: String,
     pub expires: DateTime<Utc>,
     pub active: bool,
+    pub account_type: String,
 }
 
 /// An entry in the player profile cache, keyed by player UUID.
@@ -296,10 +316,9 @@ impl Credentials {
         }
 
         let oauth_token = oauth_refresh(&self.refresh_token).await?;
-        let (pair, current_date, _) =
+        let (pair, current_date) =
             DeviceTokenPair::refresh_and_get_device_token(
                 oauth_token.date,
-                false,
                 exec,
             )
             .await?;
@@ -480,7 +499,7 @@ impl Credentials {
         let res = sqlx::query!(
             "
             SELECT
-                uuid, active, username, access_token, refresh_token, expires
+                uuid, active, username, access_token, refresh_token, expires, account_type
             FROM minecraft_users
             WHERE active = TRUE
             "
@@ -503,6 +522,7 @@ impl Credentials {
                         .single()
                         .unwrap_or_else(Utc::now),
                     active: x.active == 1,
+                    account_type: x.account_type,
                 };
                 credentials.refresh(exec).await.ok();
                 Some(credentials)
@@ -517,7 +537,7 @@ impl Credentials {
         let res = sqlx::query!(
             "
             SELECT
-                uuid, active, username, access_token, refresh_token, expires
+                uuid, active, username, access_token, refresh_token, expires, account_type
             FROM minecraft_users
             "
         )
@@ -537,6 +557,7 @@ impl Credentials {
                     .single()
                     .unwrap_or_else(Utc::now),
                 active: x.active == 1,
+                account_type: x.account_type,
             };
 
             async move {
@@ -572,14 +593,15 @@ impl Credentials {
 
         sqlx::query!(
             "
-            INSERT INTO minecraft_users (uuid, active, username, access_token, refresh_token, expires)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO minecraft_users (uuid, active, username, access_token, refresh_token, expires, account_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (uuid) DO UPDATE SET
                 active = $2,
                 username = $3,
                 access_token = $4,
                 refresh_token = $5,
-                expires = $6
+                expires = $6,
+                account_type = $7
             ",
             uuid,
             self.active,
@@ -587,6 +609,7 @@ impl Credentials {
             self.access_token,
             self.refresh_token,
             expires,
+            self.account_type,
         )
             .execute(exec)
             .await?;
@@ -649,6 +672,7 @@ impl Serialize for Credentials {
         ser.serialize_field("refresh_token", &self.refresh_token)?;
         ser.serialize_field("expires", &self.expires)?;
         ser.serialize_field("active", &self.active)?;
+        ser.serialize_field("account_type", &self.account_type)?;
         ser.end()
     }
 }
@@ -662,21 +686,20 @@ impl DeviceTokenPair {
     #[tracing::instrument(skip(exec))]
     async fn refresh_and_get_device_token(
         current_date: DateTime<Utc>,
-        force_generate: bool,
         exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
-    ) -> crate::Result<(Self, DateTime<Utc>, bool)> {
+    ) -> crate::Result<(Self, DateTime<Utc>)> {
         let pair = Self::get(exec).await?;
 
         if let Some(mut pair) = pair {
-            if pair.token.not_after > Utc::now() && !force_generate {
-                Ok((pair, current_date, false))
+            if pair.token.not_after > current_date {
+                Ok((pair, current_date))
             } else {
                 let res = device_token(&pair.key, current_date).await?;
 
                 pair.token = res.value;
                 pair.upsert(exec).await?;
 
-                Ok((pair, res.date, true))
+                Ok((pair, res.date))
             }
         } else {
             let key = generate_key()?;
@@ -689,7 +712,7 @@ impl DeviceTokenPair {
 
             pair.upsert(exec).await?;
 
-            Ok((pair, res.date, true))
+            Ok((pair, res.date))
         }
     }
 
@@ -787,8 +810,8 @@ impl DeviceTokenPair {
 }
 
 const MICROSOFT_CLIENT_ID: &str = "00000000402b5328";
-const REDIRECT_URL: &str = "https://login.live.com/oauth20_desktop.srf";
-const REQUESTED_SCOPES: &str = "service::user.auth.xboxlive.com::MBI_SSL";
+const AUTH_REPLY_URL: &str = "https://login.live.com/oauth20_desktop.srf";
+const REQUESTED_SCOPE: &str = "service::user.auth.xboxlive.com::MBI_SSL";
 
 /* [AR] Fix
  * Weird visibility issue that didn't reproduce before
@@ -871,7 +894,7 @@ async fn sisu_authenticate(
           "AppId": MICROSOFT_CLIENT_ID,
           "DeviceToken": token,
           "Offers": [
-            REQUESTED_SCOPES
+            REQUESTED_SCOPE
           ],
           "Query": {
             "code_challenge": challenge,
@@ -879,7 +902,7 @@ async fn sisu_authenticate(
             "state": generate_oauth_challenge(),
             "prompt": "select_account"
           },
-          "RedirectUri": REDIRECT_URL,
+          "RedirectUri": AUTH_REPLY_URL,
           "Sandbox": "RETAIL",
           "TokenType": "code",
           "TitleId": "1794566092",
@@ -923,12 +946,12 @@ async fn oauth_token(
     verifier: &str,
 ) -> Result<RequestWithDate<OAuthToken>, MinecraftAuthenticationError> {
     let mut query = HashMap::new();
-    query.insert("client_id", "00000000402b5328");
+    query.insert("client_id", MICROSOFT_CLIENT_ID);
     query.insert("code", code);
     query.insert("code_verifier", verifier);
     query.insert("grant_type", "authorization_code");
-    query.insert("redirect_uri", "https://login.live.com/oauth20_desktop.srf");
-    query.insert("scope", "service::user.auth.xboxlive.com::MBI_SSL");
+    query.insert("redirect_uri", AUTH_REPLY_URL);
+    query.insert("scope", REQUESTED_SCOPE);
 
     let res = auth_retry(|| {
         REQWEST_CLIENT
@@ -972,11 +995,11 @@ async fn oauth_refresh(
     refresh_token: &str,
 ) -> Result<RequestWithDate<OAuthToken>, MinecraftAuthenticationError> {
     let mut query = HashMap::new();
-    query.insert("client_id", "00000000402b5328");
+    query.insert("client_id", MICROSOFT_CLIENT_ID);
     query.insert("refresh_token", refresh_token);
     query.insert("grant_type", "refresh_token");
-    query.insert("redirect_uri", "https://login.live.com/oauth20_desktop.srf");
-    query.insert("scope", "service::user.auth.xboxlive.com::MBI_SSL");
+    query.insert("redirect_uri", AUTH_REPLY_URL);
+    query.insert("scope", REQUESTED_SCOPE);
 
     let res = auth_retry(|| {
         REQWEST_CLIENT
@@ -1040,7 +1063,7 @@ async fn sisu_authorize(
         "/authorize",
         json!({
             "AccessToken": format!("t={access_token}"),
-            "AppId": "00000000402b5328",
+            "AppId": MICROSOFT_CLIENT_ID,
             "DeviceToken": device_token,
             "ProofKey": {
                 "kty": "EC",

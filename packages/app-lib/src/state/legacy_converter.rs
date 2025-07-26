@@ -131,6 +131,7 @@ where
                     expires: legacy_credentials.expires,
                     active: minecraft_auth.default_user == Some(uuid)
                         || minecraft_users_len == 1,
+                    account_type: legacy_credentials.account_type,
                 }
                 .upsert(exec)
                 .await?;
@@ -518,6 +519,7 @@ struct LegacyCredentials {
     pub access_token: String,
     pub refresh_token: String,
     pub expires: DateTime<Utc>,
+    pub account_type: String,
 }
 
 #[derive(Deserialize, Debug)]

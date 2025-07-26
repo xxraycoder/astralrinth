@@ -89,6 +89,7 @@ import _PirateIcon from './icons/pirate.svg?component'
 import _MicrosoftIcon from './icons/microsoft.svg?component'
 import _PirateShipIcon from './icons/pirate-ship.svg?component'
 import _AstralRinthLogo from './icons/astralrinth-logo.svg?component'
+import _ElyByIcon from './icons/elyby-icon.svg?component'
 
 // [AR] Feature. Exports
 
@@ -96,6 +97,7 @@ export const PirateIcon = _PirateIcon
 export const MicrosoftIcon = _MicrosoftIcon
 export const PirateShipIcon = _PirateShipIcon
 export const AstralRinthLogo = _AstralRinthLogo
+export const ElyByIcon = _ElyByIcon
 
 // Skin Models
 export { default as ClassicPlayerModel } from './models/classic-player.gltf?url'

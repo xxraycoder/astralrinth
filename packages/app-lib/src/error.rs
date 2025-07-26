@@ -151,6 +151,41 @@ pub enum ErrorKind {
         "A skin texture must have a dimension of either 64x64 or 64x32 pixels"
     )]
     InvalidSkinTexture,
+
+    #[error(
+        "[AR] Target minecraft {minecraft_version} version doesn't exist."
+    )]
+    InvalidMinecraftVersion {
+        minecraft_version: String,
+    },
+
+    #[error(
+        "[AR] Target metadata not found for minecraft version {minecraft_version}."
+    )]
+    MinecraftMetadataNotFound {
+        minecraft_version: String,
+    },
+
+    #[error(
+        "[AR] Network error: {error}"
+    )]
+    NetworkErrorOccurred {
+        error: String,
+    },
+
+    #[error(
+        "[AR] IO error: {error}"
+    )]
+    IOErrorOccurred {
+        error: String,
+    },
+
+    #[error(
+        "[AR] Parse error: {reason}"
+    )]
+    ParseError {
+        reason: String,
+    },
 }
 
 #[derive(Debug)]
