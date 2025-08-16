@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.88.0 AS build
+FROM rust:1.89.0 AS build
 
 WORKDIR /usr/src/daedalus
 COPY . .
@@ -16,6 +16,11 @@ RUN --mount=type=cache,target=/usr/src/daedalus/target \
   && cp /usr/src/daedalus/target/release/daedalus_client /daedalus/daedalus_client
 
 FROM debian:bookworm-slim
+
+LABEL org.opencontainers.image.source=https://github.com/modrinth/code
+LABEL org.opencontainers.image.title=daedalus
+LABEL org.opencontainers.image.description="Modrinth game metadata query client"
+LABEL org.opencontainers.image.licenses=MIT
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
