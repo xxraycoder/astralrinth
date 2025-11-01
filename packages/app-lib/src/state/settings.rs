@@ -1,6 +1,7 @@
 //! Theseus settings file
 
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 
 // Types
@@ -38,6 +39,12 @@ pub struct Settings {
 
     pub developer_mode: bool,
     pub feature_flags: HashMap<FeatureFlag, bool>,
+
+    pub skipped_update: Option<String>,
+    pub pending_update_toast_for_version: Option<String>,
+    pub auto_download_updates: Option<bool>,
+
+    pub version: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, Hash, PartialEq)]
@@ -50,6 +57,8 @@ pub enum FeatureFlag {
 }
 
 impl Settings {
+    const CURRENT_VERSION: usize = 2;
+
     pub async fn get(
         exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     ) -> crate::Result<Self> {
@@ -63,7 +72,9 @@ impl Settings {
                 json(extra_launch_args) extra_launch_args, json(custom_env_vars) custom_env_vars,
                 mc_memory_max, mc_force_fullscreen, mc_game_resolution_x, mc_game_resolution_y, hide_on_process_start,
                 hook_pre_launch, hook_wrapper, hook_post_exit,
-                custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar
+                custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar,
+                skipped_update, pending_update_toast_for_version, auto_download_updates,
+                version
             FROM settings
             "
         )
@@ -117,6 +128,11 @@ impl Settings {
                 .as_ref()
                 .and_then(|x| serde_json::from_str(x).ok())
                 .unwrap_or_default(),
+            skipped_update: res.skipped_update,
+            pending_update_toast_for_version: res
+                .pending_update_toast_for_version,
+            auto_download_updates: res.auto_download_updates.map(|x| x == 1),
+            version: res.version as usize,
         })
     }
 
@@ -131,6 +147,7 @@ impl Settings {
         let extra_launch_args = serde_json::to_string(&self.extra_launch_args)?;
         let custom_env_vars = serde_json::to_string(&self.custom_env_vars)?;
         let feature_flags = serde_json::to_string(&self.feature_flags)?;
+        let version = self.version as i64;
 
         sqlx::query!(
             "
@@ -170,7 +187,13 @@ impl Settings {
 
                 toggle_sidebar = $26,
                 feature_flags = $27,
-                hide_nametag_skins_page = $28
+                hide_nametag_skins_page = $28,
+
+                skipped_update = $29,
+                pending_update_toast_for_version = $30,
+                auto_download_updates = $31,
+
+                version = $32
             ",
             max_concurrent_writes,
             max_concurrent_downloads,
@@ -199,10 +222,76 @@ impl Settings {
             self.migrated,
             self.toggle_sidebar,
             feature_flags,
-            self.hide_nametag_skins_page
+            self.hide_nametag_skins_page,
+            self.skipped_update,
+            self.pending_update_toast_for_version,
+            self.auto_download_updates,
+            version,
         )
         .execute(exec)
         .await?;
+
+        Ok(())
+    }
+
+    pub async fn migrate(exec: &Pool<Sqlite>) -> crate::Result<()> {
+        let mut settings = Self::get(exec).await?;
+
+        if settings.version < Settings::CURRENT_VERSION {
+            tracing::info!(
+                "Migrating settings version {} to {:?}",
+                settings.version,
+                Settings::CURRENT_VERSION
+            );
+        }
+        while settings.version < Settings::CURRENT_VERSION {
+            if let Err(err) = settings.perform_migration() {
+                tracing::error!(
+                    "Failed to migrate settings from version {}: {}",
+                    settings.version,
+                    err
+                );
+                return Err(err);
+            }
+        }
+
+        settings.update(exec).await?;
+
+        Ok(())
+    }
+
+    pub fn perform_migration(&mut self) -> crate::Result<()> {
+        match self.version {
+            1 => {
+                let quoter = shlex::Quoter::new().allow_nul(true);
+
+                // Previously split by spaces
+                if let Some(pre_launch) = self.hooks.pre_launch.as_ref() {
+                    self.hooks.pre_launch =
+                        Some(quoter.join(pre_launch.split(' ')).unwrap())
+                }
+
+                // Previously treated as complete path to command
+                if let Some(wrapper) = self.hooks.wrapper.as_ref() {
+                    self.hooks.wrapper =
+                        Some(quoter.quote(wrapper).unwrap().to_string())
+                }
+
+                // Previously split by spaces
+                if let Some(post_exit) = self.hooks.post_exit.as_ref() {
+                    self.hooks.post_exit =
+                        Some(quoter.join(post_exit.split(' ')).unwrap())
+                }
+
+                self.version = 2;
+            }
+            version => {
+                return Err(crate::ErrorKind::OtherError(format!(
+                    "Invalid settings version: {version}"
+                ))
+                .into());
+            }
+        }
 
         Ok(())
     }

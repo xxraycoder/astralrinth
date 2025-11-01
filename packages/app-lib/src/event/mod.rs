@@ -179,7 +179,6 @@ pub enum LoadingBarType {
     CurseForgeProfileDownload {
         profile_name: String,
     },
-    CheckingForUpdates,
     LauncherUpdate {
         version: String,
         current_version: String,

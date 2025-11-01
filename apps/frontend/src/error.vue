@@ -1,5 +1,7 @@
 <template>
 	<NuxtLayout>
+		<ModrinthLoadingIndicator />
+		<NotificationPanel />
 		<div class="main experimental-styles-within">
 			<div v-if="is404" class="error-graphic">
 				<Logo404 />
@@ -50,10 +52,16 @@
 
 <script setup>
 import { SadRinthbot } from '@modrinth/assets'
+import { NotificationPanel, provideNotificationManager } from '@modrinth/ui'
 import { defineMessage, useVIntl } from '@vintl/vintl'
+import { IntlFormatted } from '@vintl/vintl/components'
 
 import Logo404 from '~/assets/images/404.svg'
 
+import ModrinthLoadingIndicator from './components/ui/modrinth-loading-indicator.ts'
+import { FrontendNotificationManager } from './providers/frontend-notifications.ts'
+
+provideNotificationManager(new FrontendNotificationManager())
 const { formatMessage } = useVIntl()
 
 const props = defineProps({
@@ -91,6 +99,17 @@ const messages = {
 		subtitle: defineMessage({
 			id: 'error.generic.404.subtitle',
 			defaultMessage: "The page you were looking for doesn't seem to exist.",
+		}),
+	},
+	451: {
+		title: defineMessage({
+			id: 'error.generic.451.title',
+			defaultMessage: 'Content unavailable for legal reasons',
+		}),
+		subtitle: defineMessage({
+			id: 'error.generic.451.subtitle',
+			defaultMessage:
+				'This page has been blocked for legal reasons, such as government censorship or ongoing legal proceedings.',
 		}),
 	},
 	default: {

@@ -77,7 +77,7 @@
 							v-if="overrides[index] && overrides[index].type === 'dropdown'"
 							class="mt-2 flex w-full sm:w-[320px] sm:justify-end"
 						>
-							<UiServersTeleportDropdownMenu
+							<TeleportDropdownMenu
 								:id="`server-property-${index}`"
 								v-model="liveProperties[index]"
 								:name="formatPropertyName(index)"
@@ -95,12 +95,27 @@
 								:aria-labelledby="`property-label-${index}`"
 							/>
 						</div>
-						<div v-else-if="typeof property === 'number'" class="mt-2 w-full sm:w-[320px]">
+						<div
+							v-else-if="typeof property === 'number' && index !== 'level-seed' && index !== 'seed'"
+							class="mt-2 w-full sm:w-[320px]"
+						>
 							<input
 								:id="`server-property-${index}`"
 								v-model.number="liveProperties[index]"
 								type="number"
 								class="w-full border p-2"
+								:aria-labelledby="`property-label-${index}`"
+							/>
+						</div>
+						<div
+							v-else-if="index === 'level-seed' || index === 'seed'"
+							class="mt-2 w-full sm:w-[320px]"
+						>
+							<input
+								:id="`server-property-${index}`"
+								v-model="liveProperties[index]"
+								type="text"
+								class="w-full rounded-xl border p-2"
 								:aria-labelledby="`property-label-${index}`"
 							/>
 						</div>
@@ -131,7 +146,7 @@
 			</p>
 		</div>
 
-		<UiServersSaveBanner
+		<SaveBanner
 			:is-visible="hasUnsavedChanges"
 			:server="props.server"
 			:is-updating="isUpdating"
@@ -144,10 +159,11 @@
 
 <script setup lang="ts">
 import { EyeIcon, IssuesIcon, SearchIcon } from '@modrinth/assets'
-import { injectNotificationManager } from '@modrinth/ui'
+import { ButtonStyled, injectNotificationManager, TeleportDropdownMenu } from '@modrinth/ui'
 import Fuse from 'fuse.js'
 import { computed, inject, ref, watch } from 'vue'
 
+import SaveBanner from '~/components/ui/servers/SaveBanner.vue'
 import type { ModrinthServer } from '~/composables/servers/modrinth-servers.ts'
 
 const { addNotification } = injectNotificationManager()
@@ -178,8 +194,14 @@ const { data: propsData, status } = await useAsyncData('ServerProperties', async
 
 		if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
 			value = value.toLowerCase() === 'true'
-		} else if (!isNaN(value as any) && value !== '') {
-			value = Number(value)
+		} else {
+			const intLike = /^[-+]?\d+$/.test(value)
+			if (intLike) {
+				const n = Number(value)
+				if (Number.isSafeInteger(n)) {
+					value = n
+				}
+			}
 		}
 
 		properties[key.trim()] = value
@@ -195,6 +217,7 @@ watch(
 	propsData,
 	(newPropsData) => {
 		if (newPropsData) {
+			console.log(newPropsData)
 			liveProperties.value = JSON.parse(JSON.stringify(newPropsData))
 			originalProperties.value = JSON.parse(JSON.stringify(newPropsData))
 		}

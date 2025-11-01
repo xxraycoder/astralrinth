@@ -40,12 +40,7 @@ impl DiscordGuard {
     /// Initialize discord IPC client, and attempt to connect to it
     /// If it fails, it will still return a DiscordGuard, but the client will be unconnected
     pub fn init() -> crate::Result<DiscordGuard> {
-        let dipc =
-            DiscordIpcClient::new("1190718475832918136").map_err(|e| {
-                crate::ErrorKind::OtherError(format!(
-                    "Could not create Discord client {e}",
-                ))
-            })?;
+        let dipc = DiscordIpcClient::new("1190718475832918136");
 
         Ok(DiscordGuard {
             client: Arc::new(RwLock::new(dipc)),
@@ -130,25 +125,14 @@ impl DiscordGuard {
         let mut client: tokio::sync::RwLockWriteGuard<'_, DiscordIpcClient> =
             self.client.write().await;
         let res = client.set_activity(activity.clone());
-        let could_not_set_err = |e: Box<dyn serde::ser::StdError>| {
-            crate::ErrorKind::OtherError(format!(
-                "Could not update Discord activity {e}",
-            ))
-        };
 
         if reconnect_if_fail {
             if let Err(_e) = res {
-                client.reconnect().map_err(|e| {
-                    crate::ErrorKind::OtherError(format!(
-                        "Could not reconnect to Discord IPC {e}",
-                    ))
-                })?;
-                return Ok(client
-                    .set_activity(activity)
-                    .map_err(could_not_set_err)?); // try again, but don't reconnect if it fails again
+                client.reconnect()?;
+                return Ok(client.set_activity(activity)?); // try again, but don't reconnect if it fails again
             }
         } else {
-            res.map_err(could_not_set_err)?;
+            res?;
         }
 
         Ok(())
@@ -169,25 +153,13 @@ impl DiscordGuard {
         let mut client = self.client.write().await;
         let res = client.clear_activity();
 
-        let could_not_clear_err = |e: Box<dyn serde::ser::StdError>| {
-            crate::ErrorKind::OtherError(format!(
-                "Could not clear Discord activity {e}",
-            ))
-        };
-
         if reconnect_if_fail {
             if res.is_err() {
-                client.reconnect().map_err(|e| {
-                    crate::ErrorKind::OtherError(format!(
-                        "Could not reconnect to Discord IPC {e}",
-                    ))
-                })?;
-                return Ok(client
-                    .clear_activity()
-                    .map_err(could_not_clear_err)?); // try again, but don't reconnect if it fails again
+                client.reconnect()?;
+                return Ok(client.clear_activity()?); // try again, but don't reconnect if it fails again
             }
         } else {
-            res.map_err(could_not_clear_err)?;
+            res?;
         }
         Ok(())
     }

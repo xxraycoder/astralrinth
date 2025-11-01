@@ -14,77 +14,18 @@ mod error;
 #[cfg(target_os = "macos")]
 mod macos;
 
+#[cfg(feature = "updater")]
+mod updater_impl;
+#[cfg(not(feature = "updater"))]
+mod updater_impl_noop;
+
 // Should be called in launcher initialization
 #[tracing::instrument(skip_all)]
 #[tauri::command]
 async fn initialize_state(app: tauri::AppHandle) -> api::Result<()> {
     tracing::info!("Initializing app event state...");
     theseus::EventState::init(app.clone()).await?;
-
-    // #[cfg(feature = "updater")]
-    // 'updater: {
-    //     if env::var("MODRINTH_EXTERNAL_UPDATE_PROVIDER").is_ok() {
-    //         State::init().await?;
-    //         break 'updater;
-    //     }
-
-    //     use tauri_plugin_updater::UpdaterExt;
-
-    //     let updater = app.updater_builder().build()?;
-
-    //     let update_fut = updater.check();
-
-    //     let check_bar = theseus::init_loading(
-    //         theseus::LoadingBarType::CheckingForUpdates,
-    //         1.0,
-    //         "Checking for updates...",
-    //     )
-    //     .await?;
-
-        // tracing::info!("Checking for updates...");
-        // let update = update_fut.await;
-
-    //     drop(check_bar);
-
-    //     if let Some(update) = update.ok().flatten() {
-    //         tracing::info!("Update found: {:?}", update.download_url);
-    //         let loader_bar_id = theseus::init_loading(
-    //             theseus::LoadingBarType::LauncherUpdate {
-    //                 version: update.version.clone(),
-    //                 current_version: update.current_version.clone(),
-    //             },
-    //             1.0,
-    //             "Updating Modrinth App...",
-    //         )
-    //         .await?;
-
-    //         // 100 MiB
-    //         const DEFAULT_CONTENT_LENGTH: u64 = 1024 * 1024 * 100;
-
-    //         update
-    //             .download_and_install(
-    //                 |chunk_length, content_length| {
-    //                     let _ = theseus::emit_loading(
-    //                         &loader_bar_id,
-    //                         (chunk_length as f64)
-    //                             / (content_length
-    //                                 .unwrap_or(DEFAULT_CONTENT_LENGTH)
-    //                                 as f64),
-    //                         None,
-    //                     );
-    //                 },
-    //                 || {},
-    //             )
-    //             .await?;
-
-    //         app.restart();
-    //     }
-    // }
-
-    // #[cfg(not(feature = "updater"))]
-    // {
-        // }
-    tracing::info!("Initializing app state...");    
+    tracing::info!("Initializing app state...");
     State::init().await?;
     tracing::info!("AstralRinth state successfully initialized.");
     let state = State::get().await?;
@@ -121,6 +62,18 @@ fn show_window(app: tauri::AppHandle) {
 fn is_dev() -> bool {
     cfg!(debug_assertions)
 }
+
+#[tauri::command]
+fn are_updates_enabled() -> bool {
+    cfg!(feature = "updater")
+        && env::var("MODRINTH_EXTERNAL_UPDATE_PROVIDER").is_err()
+}
+
+#[cfg(feature = "updater")]
+pub use updater_impl::*;
+
+#[cfg(not(feature = "updater"))]
+pub use updater_impl_noop::*;
 
 // Toggles decorations
 #[tauri::command]
@@ -161,11 +114,6 @@ fn main() {
 
     let mut builder = tauri::Builder::default();
 
-    // #[cfg(feature = "updater")]
-    // {
-    //     builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
-    // }
-
     builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(payload) = args.get(1) {
@@ -200,9 +148,15 @@ fn main() {
                     } else {
                         "app-window-state.json".to_string()
                     },
+				)
+                // Use *only* POSITION and SIZE state flags, because saving VISIBLE causes the `visible: false` to not take effect
+                .with_state_flags(
+                    tauri_plugin_window_state::StateFlags::POSITION
+                        | tauri_plugin_window_state::StateFlags::SIZE
+                        | tauri_plugin_window_state::StateFlags::MAXIMIZED,
                 )
                 .build(),
-        )
+		)
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
@@ -270,9 +224,14 @@ fn main() {
         .plugin(api::cache::init())
         .plugin(api::friends::init())
         .plugin(api::worlds::init())
+        .manage(PendingUpdateData::default())
         .invoke_handler(tauri::generate_handler![
             initialize_state,
             is_dev,
+            are_updates_enabled,
+            get_update_size,
+            enqueue_update_for_installation,
+            remove_enqueued_update,
             toggle_decorations,
             show_window,
             restart_app,
@@ -284,8 +243,42 @@ fn main() {
     match app {
         Ok(app) => {
             app.run(|app, event| {
-                #[cfg(not(target_os = "macos"))]
+                #[cfg(not(any(feature = "updater", target_os = "macos")))]
                 drop((app, event));
+
+                #[cfg(feature = "updater")]
+                if matches!(event, tauri::RunEvent::Exit) {
+                    let update_data = app.state::<PendingUpdateData>().inner();
+                    if let Some((update, data)) = &*update_data.0.lock().unwrap() {
+                        fn set_changelog_toast(version: Option<String>) {
+                            let toast_result: theseus::Result<()> = tauri::async_runtime::block_on(async move {
+                                let mut settings = settings::get().await?;
+                                settings.pending_update_toast_for_version = version;
+                                settings::set(settings).await?;
+                                Ok(())
+                            });
+                            if let Err(e) = toast_result {
+                                tracing::warn!("Failed to set pending_update_toast: {e}")
+                            }
+                        }
+
+                        set_changelog_toast(Some(update.version.clone()));
+                        if let Err(e) = update.install(data) {
+                            tracing::error!("Error while updating: {e}");
+                            set_changelog_toast(None);
+
+                            DialogBuilder::message()
+                                .set_level(MessageLevel::Error)
+                                .set_title("Update error")
+                                .set_text(format!("Failed to install update due to an error:\n{e}"))
+                                .alert()
+                                .show()
+                                .unwrap();
+                        }
+                        app.restart();
+                    }
+                }
+
                 #[cfg(target_os = "macos")]
                 if let tauri::RunEvent::Opened { urls } = event {
                     tracing::info!("Handling webview open {urls:?}");
@@ -313,6 +306,8 @@ fn main() {
             });
         }
         Err(e) => {
+            tracing::error!("Error while running tauri application: {:?}", e);
+
             #[cfg(target_os = "windows")]
             {
                 // tauri doesn't expose runtime errors, so matching a string representation seems like the only solution
@@ -341,7 +336,6 @@ fn main() {
                 .show()
                 .unwrap();
 
-            tracing::error!("Error while running tauri application: {:?}", e);
             panic!("{1}: {:?}", e, "error while running tauri application")
         }
     }

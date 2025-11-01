@@ -13,13 +13,14 @@ use theseus::prelude::canonicalize;
 use theseus::util::utils;
 use url::Url;
 
-pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("utils")
         .invoke_handler(tauri::generate_handler![
             init_authlib_patching,
             apply_migration_fix,
             init_update_launcher,
             get_os,
+            is_network_metered,
             should_disable_mouseover,
             highlight_in_folder,
             open_path,
@@ -66,6 +67,14 @@ pub async fn init_update_launcher(
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::enum_variant_names)]
+pub enum OS {
+    Windows,
+    Linux,
+    MacOS,
+}
+
 /// Gets OS
 #[tauri::command]
 pub fn get_os() -> OS {
@@ -78,12 +87,9 @@ pub fn get_os() -> OS {
     os
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::enum_variant_names)]
-pub enum OS {
-    Windows,
-    Linux,
-    MacOS,
+#[tauri::command]
+pub async fn is_network_metered() -> Result<bool> {
+    Ok(theseus::prelude::is_network_metered().await?)
 }
 
 // Lists active progress bars

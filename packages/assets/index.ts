@@ -10,6 +10,7 @@ import './omorphia.scss'
 
 import _FourOhFourNotFound from './branding/404.svg?component'
 // Branding
+import _BrowserWindowSuccessIllustration from './branding/illustrations/browser-window-success.svg?component'
 import _ModrinthIcon from './branding/logo.svg?component'
 import _ModrinthPlusIcon from './branding/modrinth-plus.svg?component'
 import _AngryRinthbot from './branding/rinthbot/angry.webp'
@@ -47,6 +48,7 @@ import _WindowsIcon from './external/windows.svg?component'
 import _YouTubeIcon from './external/youtube.svg?component'
 
 export const ModrinthIcon = _ModrinthIcon
+export const BrowserWindowSuccessIllustration = _BrowserWindowSuccessIllustration
 export const FourOhFourNotFound = _FourOhFourNotFound
 export const ModrinthPlusIcon = _ModrinthPlusIcon
 export const AngryRinthbot = _AngryRinthbot
@@ -82,16 +84,12 @@ export const TwitterIcon = _TwitterIcon
 export const WindowsIcon = _WindowsIcon
 export const YouTubeIcon = _YouTubeIcon
 
-// [AR] Feature. Icons
-
+// [AR] Styles
 import _PirateIcon from './icons/pirate.svg?component'
 import _MicrosoftIcon from './icons/microsoft.svg?component'
 import _PirateShipIcon from './icons/pirate-ship.svg?component'
 import _AstralRinthLogo from './icons/astralrinth-logo.svg?component'
 import _ElyByIcon from './icons/elyby-icon.svg?component'
-
-// [AR] Feature. Exports
-
 export const PirateIcon = _PirateIcon
 export const MicrosoftIcon = _MicrosoftIcon
 export const PirateShipIcon = _PirateShipIcon

@@ -50,6 +50,9 @@
 <script setup>
 import { RightArrowIcon, WavingRinthbot } from '@modrinth/assets'
 import { Checkbox, commonMessages } from '@modrinth/ui'
+import { IntlFormatted } from '@vintl/vintl/components'
+
+import { normalizeChildren } from '@/utils/vue-children.ts'
 
 const route = useRoute()
 
@@ -68,7 +71,7 @@ const messages = defineMessages({
 	welcomeDescription: {
 		id: 'auth.welcome.description',
 		defaultMessage:
-			'You’re now part of the awesome community of creators & explorers already building, downloading, and staying up-to-date with awazing mods.',
+			'You’re now part of the awesome community of creators & explorers already building, downloading, and staying up-to-date with amazing mods.',
 	},
 	welcomeLongTitle: {
 		id: 'auth.welcome.long-title',

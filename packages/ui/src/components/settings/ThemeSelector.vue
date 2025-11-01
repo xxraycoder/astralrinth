@@ -4,7 +4,7 @@ import { defineMessages, useVIntl } from '@vintl/vintl'
 
 const { formatMessage } = useVIntl()
 
-defineProps<{
+const { updateColorTheme, currentTheme, themeOptions, systemThemeColor } = defineProps<{
 	updateColorTheme: (theme: T) => void
 	currentTheme: T
 	themeOptions: readonly T[]
@@ -53,6 +53,11 @@ const colorTheme = defineMessages({
 function asString(theme: T): string {
 	return theme
 }
+
+function getPreviewClass(option: T): string {
+	const base = option === 'system' ? systemThemeColor : option
+	return base.endsWith('-mode') ? base : `${base}-mode`
+}
 </script>
 
 <template>
@@ -64,7 +69,7 @@ function asString(theme: T): string {
 			:class="{ selected: currentTheme === option }"
 			@click="() => updateColorTheme(option)"
 		>
-			<div class="preview" :class="`${option === 'system' ? systemThemeColor : option}-mode`">
+			<div class="preview" :class="getPreviewClass(option)">
 				<div class="example-card card card">
 					<div class="example-icon"></div>
 					<div class="example-text-1"></div>
@@ -72,18 +77,18 @@ function asString(theme: T): string {
 				</div>
 			</div>
 			<div class="label">
-				<RadioButtonCheckedIcon v-if="currentTheme === option" class="radio" />
-				<RadioButtonIcon v-else class="radio" />
+				<RadioButtonCheckedIcon v-if="currentTheme === option" class="radio shrink-0" />
+				<RadioButtonIcon v-else class="radio shrink-0" />
 				{{ colorTheme[asString(option)] ? formatMessage(colorTheme[asString(option)]) : option }}
 				<SunIcon
 					v-if="'light' === option"
 					v-tooltip="formatMessage(colorTheme.preferredLight)"
-					class="theme-icon"
+					class="theme-icon shrink-0"
 				/>
 				<MoonIcon
 					v-else-if="'dark' === option"
 					v-tooltip="formatMessage(colorTheme.preferredDark)"
-					class="theme-icon"
+					class="theme-icon shrink-0"
 				/>
 			</div>
 		</button>
@@ -95,6 +100,24 @@ function asString(theme: T): string {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 	gap: var(--gap-lg);
+
+	.preview {
+		&.light-mode {
+			@extend .light-mode;
+		}
+
+		&.dark-mode {
+			@extend .dark-mode;
+		}
+
+		&.oled-mode {
+			@extend .oled-mode;
+		}
+
+		&.retro-mode {
+			@extend .retro-mode;
+		}
+	}
 
 	.preview .example-card {
 		margin: 0;

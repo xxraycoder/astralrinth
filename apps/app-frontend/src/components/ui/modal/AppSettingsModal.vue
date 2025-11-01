@@ -11,10 +11,10 @@ import {
 	SettingsIcon,
 	ShieldIcon,
 } from '@modrinth/assets'
-import { TabbedModal } from '@modrinth/ui'
+import { ProgressBar, TabbedModal } from '@modrinth/ui'
 import { getVersion } from '@tauri-apps/api/app'
 import { platform as getOsPlatform, version as getOsVersion } from '@tauri-apps/plugin-os'
-import { defineMessage, useVIntl } from '@vintl/vintl'
+import { defineMessage, defineMessages, useVIntl } from '@vintl/vintl'
 import { computed, ref, watch } from 'vue'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
@@ -25,6 +25,7 @@ import JavaSettings from '@/components/ui/settings/JavaSettings.vue'
 import PrivacySettings from '@/components/ui/settings/PrivacySettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/ResourceManagementSettings.vue'
 import { get, set } from '@/helpers/settings.ts'
+
 // [AR] Imports
 import { installState, getRemote, updateState } from '@/helpers/update.js'
 
@@ -42,6 +43,7 @@ const initDownload = async () => {
     updateRequestFailView.value.show()
   }
 }
+import { injectAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
 import { useTheming } from '@/store/state'
 
 const themeStore = useTheming()
@@ -117,6 +119,8 @@ const isOpen = computed(() => modal.value?.isOpen)
 
 defineExpose({ show, isOpen })
 
+const { progress, version: downloadingVersion } = injectAppUpdateDownloadProgress()
+
 const version = await getVersion()
 const osPlatform = getOsPlatform()
 const osVersion = getOsVersion()
@@ -142,6 +146,13 @@ function devModeCount() {
 		}
 	}
 }
+
+const messages = defineMessages({
+	downloading: {
+		id: 'app.settings.downloading',
+		defaultMessage: 'Downloading v{version}',
+	},
+})
 </script>
 <template>
 	<ModalWrapper ref="modal">
@@ -154,6 +165,14 @@ function devModeCount() {
 		<TabbedModal :tabs="tabs.filter((t) => !t.developerOnly || themeStore.devMode)">
 			<template #footer>
 				<div class="mt-auto text-secondary text-sm">
+					<div class="mb-3">
+						<template v-if="progress > 0 && progress < 1">
+							<p class="m-0 mb-2">
+								{{ formatMessage(messages.downloading, { version: downloadingVersion }) }}
+							</p>
+							<ProgressBar :progress="progress" />
+						</template>
+					</div>
 					<p v-if="themeStore.devMode" class="text-brand font-semibold m-0 mb-2">
 						{{ formatMessage(developerModeEnabled) }}
 					</p>
@@ -171,7 +190,7 @@ function devModeCount() {
 						<div>
 							<p class="m-0">AstralRinth App {{ version }}</p>
 							<p class="m-0">
-								<span v-if="osPlatform === 'macos'">MacOS</span>
+								<span v-if="osPlatform === 'macos'">macOS</span>
 								<span v-else class="capitalize">{{ osPlatform }}</span>
 								{{ osVersion }}
 							</p>
@@ -192,28 +211,34 @@ function devModeCount() {
     	<ModalWrapper ref="updateModalView" :has-to-type="false" header="Request to update the AstralRinth launcher">
     	  <div class="space-y-4">
     	    <div class="space-y-2">
-    	      <p>The new version of the AstralRinth launcher is available.</p>
+    	      <strong>The new version of the AstralRinth launcher is available!</strong>
     	      <p>Your version is outdated. We recommend that you update to the latest version.</p>
-    	      <p><strong>⚠️ Warning ⚠️</strong></p>
+			  <br/>
+			  <br/>
+    	      <p><strong>⚠️ Please, read this notice before initialize update process</strong></p>
     	      <p>
-    	        Before updating, make sure that you have saved all running instances and made a backup copy of the instances
-    	        that are valuable to you. Remember that the authors of the product are not responsible for the breakdown of
-    	        your files, so you should always make copies of them and keep them in a safe place.
+    	        Before updating, make sure that you have saved and closed all running instances and made a backup copy of the launcher data such as
+				<code>%appdata%\Roaming\AstralRinthApp</code> on Windows or <code>~/Library/Application Support/AstralRinthApp</code> on macOS.
+				Remember that the authors of the product are not responsible for the breakdown of
+    	        your files, so you should always make back up copies of them and keep them in a safe place.
     	      </p>
     	    </div>
     	    <div class="text-sm text-secondary space-y-1">
-    	      <a class="neon-text" href="https://me.astralium.su/get/ar" target="_blank"
-    	        rel="noopener noreferrer"><strong>Source:</strong> Git Astralium</a>
     	      <p>
-    	        <strong>Version on remote server:</strong>
-    	        <span id="releaseData" class="neon-text"></span>
-    	      </p>
-    	      <p>
-    	        <strong>Version on local device:</strong>
+    	        <strong>☁️ Latest release tag:</strong>
+    	        <span id="releaseTag" class="neon-text"></span>
+		        <br/>
+				<strong>☁️ Latest release title:</strong>
+				<span id="releaseTitle" class="neon-text"></span>
+				<br/>
+    	        <strong>💾 Installed & Running version:</strong>
     	        <span class="neon-text">v{{ version }}</span>
     	      </p>
     	    </div>
-
+			  <a class="neon-text" href="https://me.astralium.su/get/ar" target="_blank"
+    	        rel="noopener noreferrer">
+				Checkout our git repository
+			  </a>
     	    <div class="absolute bottom-4 right-4 flex items-center gap-4 neon-button neon">
     	      <Button class="bordered" @click="updateModalView.hide()">Cancel</Button>
     	      <Button class="bordered" @click="initDownload()">Download file</Button>
@@ -252,4 +277,11 @@ function devModeCount() {
 @import '../../../../../../packages/assets/styles/neon-icon.scss';
 @import '../../../../../../packages/assets/styles/neon-button.scss';
 @import '../../../../../../packages/assets/styles/neon-text.scss';
+
+code {
+  background: linear-gradient(90deg, #005eff, #00cfff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
 </style>

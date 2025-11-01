@@ -36,6 +36,9 @@ pub mod prelude {
         jre, metadata, minecraft_auth, mr_auth, pack, process,
         profile::{self, Profile, create},
         settings,
-        util::io::{IOError, canonicalize},
+        util::{
+            io::{IOError, canonicalize},
+            network::{is_network_metered, tcp_listen_any_loopback},
+        },
     };
 }

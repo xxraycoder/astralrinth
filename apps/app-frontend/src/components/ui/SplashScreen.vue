@@ -1,10 +1,14 @@
 <template>
 	<div v-if="!hidden" class="splash-screen dark" :class="{ 'fade-out': doneLoading }">
 		<div v-if="os !== 'MacOS'" class="app-buttons">
-			<button class="btn icon-only transparent" icon-only @click="() => getCurrent().minimize()">
+			<button
+				class="btn icon-only transparent"
+				icon-only
+				@click="() => getCurrentWindow().minimize()"
+			>
 				<MinimizeIcon />
 			</button>
-			<button class="btn icon-only transparent" @click="() => getCurrent().toggleMaximize()">
+			<button class="btn icon-only transparent" @click="() => getCurrentWindow().toggleMaximize()">
 				<MaximizeIcon />
 			</button>
 			<button class="btn icon-only transparent" @click="handleClose">
@@ -110,7 +114,7 @@ watch(loading, (newValue) => {
 			setTimeout(() => {
 				hidden.value = true
 				loading.setEnabled(true)
-			}, 250)
+			}, 50)
 		}
 	}
 })
@@ -131,9 +135,6 @@ loading_listener(async (e) => {
 	if (e.event.type === 'directory_move') {
 		loadingProgress.value = 100 * (e.fraction ?? 1)
 		message.value = 'Updating app directory...'
-	} else if (e.event.type === 'launcher_update') {
-		loadingProgress.value = 100 * (e.fraction ?? 1)
-		message.value = 'Updating Modrinth App...'
 	} else if (e.event.type === 'checking_for_updates') {
 		loadingProgress.value = 100 * (e.fraction ?? 1)
 		message.value = 'Checking for updates...'

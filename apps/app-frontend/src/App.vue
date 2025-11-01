@@ -4,6 +4,7 @@ import {
 	ChangeSkinIcon,
 	CompassIcon,
 	DownloadIcon,
+	ExternalIcon,
 	HomeIcon,
 	LeftArrowIcon,
 	LibraryIcon,
@@ -14,9 +15,11 @@ import {
 	NewspaperIcon,
 	NotepadTextIcon,
 	PlusIcon,
+	RefreshCwIcon,
 	RestoreIcon,
 	RightArrowIcon,
 	SettingsIcon,
+	UserIcon,
 	WorldIcon,
 	XIcon,
 } from '@modrinth/assets'
@@ -24,59 +27,68 @@ import {
 	Avatar,
 	Button,
 	ButtonStyled,
+	commonMessages,
 	NewsArticleCard,
 	NotificationPanel,
 	OverflowMenu,
-	provideNotificationManager,
+	ProgressSpinner,
+	provideNotificationManager
 } from '@modrinth/ui'
-import { useLoading, useTheming } from '@/store/state'
-// import ModrinthAppLogo from '@/assets/modrinth_app.svg?component'
-import AccountsCard from '@/components/ui/AccountsCard.vue'
-import InstanceCreationModal from '@/components/ui/InstanceCreationModal.vue'
-import { get, set } from '@/helpers/settings.ts'
-import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
-import RunningAppBar from '@/components/ui/RunningAppBar.vue'
-import SplashScreen from '@/components/ui/SplashScreen.vue'
-import ErrorModal from '@/components/ui/ErrorModal.vue'
-import ModrinthLoadingIndicator from '@/components/LoadingIndicatorBar.vue'
-import { command_listener, warning_listener } from '@/helpers/events.js'
-import { type } from '@tauri-apps/plugin-os'
-import { debugAnalytics, initAnalytics, optOutAnalytics, trackEvent } from '@/helpers/analytics'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { renderString } from '@modrinth/utils'
 import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { type } from '@tauri-apps/plugin-os'
 import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
+import { defineMessages, useVIntl } from '@vintl/vintl'
 import { $fetch } from 'ofetch'
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import ModrinthLoadingIndicator from '@/components/LoadingIndicatorBar.vue'
+import AccountsCard from '@/components/ui/AccountsCard.vue'
+import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
+import ErrorModal from '@/components/ui/ErrorModal.vue'
 import FriendsList from '@/components/ui/friends/FriendsList.vue'
 import IncompatibilityWarningModal from '@/components/ui/install_flow/IncompatibilityWarningModal.vue'
 import InstallConfirmModal from '@/components/ui/install_flow/InstallConfirmModal.vue'
-import { useInstall } from '@/store/install.js'
-import { get_opening_command, initialize_state } from '@/helpers/state'
-import { useFetch } from '@/helpers/fetch.js'
-import NavButton from '@/components/ui/NavButton.vue'
-import { cancelLogin, get as getCreds, login, logout } from '@/helpers/mr_auth.js'
-import { get_user } from '@/helpers/cache.js'
+import ModInstallModal from '@/components/ui/install_flow/ModInstallModal.vue'
+import InstanceCreationModal from '@/components/ui/InstanceCreationModal.vue'
 import AppSettingsModal from '@/components/ui/modal/AppSettingsModal.vue'
 import AuthGrantFlowWaitModal from '@/components/ui/modal/AuthGrantFlowWaitModal.vue'
-import ModInstallModal from '@/components/ui/install_flow/ModInstallModal.vue'
+import NavButton from '@/components/ui/NavButton.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
+import RunningAppBar from '@/components/ui/RunningAppBar.vue'
+import SplashScreen from '@/components/ui/SplashScreen.vue'
 import URLConfirmModal from '@/components/ui/URLConfirmModal.vue'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
+import { debugAnalytics, optOutAnalytics, trackEvent } from '@/helpers/analytics'
+import { get_user } from '@/helpers/cache.js'
+import { command_listener, warning_listener } from '@/helpers/events.js'
+import { useFetch } from '@/helpers/fetch.js'
+import { cancelLogin, get as getCreds, login, logout } from '@/helpers/mr_auth.ts'
 import { list } from '@/helpers/profile.js'
-import { getOS, isDev } from '@/helpers/utils.js'
+import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
+import { get_opening_command, initialize_state } from '@/helpers/state'
+import {
+	getOS,
+	isDev
+} from '@/helpers/utils.js'
+import {
+	provideAppUpdateDownloadProgress
+} from '@/providers/download-progress.ts'
 import { useError } from '@/store/error.js'
+import { useInstall } from '@/store/install.js'
+import { useLoading, useTheming } from '@/store/state'
 
 import { create_profile_and_install_from_file } from './helpers/pack'
 import { generateSkinPreviews } from './helpers/rendering/batch-skin-renderer'
 import { get_available_capes, get_available_skins } from './helpers/skins'
 import { AppNotificationManager } from './providers/app-notifications'
 
-// [AR] Feature
+// [AR] Imports
+import { get, set } from '@/helpers/settings.ts'
 import { getRemote, updateState } from '@/helpers/update.js'
 
 const themeStore = useTheming()
@@ -110,22 +122,45 @@ const criticalErrorMessage = ref()
 const isMaximized = ref(false)
 
 onMounted(async () => {
-  await useCheckDisableMouseover()
-  await getRemote(false) // [AR] Check for updates
+	await useCheckDisableMouseover()
+	await getRemote(false) // [AR] Check for updates
 
 	document.querySelector('body').addEventListener('click', handleClick)
 	document.querySelector('body').addEventListener('auxclick', handleAuxClick)
 })
 
-onUnmounted(() => {
+onUnmounted(async () => {
 	document.querySelector('body').removeEventListener('click', handleClick)
 	document.querySelector('body').removeEventListener('auxclick', handleAuxClick)
 })
 
-async function setupApp() {
-  	const settings = await get()
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	updateInstalledToastTitle: {
+		id: 'app.update.complete-toast.title',
+		defaultMessage: 'Version {version} was successfully installed!',
+	},
+	updateInstalledToastText: {
+		id: 'app.update.complete-toast.text',
+		defaultMessage: 'Click here to view the changelog.',
+	},
+	reloadToUpdate: {
+		id: 'app.update.reload-to-update',
+		defaultMessage: 'Reload to install update',
+	},
+	downloadUpdate: {
+		id: 'app.update.download-update',
+		defaultMessage: 'Download update',
+	},
+	downloadingUpdate: {
+		id: 'app.update.downloading-update',
+		defaultMessage: 'Downloading update ({percent}%)',
+	},
+})
 
-  	// [AR] Patched
+async function setupApp() {
+	// [AR] Patched
+	const settings = await get()
   	settings.personalized_ads = false
   	settings.telemetry = false
   	await set(settings)
@@ -143,7 +178,8 @@ async function setupApp() {
 		toggle_sidebar,
 		developer_mode,
 		feature_flags,
-	} = await get()
+		pending_update_toast_for_version,
+	} = await getSettings()
 
 	if (default_page === 'Library') {
 		await router.push('/library')
@@ -170,17 +206,16 @@ async function setupApp() {
 		isMaximized.value = await getCurrentWindow().isMaximized()
 	})
 
-  	// initAnalytics()
-  	if (!telemetry) {
+	// [AR] Patched
+	if (!telemetry) {
   	  console.info("[AR] • Telemetry disabled by default (Hard patched).")
   	  optOutAnalytics()
   	}
   	if (!personalized_ads) {
   	  console.info("[AR] • Personalized ads disabled by default (Hard patched).")
   	}
-
-  	if (dev) debugAnalytics()
-  	trackEvent('Launched', { version, dev, onboarded })
+	if (dev) debugAnalytics()
+	trackEvent('Launched', { version, dev, onboarded })
 
 	if (!dev) document.addEventListener('contextmenu', (event) => event.preventDefault())
 
@@ -199,23 +234,22 @@ async function setupApp() {
 		}),
 	)
 
-  	/// [AR] Patch
-	// useFetch(
-	// 	`https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
-	// 	'criticalAnnouncements',
-	// 	true,
-	// )
-	// 	.then((response) => response.json())
-	// 	.then((res) => {
-	// 		if (res && res.header && res.body) {
-	// 			criticalErrorMessage.value = res
-	// 		}
-	// 	})
-	// 	.catch(() => {
-	// 		console.log(
-	// 			`No critical announcement found at https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
-	// 		)
-	// 	})
+	useFetch(
+		`https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
+		'criticalAnnouncements',
+		true,
+	)
+		.then((response) => response.json())
+		.then((res) => {
+			if (res && res.header && res.body) {
+				criticalErrorMessage.value = res
+			}
+		})
+		.catch(() => {
+			console.log(
+				`No critical announcement found at https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
+			)
+		})
 
 	useFetch(`https://modrinth.com/news/feed/articles.json`, 'news', true)
 		.then((response) => response.json())
@@ -236,7 +270,6 @@ async function setupApp() {
 		})
 
 	get_opening_command().then(handleCommand)
-	// checkUpdates()
 	fetchCredentials()
 
 	try {
@@ -245,6 +278,12 @@ async function setupApp() {
 		generateSkinPreviews(skins, capes)
 	} catch (error) {
 		console.warn('Failed to generate skin previews in app setup.', error)
+	}
+
+	if (pending_update_toast_for_version !== null) {
+		const settings = await getSettings()
+		settings.pending_update_toast_for_version = null
+		await setSettings(settings)
 	}
 
 	if (osType === 'windows') {
@@ -347,19 +386,6 @@ const forceSidebar = computed(
 	() => route.path.startsWith('/browse') || route.path.startsWith('/project'),
 )
 const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
-// const showAd = computed(() => !(!sidebarVisible.value || hasPlus.value))
-
-// watch(
-// 	showAd,
-// 	() => {
-// 		if (!showAd.value) {
-// 			hide_ads_window(true)
-// 		} else {
-// 			init_ads_window(true)
-// 		}
-// 	},
-// 	{ immediate: true },
-// )
 
 onMounted(() => {
 	invoke('show_window')
@@ -392,18 +418,10 @@ async function handleCommand(e) {
 	}
 }
 
-// const updateAvailable = ref(false)
-// async function checkUpdates() {
-// 	const update = await check()
-// 	updateAvailable.value = !!update
-
-// 	setTimeout(
-// 		() => {
-// 			checkUpdates()
-// 		},
-// 		5 * 1000 * 60,
-// 	)
-// }
+const appUpdateDownload = {
+	progress: ref(0),
+	version: ref(),
+}
 
 function handleClick(e) {
 	let target = e.target
@@ -478,24 +496,20 @@ async function openSurvey() {
 		onOpen: () => console.info('Opened user survey'),
 		onClose: () => {
 			console.info('Closed user survey')
-			// show_ads_window()
 		},
 		onSubmit: () => console.info('Active user survey submitted'),
 	}
 
 	try {
-		// hide_ads_window()
 		if (window.Tally?.openPopup) {
 			console.info(`Opening Tally popup for user survey (form ID: ${formId})`)
 			dismissSurvey()
 			window.Tally.openPopup(formId, popupOptions)
 		} else {
 			console.warn('Tally script not yet loaded')
-			// show_ads_window()
 		}
 	} catch (e) {
 		console.error('Error opening Tally popup:', e)
-		// show_ads_window()
 	}
 
 	console.info(`Found user survey to show with tally_id: ${formId}`)
@@ -549,6 +563,8 @@ async function processPendingSurveys() {
 		console.info('No user survey to show')
 	}
 }
+
+provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this shit line -> SettingsModal will not work.
 </script>
 
 <template>
@@ -608,48 +624,99 @@ async function processPendingSurveys() {
 				<PlusIcon />
 			</NavButton>
 			<div class="flex flex-grow"></div>
-			<!-- <NavButton v-if="updateAvailable" v-tooltip.right="'Install update'" :to="() => restartApp()">
-				<DownloadIcon />
-			</NavButton> -->
+			<Transition name="nav-button-animated">
+				<div
+					v-if="
+						availableUpdate &&
+						updateToastDismissed &&
+						!restarting &&
+						(finishedDownloading || metered)
+					"
+				>
+					<NavButton
+						v-tooltip.right="
+							formatMessage(
+								finishedDownloading
+									? messages.reloadToUpdate
+									: downloadProgress === 0
+										? messages.downloadUpdate
+										: messages.downloadingUpdate,
+								{
+									percent: downloadPercent,
+								},
+							)
+						"
+						:to="
+							finishedDownloading
+								? installUpdate
+								: downloadProgress > 0 && downloadProgress < 1
+									? showUpdateToast
+									: downloadAvailableUpdate
+						"
+					>
+						<ProgressSpinner
+							v-if="downloadProgress > 0 && downloadProgress < 1"
+							class="text-brand"
+							:progress="downloadProgress"
+						/>
+						<RefreshCwIcon v-else-if="finishedDownloading" class="text-brand" />
+						<DownloadIcon v-else class="text-brand" />
+					</NavButton>
+				</div>
+			</Transition>
 			<template v-if="updateState">
-      		  <NavButton class="neon-icon pulse" v-tooltip.right="'Settings'" :to="() => $refs.settingsModal.show()">
-      		    <SettingsIcon />
-      		  </NavButton>
+			  <NavButton
+			    class="neon-icon pulse"
+				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+				:to="() => $refs.settingsModal.show()">
+				<SettingsIcon />
+			    </NavButton>
       		</template>
       		<template v-else>
-      		  <NavButton v-tooltip.right="'Settings'" :to="() => $refs.settingsModal.show()">
-      		    <SettingsIcon />
-      		  </NavButton>
+      		  <NavButton
+				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+				:to="() => $refs.settingsModal.show()">
+				<SettingsIcon />
+			  </NavButton>
       		</template>
-			<ButtonStyled v-if="credentials" type="transparent" circular>
-				<OverflowMenu
-					:options="[
-						{
-							id: 'sign-out',
-							action: () => logOut(),
-							color: 'danger',
-						},
-					]"
-					direction="left"
-				>
-					<Avatar
-						:src="credentials.user.avatar_url"
-						:alt="credentials.user.username"
-						size="32px"
-						circle
-					/>
-					<template #sign-out> <LogOutIcon /> Sign out </template>
-				</OverflowMenu>
-			</ButtonStyled>
-			<NavButton v-else v-tooltip.right="'Sign in'" :to="() => signIn()">
-				<LogInIcon />
-				<template #label>Sign in</template>
+			<OverflowMenu
+				v-if="credentials"
+				v-tooltip.right="`Modrinth account`"
+				class="w-12 h-12 text-primary rounded-full flex items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast border-0 cursor-pointer"
+				:options="[
+					{
+						id: 'view-profile',
+						action: () => openUrl('https://modrinth.com/user/' + credentials.user.username),
+					},
+					{
+						id: 'sign-out',
+						action: () => logOut(),
+						color: 'danger',
+					},
+				]"
+				placement="right-end"
+			>
+				<Avatar :src="credentials.user.avatar_url" alt="" size="32px" circle />
+				<template #view-profile>
+					<UserIcon />
+					<span class="inline-flex items-center gap-1">
+						Signed in as
+						<span class="inline-flex items-center gap-1 text-contrast font-semibold">
+							<Avatar :src="credentials.user.avatar_url" alt="" size="20px" circle />
+							{{ credentials.user.username }}
+						</span>
+					</span>
+					<ExternalIcon />
+				</template>
+				<template #sign-out> <LogOutIcon /> Sign out </template>
+			</OverflowMenu>
+			<NavButton v-else v-tooltip.right="'Sign in to a Modrinth account'" :to="() => signIn()">
+				<LogInIcon class="text-brand" />
 			</NavButton>
 		</div>
 		<div data-tauri-drag-region class="app-grid-statusbar bg-bg-raised h-[--top-bar-height] flex">
 			<div data-tauri-drag-region class="flex p-3">
-				<!-- <ModrinthAppLogo class="h-full w-auto text-contrast pointer-events-none" /> -->
-				<div class="flex items-center gap-1 ml-3">
+				<div data-tauri-drag-region class="flex items-center gap-1 ml-3">
 					<button
 						class="cursor-pointer p-0 m-0 text-contrast border-none outline-none bg-button-bg rounded-full flex items-center justify-center w-6 h-6 hover:brightness-75 transition-all"
 						@click="router.back()"
@@ -665,7 +732,7 @@ async function processPendingSurveys() {
 				</div>
 				<Breadcrumbs class="pt-[2px]" />
 			</div>
-			<section class="flex ml-auto items-center">
+			<section data-tauri-drag-region class="flex ml-auto items-center">
 				<ButtonStyled
 					v-if="!forceSidebar && themeStore.toggleSidebar"
 					:type="sidebarToggled ? 'standard' : 'transparent'"
@@ -782,20 +849,26 @@ async function processPendingSurveys() {
 			>
 				<div id="sidebar-teleport-target" class="sidebar-teleport-content"></div>
 				<div class="sidebar-default-content" :class="{ 'sidebar-enabled': sidebarVisible }">
-					<div class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
-						<h3 class="text-lg m-0">Playing as</h3>
+					<div
+						class="p-4 pr-1 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid"
+					>
+						<h3 class="text-base text-primary font-medium m-0">Playing as</h3>
 						<suspense>
 							<AccountsCard ref="accounts" mode="small" />
 						</suspense>
 					</div>
-					<div class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
+					<div class="py-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
 						<suspense>
-							<FriendsList :credentials="credentials" :sign-in="() => signIn()" />
+							<FriendsList
+								:credentials="credentials"
+								:sign-in="() => signIn()"
+								:refresh-credentials="fetchCredentials"
+							/>
 						</suspense>
 					</div>
-					<div v-if="news && news.length > 0" class="pt-4 flex flex-col items-center">
-						<h3 class="px-4 text-lg m-0 text-left w-full">News</h3>
-						<div class="px-4 pt-2 space-y-4 flex flex-col items-center w-full">
+					<div v-if="news && news.length > 0" class="p-4 pr-1 flex flex-col items-center">
+						<h3 class="text-base mb-4 text-primary font-medium m-0 text-left w-full">News</h3>
+						<div class="space-y-4 flex flex-col items-center w-full">
 							<NewsArticleCard
 								v-for="(item, index) in news"
 								:key="`news-${index}`"
@@ -810,16 +883,6 @@ async function processPendingSurveys() {
 					</div>
 				</div>
 			</div>
-			<template v-if="showAd">
-				<a
-					href="https://modrinth.plus?app"
-					class="absolute bottom-[250px] w-full flex justify-center items-center gap-1 px-4 py-3 text-purple font-medium hover:underline z-10"
-					target="_blank"
-				>
-					<ArrowBigUpDashIcon class="text-2xl" /> Upgrade to Modrinth+
-				</a>
-				<!-- <PromotionWrapper /> -->
-			</template>
 		</div>
 	</div>
 	<URLConfirmModal ref="urlModal" />
@@ -833,7 +896,6 @@ async function processPendingSurveys() {
 <style lang="scss" scoped>
 @import '../../../packages/assets/styles/neon-icon.scss';
 @import '../../../packages/assets/styles/neon-text.scss';
-
 .window-controls {
 	z-index: 20;
 	display: none;
@@ -926,10 +988,6 @@ async function processPendingSurveys() {
 	grid-area: status;
 }
 
-[data-tauri-drag-region] {
-	-webkit-app-region: drag;
-}
-
 [data-tauri-drag-region-exclude] {
 	-webkit-app-region: no-drag;
 }
@@ -971,21 +1029,6 @@ async function processPendingSurveys() {
 	--color-divider: var(--brand-gradient-border);
 	--color-divider-dark: var(--brand-gradient-border);
 }
-
-// .app-sidebar::after {
-// 	content: '';
-// 	position: absolute;
-// 	bottom: 250px;
-// 	left: 0;
-// 	right: 0;
-// 	height: 5rem;
-// 	background: var(--brand-gradient-fade-out-color);
-// 	pointer-events: none;
-// }
-
-// .app-sidebar.has-plus::after {
-// 	display: none;
-// }
 
 .app-sidebar::before {
 	content: '';
@@ -1050,6 +1093,84 @@ async function processPendingSurveys() {
 .popup-survey-leave-to {
 	opacity: 0;
 	transform: translateY(10rem) scale(0.8) scaleY(1.6);
+}
+
+.toast-enter-active {
+	transition: opacity 0.25s linear;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+	opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.toast-enter-active,
+	.nav-button-animated-enter-active {
+		transition: all 0.5s cubic-bezier(0.15, 1.4, 0.64, 0.96);
+	}
+
+	.toast-leave-active,
+	.nav-button-animated-leave-active {
+		transition: all 0.25s ease;
+	}
+
+	.toast-enter-from {
+		scale: 0.5;
+		translate: 0 -10rem;
+		opacity: 0;
+	}
+
+	.toast-leave-to {
+		scale: 0.96;
+		translate: 20rem 0;
+		opacity: 0;
+	}
+
+	.nav-button-animated-enter-active {
+		position: relative;
+	}
+
+	.nav-button-animated-enter-active::before {
+		content: '';
+		inset: 0;
+		border-radius: 100vw;
+		background-color: var(--color-brand-highlight);
+		position: absolute;
+		animation: pop 0.5s ease-in forwards;
+		opacity: 0;
+	}
+
+	@keyframes pop {
+		0% {
+			scale: 0.5;
+		}
+		50% {
+			opacity: 0.5;
+		}
+		100% {
+			scale: 1.5;
+		}
+	}
+
+	.nav-button-animated-enter-from {
+		scale: 0.5;
+		translate: -2rem 0;
+		opacity: 0;
+	}
+
+	.nav-button-animated-leave-to {
+		scale: 0.75;
+		opacity: 0;
+	}
+
+	.fade-enter-active {
+		transition: 0.25s ease-in-out;
+	}
+
+	.fade-enter-from {
+		opacity: 0;
+	}
 }
 </style>
 <style>

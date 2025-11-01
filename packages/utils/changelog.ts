@@ -11,18 +11,278 @@ export type VersionEntry = {
 
 const VERSIONS: VersionEntry[] = [
 	{
+		date: `2025-10-26T18:30:00-07:00`,
+		product: 'app',
+		version: '0.10.15',
+		body: `## Improvements
+- Fixed skins page uploading modified 'normalized' versions of the skin texture instead of the original.
+- Improved skins page lighting to have the player model be lit more from the front.`,
+	},
+	{
+		date: `2025-10-26T18:05:00-07:00`,
+		product: 'web',
+		body: `## Improvements
+- Fixed the colors of OLED mode being brighter than intended.`,
+	},
+	{
+		date: `2025-10-24T21:05:00-07:00`,
+		product: 'app',
+		version: '0.10.14',
+		body: `## Improvements
+- Fixed window maximized state not being saved properly.
+- Fixed padding issue when Friends are loading.
+- Fixed the colors of OLED mode being brighter than intended.`,
+	},
+	{
+		date: `2025-10-19T17:45:00-07:00`,
+		product: 'app',
+		version: '0.10.13',
+		body: `## Improvements
+- Revamped the app sidebar and friends UI to be more straightforward and easier to use.
+- Improved the UI of the Modrinth account button in the bottom left corner. It's now more visually consistent with the other navigation buttons and it has a link to your profile.
+- Updated the ad fallback to be green again instead of blue.
+- Fixed 'Open folder' in the instance page context menu having the wrong icon.`,
+	},
+	{
+		date: `2025-10-15T12:15:00-07:00`,
+		product: 'app',
+		version: '0.10.12',
+		body: `## Improvements
+- Fixed cache sticking around for way too long (30 hours instead of 30 minutes).`,
+	},
+	{
+		date: `2025-10-15T04:11:00-07:00`,
+		product: 'app',
+		version: '0.10.11',
+		body: `## Improvements
+- Fixed ads being able to play audio.`,
+	},
+	{
+		date: `2025-10-14T18:45:00-07:00`,
+		product: 'servers',
+		body: `### Improvements
+- Removed 'Prepare download' step for downloading backups, you can now just download them directly.`,
+	},
+	{
+		date: `2025-10-08T13:45:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Add ability to download tax form after submission.`,
+	},
+	{
+		date: `2025-10-07T09:50:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Allow users to fill out tax form when attempting a withdraw that exceeds $600/yr threshold.`,
+	},
+	{
+		date: `2025-10-04T17:20:00-07:00`,
+		product: 'app',
+		version: '0.10.10',
+		body: `## Improvements
+- Fixed Minecraft versions 1.12.2 and earlier failing to install.`,
+	},
+	{
+		date: `2025-10-04T09:45:00-07:00`,
+		product: 'app',
+		version: '0.10.9',
+		body: `### Security fixes
+- Fixed a couple Modrinth Pack (\`.mrpack\`) importing security vulnerabilities.`,
+	},
+	{
+		date: `2025-10-01T19:05:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Added banner informing Russian users of our non-compliance with censorship laws that will lead to Modrinth being blocked in Russia. For more info, see [our news article on it](/news/article/standing-by-our-values).`,
+	},
+	{
+		date: `2025-09-29T12:50:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Re-enabled the creation of organizations.
+- Added limits for creating content on Modrinth
+	- Up to 256 projects
+	- Up to 16 organizations
+	- Up to 64 collections
+	- If you need more, please contact [support](https://support.modrinth.com) and explain why, and we can increase your limits.`,
+	},
+	{
+		date: `2025-09-29T12:50:00-07:00`,
+		product: 'app',
+		version: '0.10.8',
+		body: `### Improvements
+- Overhauled Modrinth App updater to make it easier to stay up-to-date.
+  - Updates will now be downloaded in the background to make a seamless updating experience.
+  - When an update is downloaded, it will prompt you to reload the app.
+  - If a metered internet connection is detected, it will ask you before downloading the update.
+- Fixed how transparency is handled on the skins page. (Contributed by [Jerozgen](https://github.com/modrinth/code/pull/4373))
+- Removed the 'Advanced' toggle in the Instance creation interface.
+- Improved version selection when installing content.
+	- Installing versions from the Discover content page will now install a version according to your filters, rather than simply the latest.
+	- Dependencies will now download with the same logic as the content being installed.
+	- Non-mod projects and dependencies will now be installed properly.
+- Fixed window dragging issues with the top bar. (Contributed by [aervxa](https://github.com/modrinth/code/pull/4218))
+- Fixed an empty servers.dat file being created when one doesn't already exist, preventing certain mods from providing defaults.
+- Fixed long creator names overflowing on project pages.
+- Strings in Markdown descriptions that look like domain names or IP addresses will no longer automatically be converted to links, such as \`README.md\`.
+- When adding friends, unknown users will now show an error.
+- Pressing 'Enter' after typing in a friend's username will now send the friend request.
+- Improved error handling from Modrinth API.
+- Fixed the white flash when the app is opened on certain systems. (Contributed by [aervxa](https://github.com/modrinth/code/pull/4177))`,
+	},
+	{
+		date: `2025-09-25T19:15:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Temporarily disabled the creation of Organizations.`,
+	},
+	{
+		date: `2025-09-21T15:45:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Added tax compliance for creators who have withdrawn over the tax reporting threshold.
+- Fixed project download interface displaying empty for projects that only support snapshots.`,
+	},
+	{
+		date: `2025-09-08T14:45:00-07:00`,
+		product: 'servers',
+		body: `### Improvements
+- Fixed world seed being rounded in options.`,
+	},
+	{
+		date: `2025-09-07T15:55:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed Modrinth App sign in redirect when using SSO.`,
+	},
+	{
+		date: `2025-09-03T15:40:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed a number of bugs with the Modrinth App marketing page
+- Added clearer notices about Modrinth App's beta status on marketing page.
+- Added disclaimer about Modrinth App's issues on Linux to marketing page.
+- Fixed certain icons in settings shrinking size on mobile.
+- In project settings, the description page no longer refers to all projects as mods.
+- Fixed spelling error during sign up.`,
+	},
+	{
+		date: `2025-09-02T10:30:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed text animation timing on landing page.
+- Fixed file upload buttons on gallery and version pages not being selectable with the keyboard.
+- Fixed long creator names overflowing on project pages.
+- Fixed project summaries with long words in search results causing overflow issues.`,
+	},
+	{
+		date: `2025-09-01T16:20:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Significantly improved the performance of certain project pages.
+- Strings in Markdown descriptions that look like domain names or IP addresses will no longer automatically be converted to links, such as \`README.md\`.
+- Fixed project environment settings sometimes showing the wrong warning/info message.`,
+	},
+	{
+		date: `2025-08-31T17:15:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Updated some of the publishing checklist messages.
+- Fixed certain buttons having the wrong focus effect in Firefox browsers.`,
+	},
+	{
+		date: `2025-08-31T11:50:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed mods with datapack or plugin versions being unable to set environment.
+- Fixed users getting empty notifications for messages they can't see.`,
+	},
+	{
+		date: `2025-08-31T10:35:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed screen reader accessibility of the new project environments settings page.
+- Fixed mobile responsiveness of project settings page.
+- Fixed error loading project pages when using the project ID in the URL.
+- Updated the message for unverified environments when the user does not have permission to update the environment.
+- Improved handling of projects with multiple environments.
+- Fixed blog posts not loading images when missing a slash at the end of the URL.`,
+	},
+	{
+		date: `2025-08-28T18:45:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed modpacks showing an environment migration warning perpetually.
+- Fixed environment settings being unclear about permissions.`,
+	},
+	{
+		date: `2025-08-28T16:50:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Overhauled creator-facing project environment metadata
+	- This is part of a larger project to make environment data across Modrinth more reliable. Read [this blog post](/news/article/new-environments) for more information.
+- Improved performance of project pages.`,
+	},
+	{
+		date: `2025-08-28T16:50:00-07:00`,
+		product: 'servers',
+		body: `### Improvements
+- Fixed issue with Files page not showing files in the correct order sometimes.
+- Fixed Medal servers showing a confusing cancellation/suspension notice.`,
+	},
+	{
+		date: `2025-08-20T13:30:00-07:00`,
+		product: 'app',
+		version: '0.10.7',
+		body: `### Improvements
+- Fixed Quick Play not working with Singleplayer worlds.
+- Updated ad fallback to Medal promo.`,
+	},
+	{
+		date: `2025-08-19T13:56:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed Modrinth Servers marketing page requiring auth.
+- Fixed mobile responsiveness of Modrinth Servers Medal collaboration banner.`,
+	},
+	{
+		date: `2025-08-19T11:10:00-07:00`,
+		product: 'servers',
+		body: `### Improvements
+- Improved upgrading experience.`,
+	},
+	{
+		date: `2025-08-19T11:10:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Added Modrinth Servers free trial promotion in partnership with Medal.
+- Fixed typo in revenue page.`,
+	},
+	{
+		date: `2025-08-18T09:10:00-07:00`,
+		product: 'servers',
+		body: `### Improvements
+- Fixed various dropdowns not appearing.`,
+	},
+	{
+		date: `2025-08-18T09:10:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed a bunch of random NaNs appearing throughout the UI.`,
+	},
+	{
+		date: `2025-08-17T15:35:00-07:00`,
+		product: 'web',
+		body: `### Improvements
+- Fixed notification pages not loading.`,
+	},
+	{
 		date: `2025-08-15T13:15:00-07:00`,
 		product: 'app',
 		version: '0.10.6',
 		body: `### Improvements
 - Fixed Forge versions between 1.17.1 and 1.20.3 failing to launch.
 - Fixed search page constantly resetting back to page 1.`,
-	},
-	{
-		date: `2025-08-15T12:25:00-07:00`,
-		product: 'web',
-		body: `### Improvements
-- Fixed notification pages not loading.`,
 	},
 	{
 		date: `2025-08-15T11:55:00-07:00`,

@@ -13,17 +13,26 @@ import {
 	TrashIcon,
 	XIcon,
 } from '@modrinth/assets'
-import { ButtonStyled, commonMessages, OverflowMenu, ProgressBar } from '@modrinth/ui'
+import {
+	ButtonStyled,
+	commonMessages,
+	injectNotificationManager,
+	OverflowMenu,
+	ProgressBar,
+} from '@modrinth/ui'
 import type { Backup } from '@modrinth/utils'
 import { defineMessages, useVIntl } from '@vintl/vintl'
 import dayjs from 'dayjs'
 import { computed, ref } from 'vue'
 
+import type { ModrinthServer } from '~/composables/servers/modrinth-servers.ts'
+
 const flags = useFeatureFlags()
 const { formatMessage } = useVIntl()
+const { addNotification } = injectNotificationManager()
 
 const emit = defineEmits<{
-	(e: 'prepare' | 'download' | 'rename' | 'restore' | 'lock' | 'retry'): void
+	(e: 'download' | 'rename' | 'restore' | 'lock' | 'retry'): void
 	(e: 'delete', skipConfirmation?: boolean): void
 }>()
 
@@ -33,11 +42,13 @@ const props = withDefaults(
 		preview?: boolean
 		kyrosUrl?: string
 		jwt?: string
+		server?: ModrinthServer
 	}>(),
 	{
 		preview: false,
 		kyrosUrl: undefined,
 		jwt: undefined,
+		server: undefined,
 	},
 )
 
@@ -49,13 +60,7 @@ const backupQueued = computed(
 const automated = computed(() => props.backup.automated)
 const failedToCreate = computed(() => props.backup.interrupted)
 
-const preparedDownloadStates = ['ready', 'done']
 const inactiveStates = ['failed', 'cancelled']
-
-const hasPreparedDownload = computed(() => {
-	const fileState = props.backup.task?.file?.state ?? ''
-	return preparedDownloadStates.includes(fileState)
-})
 
 const creating = computed(() => {
 	const task = props.backup.task?.create
@@ -79,22 +84,7 @@ const restoring = computed(() => {
 	return undefined
 })
 
-const initiatedPrepare = ref(false)
-
-const preparingFile = computed(() => {
-	if (hasPreparedDownload.value) {
-		return false
-	}
-
-	const task = props.backup.task?.file
-	return (
-		(!task && initiatedPrepare.value) ||
-		(task && task.progress < 1 && !inactiveStates.includes(task.state))
-	)
-})
-
 const failedToRestore = computed(() => props.backup.task?.restore?.state === 'failed')
-const failedToPrepareFile = computed(() => props.backup.task?.file?.state === 'failed')
 
 const messages = defineMessages({
 	locked: {
@@ -121,22 +111,6 @@ const messages = defineMessages({
 		id: 'servers.backups.item.queued-for-backup',
 		defaultMessage: 'Queued for backup',
 	},
-	preparingDownload: {
-		id: 'servers.backups.item.preparing-download',
-		defaultMessage: 'Preparing download...',
-	},
-	prepareDownload: {
-		id: 'servers.backups.item.prepare-download',
-		defaultMessage: 'Prepare download',
-	},
-	prepareDownloadAgain: {
-		id: 'servers.backups.item.prepare-download-again',
-		defaultMessage: 'Try preparing again',
-	},
-	alreadyPreparing: {
-		id: 'servers.backups.item.already-preparing',
-		defaultMessage: 'Already preparing backup for download',
-	},
 	creatingBackup: {
 		id: 'servers.backups.item.creating-backup',
 		defaultMessage: 'Creating backup...',
@@ -153,10 +127,6 @@ const messages = defineMessages({
 		id: 'servers.backups.item.failed-to-restore-backup',
 		defaultMessage: 'Failed to restore from backup',
 	},
-	failedToPrepareFile: {
-		id: 'servers.backups.item.failed-to-prepare-backup',
-		defaultMessage: 'Failed to prepare download',
-	},
 	automated: {
 		id: 'servers.backups.item.automated',
 		defaultMessage: 'Automated',
@@ -165,7 +135,48 @@ const messages = defineMessages({
 		id: 'servers.backups.item.retry',
 		defaultMessage: 'Retry',
 	},
+	downloadingBackup: {
+		id: 'servers.backups.item.downloading-backup',
+		defaultMessage: 'Downloading backup...',
+	},
+	downloading: {
+		id: 'servers.backups.item.downloading',
+		defaultMessage: 'Downloading',
+	},
 })
+
+const downloadingState = ref<{ progress: number; state: string } | undefined>(undefined)
+
+const downloading = computed(() => downloadingState.value)
+
+const handleDownload = async () => {
+	if (!props.server?.backups || downloading.value) {
+		return
+	}
+
+	downloadingState.value = { progress: 0, state: 'ongoing' }
+
+	try {
+		const download = props.server.backups.downloadBackup(props.backup.id, props.backup.name)
+
+		download.onProgress((p) => {
+			downloadingState.value = { progress: p.progress, state: 'ongoing' }
+		})
+
+		await download.promise
+
+		emit('download')
+	} catch (error) {
+		console.error('Failed to download backup:', error)
+		addNotification({
+			type: 'error',
+			title: 'Download failed',
+			text: error instanceof Error ? error.message : 'Failed to download backup',
+		})
+	} finally {
+		downloadingState.value = undefined
+	}
+}
 </script>
 <template>
 	<div
@@ -200,17 +211,13 @@ const messages = defineMessages({
 				</span>
 				<span v-if="(failedToCreate || failedToRestore) && (automated || backup.locked)">•</span>
 				<span
-					v-if="failedToCreate || failedToRestore || failedToPrepareFile"
+					v-if="failedToCreate || failedToRestore"
 					class="flex items-center gap-1 text-sm text-red"
 				>
 					<XIcon />
 					{{
 						formatMessage(
-							failedToCreate
-								? messages.failedToCreateBackup
-								: failedToRestore
-									? messages.failedToRestoreBackup
-									: messages.failedToPrepareFile,
+							failedToCreate ? messages.failedToCreateBackup : messages.failedToRestoreBackup,
 						)
 					}}
 				</span>
@@ -234,6 +241,15 @@ const messages = defineMessages({
 				:progress="restoring.progress"
 				color="purple"
 				:waiting="restoring.progress === 0"
+				class="max-w-full"
+			/>
+		</div>
+		<div v-else-if="downloading" class="col-span-2 flex flex-col gap-3 text-blue">
+			{{ formatMessage(messages.downloadingBackup) }}
+			<ProgressBar
+				:progress="downloading.progress >= 0 ? downloading.progress : 0"
+				color="blue"
+				:waiting="downloading.progress <= 0"
 				class="max-w-full"
 			/>
 		</div>
@@ -268,57 +284,32 @@ const messages = defineMessages({
 				</button>
 			</ButtonStyled>
 			<template v-else>
-				<ButtonStyled>
-					<a
-						v-if="hasPreparedDownload"
-						:class="{
-							disabled: !kyrosUrl || !jwt,
-						}"
-						:href="`https://${kyrosUrl}/modrinth/v0/backups/${backup.id}/download?auth=${jwt}`"
-						@click="() => emit('download')"
-					>
+				<ButtonStyled v-show="!downloading">
+					<button :disabled="!server?.backups" @click="handleDownload">
 						<DownloadIcon />
 						{{ formatMessage(commonMessages.downloadButton) }}
-					</a>
-					<button
-						v-else
-						:disabled="!!preparingFile"
-						@click="
-							() => {
-								initiatedPrepare = true
-								emit('prepare')
-							}
-						"
-					>
-						<SpinnerIcon v-if="preparingFile" class="animate-spin" />
-						<DownloadIcon v-else />
-						{{
-							formatMessage(
-								preparingFile
-									? messages.preparingDownload
-									: failedToPrepareFile
-										? messages.prepareDownloadAgain
-										: messages.prepareDownload,
-							)
-						}}
 					</button>
 				</ButtonStyled>
 				<ButtonStyled circular type="transparent">
 					<OverflowMenu
 						:options="[
-							{ id: 'rename', action: () => emit('rename') },
+							{
+								id: 'rename',
+								action: () => emit('rename'),
+								disabled: !!restoring || !!downloading,
+							},
 							{
 								id: 'restore',
 								action: () => emit('restore'),
-								disabled: !!restoring || !!preparingFile,
+								disabled: !!restoring || !!downloading,
 							},
-							{ id: 'lock', action: () => emit('lock') },
+							{ id: 'lock', action: () => emit('lock'), disabled: !!restoring || !!downloading },
 							{ divider: true },
 							{
 								id: 'delete',
 								color: 'red',
 								action: () => emit('delete'),
-								disabled: !!restoring || !!preparingFile,
+								disabled: !!restoring || !!downloading,
 							},
 						]"
 					>

@@ -173,7 +173,7 @@
 					<span class="version-info">
 						for
 						<Categories
-							:categories="notif.extra_data.version.loaders"
+							:categories="getLoaderCategories(notif.extra_data.version)"
 							:type="notif.extra_data.project.project_type"
 							class="categories"
 						/>
@@ -331,7 +331,22 @@ import {
 	VersionIcon,
 	XIcon,
 } from '@modrinth/assets'
-import { injectNotificationManager, useRelativeTime } from '@modrinth/ui'
+import {
+	Avatar,
+	Categories,
+	CopyCode,
+	DoubleIcon,
+	injectNotificationManager,
+	ProjectStatusBadge,
+	useRelativeTime,
+} from '@modrinth/ui'
+import { getUserLink, renderString } from '@modrinth/utils'
+
+import { markAsRead } from '~/helpers/platform-notifications'
+import { getProjectLink, getVersionLink } from '~/helpers/projects'
+import { acceptTeamInvite, removeSelfFromTeam } from '~/helpers/teams'
+
+import ThreadSummary from './thread/ThreadSummary.vue'
 
 const { addNotification } = injectNotificationManager()
 const emit = defineEmits(['update:notifications'])
@@ -440,6 +455,12 @@ function getMessages() {
 		}
 	}
 	return messages
+}
+
+function getLoaderCategories(ver) {
+	return tags.value.loaders.filter((loader) => {
+		return ver?.loaders?.includes(loader.name)
+	})
 }
 </script>
 

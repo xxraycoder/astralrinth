@@ -87,6 +87,7 @@ export const configuredXss = new FilterXSS({
 
 				if (url.hostname.includes('wsrv.nl')) {
 					url.searchParams.delete('errorredirect')
+					url.searchParams.delete('default')
 				}
 
 				const allowedHostnames = [
@@ -138,6 +139,11 @@ export const md = (options = {}) => {
 		function (tokens, idx, options, _env, self) {
 			return self.renderToken(tokens, idx, options)
 		}
+
+	md.linkify.set({
+		fuzzyLink: false,
+		fuzzyIP: false,
+	})
 
 	md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
 		const token = tokens[idx]

@@ -56,9 +56,9 @@
 							<div class="label">
 								<RadioButtonCheckedIcon
 									v-if="cosmetics.searchDisplayMode[projectType.id] === 'list'"
-									class="radio"
+									class="radio shrink-0"
 								/>
-								<RadioButtonIcon v-else class="radio" />
+								<RadioButtonIcon v-else class="radio shrink-0" />
 								Rows
 							</div>
 						</button>
@@ -82,9 +82,9 @@
 							<div class="label">
 								<RadioButtonCheckedIcon
 									v-if="cosmetics.searchDisplayMode[projectType.id] === 'grid'"
-									class="radio"
+									class="radio shrink-0"
 								/>
-								<RadioButtonIcon v-else class="radio" />
+								<RadioButtonIcon v-else class="radio shrink-0" />
 								Grid
 							</div>
 						</button>
@@ -106,9 +106,9 @@
 							<div class="label">
 								<RadioButtonCheckedIcon
 									v-if="cosmetics.searchDisplayMode[projectType.id] === 'gallery'"
-									class="radio"
+									class="radio shrink-0"
 								/>
-								<RadioButtonIcon v-else class="radio" />
+								<RadioButtonIcon v-else class="radio shrink-0" />
 								Gallery
 							</div>
 						</button>
@@ -207,7 +207,10 @@
 import { CodeIcon, RadioButtonCheckedIcon, RadioButtonIcon } from '@modrinth/assets'
 import { Button, injectNotificationManager, ThemeSelector } from '@modrinth/ui'
 import { formatProjectType } from '@modrinth/utils'
+import { defineMessages, useVIntl } from '@vintl/vintl'
+import { IntlFormatted } from '@vintl/vintl/components'
 
+import { normalizeChildren } from '@/utils/vue-children.ts'
 import MessageBanner from '~/components/ui/MessageBanner.vue'
 import type { DisplayLocation } from '~/plugins/cosmetics'
 import { isDarkTheme, type Theme } from '~/plugins/theme/index.ts'

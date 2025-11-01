@@ -231,6 +231,7 @@ fn main() {
                         "apply_migration_fix",
                         "init_update_launcher",
                         "get_os",
+                        "is_network_metered",
                         "should_disable_mouseover",
                         "highlight_in_folder",
                         "open_path",
