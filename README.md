@@ -16,19 +16,13 @@
 
 # About Project
 
-## **AstralRinth • Empowering Your Minecraft Adventure**
+## **AstralRinth • Empowering Your Minecraft Experience**
 
-Welcome to **AstralRinth (AR)** — a powerful fork of Modrinth, reimagined to enhance your Minecraft journey. Whether you're a GUI enthusiast or a developer building with Modrinth’s API, **Theseus Core** is your launchpad into a new era of Minecraft gameplay.
-
-- *Recently, improved integration with the Git Astralium API has been added.*
+**AstralRinth** — a powerful fork of Modrinth, reimagined to enhance your Minecraft journey. Whether you're a GUI enthusiast or a developer building with Modrinth’s API, **Theseus Core** is your launchpad into a new era of Minecraft gameplay.
 
 ## **About the Software**
 
-**AstralRinth** is a dedicated branch of the Theseus project, focused on **offline authentication**, offering you more flexibility and control. Play Minecraft without the need for constant online verification — a user-first approach to modern modded gaming.
-
-## **AR • Unlocking Minecraft's Boundless Horizon**
-
-This unique fork introduces a **free trial Minecraft experience**, bypassing license checks while maintaining rich functionality. Currently includes:
+**AstralRinth** is a dedicated branch of the Modrinth (a.k.a Theseus) project, focused on **offline authentication**, offering you more flexibility and control. Play Minecraft without the need for constant online verification — a user-first approach to modern modded gaming.
 
 ---
 
@@ -43,8 +37,8 @@ To install the launcher:
 
 | Extension | OS      | Notes                                                                 |
 | --------- | ------- | --------------------------------------------------------------------- |
-| `.msi`    | Windows | Supported on all recent Windows versions                              |
-| `.dmg`    | macOS   | Works on Ventura, Sonoma, Sequoia _(may also support older versions)_ |
+| `.msi`    | Windows | Supported on all recent Windows versions (10/11)                              |
+| `.dmg`    | macOS   | Works on Ventura, Sonoma, Sequoia, Tahoe _(may also support older versions)_ |
 | `.deb`    | Linux   | Basic support; compatibility may vary by distribution                 |
 
 ### Installation Warnings
@@ -70,7 +64,7 @@ Avoid using builds with these prefixes — they may be unstable or experimental:
 - No ads in the entire launcher.
 - Custom `.svg` vector icons for a distinct UI.
 - Improved compatibility with both licensed and pirate accounts.
-  - Use **official microsoft accounts** or **offline/pirate accounts** — login won't break.
+  - Use **official microsoft accounts** or **offline/pirate accounts**.
   - Supports license-free access for testing or personal use.
   - No dependence on official authentication services.
 - Discord Rich Presence integration:
@@ -92,15 +86,15 @@ Avoid using builds with these prefixes — they may be unstable or experimental:
 
 To begin using AstralRinth:
 
-1. **Download Your OS Version**
+1. **Download Latest Release**
 
    - Go to the [releases page](https://git.astralium.su/didirus/AstralRinth/releases)
    - [How to choose a file](#downloadable-file-extensions)
    - [How to choose a release](#installation-warnings)
 
-2. **Log In**
+2. **Log in or create new offline account**
 
-   - Use your official Mojang/Microsoft account, or test using a non-licensed account.
+   - Use your official Microsoft account (MSA), or test using a non-licensed account (Offline).
 
 3. **Launch Minecraft**
    - Start Minecraft from the launcher.
