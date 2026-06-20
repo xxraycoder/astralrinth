@@ -34,35 +34,32 @@
 					<label for="proof">
 						<span class="label__title">Proof</span>
 					</label>
-					<input
+					<StyledInput
 						id="proof"
 						v-model="(modPackData[currentIndex] as ModerationUnknownModpackItem).proof"
-						type="text"
 						autocomplete="off"
 						placeholder="Enter proof of status..."
-						@input="persistAll()"
+						@update:model-value="persistAll()"
 					/>
 					<label for="link">
 						<span class="label__title">Link</span>
 					</label>
-					<input
+					<StyledInput
 						id="link"
 						v-model="(modPackData[currentIndex] as ModerationUnknownModpackItem).url"
-						type="text"
 						autocomplete="off"
 						placeholder="Enter link of project..."
-						@input="persistAll()"
+						@update:model-value="persistAll()"
 					/>
 					<label for="title">
 						<span class="label__title">Title</span>
 					</label>
-					<input
+					<StyledInput
 						id="title"
 						v-model="(modPackData[currentIndex] as ModerationUnknownModpackItem).title"
-						type="text"
 						autocomplete="off"
 						placeholder="Enter title of project..."
-						@input="persistAll()"
+						@update:model-value="persistAll()"
 					/>
 				</div>
 			</div>
@@ -146,7 +143,7 @@
 
 <script setup lang="ts">
 import { LeftArrowIcon, RightArrowIcon } from '@modrinth/assets'
-import { ButtonStyled } from '@modrinth/ui'
+import { ButtonStyled, StyledInput } from '@modrinth/ui'
 import type {
 	ModerationFlameModpackItem,
 	ModerationJudgements,
@@ -161,6 +158,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
 	projectId: string
+	projectUpdated: string
 	modelValue?: ModerationJudgements
 }>()
 
@@ -201,6 +199,10 @@ const permanentNoFiles = useSessionStorage<ModerationModpackItem[]>(
 			write: (v: any) => JSON.stringify(v),
 		},
 	},
+)
+const cachedProjectUpdated = useSessionStorage<string | null>(
+	`modpack-permissions-updated-${props.projectId}`,
+	null,
 )
 const currentIndex = ref(0)
 
@@ -363,11 +365,13 @@ async function fetchModPackData(): Promise<void> {
 		}
 
 		modPackData.value = sortedData
+		cachedProjectUpdated.value = props.projectUpdated
 		persistAll()
 	} catch (error) {
 		console.error('Failed to fetch modpack data:', error)
 		modPackData.value = []
 		permanentNoFiles.value = []
+		cachedProjectUpdated.value = props.projectUpdated
 		persistAll()
 	}
 }
@@ -457,7 +461,10 @@ function getJudgements(): ModerationJudgements {
 
 onMounted(() => {
 	loadPersistedData()
-	if (!modPackData.value) {
+
+	const isStale = cachedProjectUpdated.value !== props.projectUpdated
+
+	if (!modPackData.value || isStale) {
 		fetchModPackData()
 	}
 })
@@ -477,6 +484,7 @@ watch(
 	() => props.projectId,
 	() => {
 		clearPersistedData()
+		cachedProjectUpdated.value = null
 		loadPersistedData()
 		if (!modPackData.value) {
 			fetchModPackData()

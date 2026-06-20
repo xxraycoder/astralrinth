@@ -94,6 +94,35 @@ export async function warning_listener(callback) {
 	return await listen('warning', (event) => callback(event.payload))
 }
 
+// This code function modified by AstralRinth
+export async function info_listener(callback) {
+	return await listen('info', (event) => callback(event.payload))
+}
+
 export async function friend_listener(callback) {
 	return await listen('friend', (event) => callback(event.payload))
+}
+
+export async function notification_listener(callback) {
+	return await listen('notification', (event) => callback(event.payload))
+}
+
+/// Payload for the 'log' event
+/*
+    LogPayload {
+        profile_path_id: string,
+        type: "log4j" | "legacy",
+        // log4j fields (when type === "log4j"):
+        timestamp_millis?: number,
+        logger_name?: string,
+        level?: string,
+        thread_name?: string,
+        message?: string,
+        throwable?: string,
+        // legacy fields (when type === "legacy"):
+        message?: string,
+    }
+*/
+export async function log_listener(callback) {
+	return await listen('log', (event) => callback(event.payload))
 }

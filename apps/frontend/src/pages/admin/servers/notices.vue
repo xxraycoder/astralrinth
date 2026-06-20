@@ -11,12 +11,12 @@
 					<span class="text-lg font-semibold text-contrast"> Level </span>
 					<span>Determines how the notice should be styled.</span>
 				</label>
-				<TeleportDropdownMenu
+				<Combobox
 					id="level-selector"
 					v-model="newNoticeLevel"
 					class="max-w-[10rem]"
-					:options="levelOptions"
-					:display-name="(x) => formatMessage(x.name)"
+					:options="levelOptions.map((x) => ({ value: x, label: formatMessage(x.name) }))"
+					:display-value="newNoticeLevel ? formatMessage(newNoticeLevel.name) : 'Select level'"
 					name="Level"
 				/>
 			</div>
@@ -24,11 +24,10 @@
 				<label for="notice-title" class="flex flex-col gap-1">
 					<span class="text-lg font-semibold text-contrast"> Title </span>
 				</label>
-				<input
+				<StyledInput
 					id="notice-title"
 					v-model="newNoticeTitle"
 					placeholder="E.g. Maintenance"
-					type="text"
 					autocomplete="off"
 				/>
 			</div>
@@ -39,17 +38,20 @@
 						<span class="text-brand-red">*</span>
 					</span>
 				</label>
-				<input
+				<StyledInput
 					v-if="newNoticeSurvey"
 					id="notice-message"
 					v-model="newNoticeMessage"
 					placeholder="E.g. rXGtq2"
-					type="text"
 					autocomplete="off"
 				/>
-				<div v-else class="textarea-wrapper h-32">
-					<textarea id="notice-message" v-model="newNoticeMessage" />
-				</div>
+				<StyledInput
+					v-else
+					id="notice-message"
+					v-model="newNoticeMessage"
+					multiline
+					wrapper-class="h-32"
+				/>
 			</div>
 			<div v-if="!newNoticeSurvey" class="flex items-center justify-between gap-2">
 				<label for="dismissable-toggle" class="flex flex-col gap-1">
@@ -63,7 +65,7 @@
 					<span class="text-lg font-semibold text-contrast"> Announcement date </span>
 					<span>Leave blank for notice to be available immediately.</span>
 				</label>
-				<input
+				<StyledInput
 					id="scheduled-date"
 					v-model="newNoticeScheduledDate"
 					type="datetime-local"
@@ -75,7 +77,7 @@
 					<span class="text-lg font-semibold text-contrast"> Expiration date </span>
 					<span>The notice will automatically be deleted after this date.</span>
 				</label>
-				<input
+				<StyledInput
 					id="expiration-date"
 					v-model="newNoticeExpiresDate"
 					type="datetime-local"
@@ -118,11 +120,11 @@
 		</div>
 	</NewModal>
 	<AssignNoticeModal ref="assignNoticeModal" @close="refreshNotices" />
-	<div class="page experimental-styles-within">
+	<div class="page">
 		<div
 			class="mb-6 flex items-end justify-between border-0 border-b border-solid border-divider pb-4"
 		>
-			<h1 class="m-0 text-2xl">Servers notices</h1>
+			<h1 class="m-0 text-2xl">Server notices</h1>
 			<ButtonStyled color="brand">
 				<button @click="openNewNoticeModal">
 					<PlusIcon />
@@ -157,16 +159,13 @@
 						</div>
 						<div class="text-sm">
 							<span v-if="notice.announce_at">
-								{{ dayjs(notice.announce_at).format('MMM D, YYYY [at] h:mm A') }}
+								{{ formatDateTimeShortMonth(notice.announce_at) }}
 								({{ formatRelativeTime(notice.announce_at) }})
 							</span>
 							<template v-else> Never begins </template>
 						</div>
 						<div class="text-sm">
-							<span
-								v-if="notice.expires"
-								v-tooltip="dayjs(notice.expires).format('MMMM D, YYYY [at] h:mm A')"
-							>
+							<span v-if="notice.expires" v-tooltip="formatDateTime(notice.expires)">
 								{{ formatRelativeTime(notice.expires) }}
 							</span>
 							<template v-else> Never expires </template>
@@ -219,7 +218,7 @@
 							:level="notice.level"
 							:message="notice.message"
 							:dismissable="notice.dismissable"
-							:title="notice.title"
+							:title="notice.title ?? undefined"
 							preview
 						/>
 						<div class="mt-4 flex items-center gap-2">
@@ -261,31 +260,45 @@
 	</div>
 </template>
 <script setup lang="ts">
+import type { Archon } from '@modrinth/api-client'
 import { EditIcon, PlusIcon, SaveIcon, SettingsIcon, TrashIcon, XIcon } from '@modrinth/assets'
 import {
 	ButtonStyled,
+	Combobox,
 	commonMessages,
 	CopyCode,
+	defineMessages,
+	injectModrinthClient,
 	injectNotificationManager,
 	NewModal,
 	ServerNotice,
+	StyledInput,
 	TagItem,
-	TeleportDropdownMenu,
 	Toggle,
+	useFormatDateTime,
 	useRelativeTime,
+	useVIntl,
 } from '@modrinth/ui'
 import { NOTICE_LEVELS } from '@modrinth/ui/src/utils/notices.ts'
-import type { ServerNotice as ServerNoticeType } from '@modrinth/utils'
-import { useVIntl } from '@vintl/vintl'
 import dayjs from 'dayjs'
 import { computed } from 'vue'
 
-import AssignNoticeModal from '~/components/ui/servers/notice/AssignNoticeModal.vue'
-import { useServersFetch } from '~/composables/servers/servers-fetch.ts'
+import AssignNoticeModal from '~/components/ui/admin/AssignNoticeModal.vue'
 
 const { addNotification } = injectNotificationManager()
+const client = injectModrinthClient()
 const { formatMessage } = useVIntl()
 const formatRelativeTime = useRelativeTime()
+const formatDateTime = useFormatDateTime({
+	timeStyle: 'short',
+	dateStyle: 'long',
+})
+const formatDateTimeShortMonth = useFormatDateTime({
+	timeStyle: 'short',
+	dateStyle: 'medium',
+})
+
+type ServerNoticeType = Archon.Notices.v0.ListedNotice
 
 const notices = ref<ServerNoticeType[]>([])
 const createNoticeModal = ref<InstanceType<typeof NewModal>>()
@@ -294,16 +307,14 @@ const assignNoticeModal = ref<InstanceType<typeof AssignNoticeModal>>()
 await refreshNotices()
 
 async function refreshNotices() {
-	await useServersFetch('notices').then((res) => {
-		notices.value = res as ServerNoticeType[]
-		notices.value.sort((a, b) => {
-			const dateDiff = dayjs(b.announce_at).diff(dayjs(a.announce_at))
-			if (dateDiff === 0) {
-				return b.id - a.id
-			}
+	notices.value = await client.archon.notices_v0.list()
+	notices.value.sort((a, b) => {
+		const dateDiff = dayjs(b.announce_at).diff(dayjs(a.announce_at))
+		if (dateDiff === 0) {
+			return b.id - a.id
+		}
 
-			return dateDiff
-		})
+		return dateDiff
 	})
 }
 
@@ -337,7 +348,7 @@ function startEditing(notice: ServerNoticeType, assignments: boolean = false) {
 	newNoticeLevel.value = levelOptions.find((x) => x.id === notice.level) ?? levelOptions[0]
 	newNoticeDismissable.value = notice.dismissable
 	newNoticeMessage.value = notice.message
-	newNoticeTitle.value = notice.title
+	newNoticeTitle.value = notice.title ?? undefined
 	newNoticeScheduledDate.value = dayjs(notice.announce_at).format(DATE_TIME_FORMAT)
 	newNoticeExpiresDate.value = notice.expires
 		? dayjs(notice.expires).format(DATE_TIME_FORMAT)
@@ -351,9 +362,8 @@ function startEditing(notice: ServerNoticeType, assignments: boolean = false) {
 }
 
 async function deleteNotice(notice: ServerNoticeType) {
-	await useServersFetch(`notices/${notice.id}`, {
-		method: 'DELETE',
-	})
+	await client.archon.notices_v0
+		.delete(notice.id)
 		.then(() => {
 			addNotification({
 				title: `Successfully deleted notice #${notice.id}`,
@@ -402,9 +412,10 @@ async function saveChanges() {
 		return
 	}
 
-	await useServersFetch(`notices/${editingNotice.value?.id}`, {
-		method: 'PATCH',
-		body: {
+	if (!editingNotice.value) return
+
+	await client.archon.notices_v0
+		.update(editingNotice.value.id, {
 			message: newNoticeMessage.value,
 			title: newNoticeSurvey.value ? undefined : trimmedTitle.value,
 			level: newNoticeLevel.value.id,
@@ -415,14 +426,14 @@ async function saveChanges() {
 			expires: newNoticeExpiresDate.value
 				? dayjs(newNoticeExpiresDate.value).toISOString()
 				: undefined,
-		},
-	}).catch((err) => {
-		addNotification({
-			title: 'Error saving changes to notice',
-			text: err,
-			type: 'error',
 		})
-	})
+		.catch((err) => {
+			addNotification({
+				title: 'Error saving changes to notice',
+				text: err,
+				type: 'error',
+			})
+		})
 	await refreshNotices()
 	createNoticeModal.value?.hide()
 }
@@ -432,9 +443,8 @@ async function createNotice() {
 		return
 	}
 
-	await useServersFetch('notices', {
-		method: 'POST',
-		body: {
+	await client.archon.notices_v0
+		.create({
 			message: newNoticeMessage.value,
 			title: newNoticeSurvey.value ? undefined : trimmedTitle.value,
 			level: newNoticeLevel.value.id,
@@ -445,14 +455,14 @@ async function createNotice() {
 			expires: newNoticeExpiresDate.value
 				? dayjs(newNoticeExpiresDate.value).toISOString()
 				: undefined,
-		},
-	}).catch((err) => {
-		addNotification({
-			title: 'Error creating notice',
-			text: err,
-			type: 'error',
 		})
-	})
+		.catch((err) => {
+			addNotification({
+				title: 'Error creating notice',
+				text: err,
+				type: 'error',
+			})
+		})
 	await refreshNotices()
 	createNoticeModal.value?.hide()
 }

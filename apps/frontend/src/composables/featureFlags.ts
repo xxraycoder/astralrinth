@@ -19,6 +19,7 @@ const validateValues = <K extends PropertyKey>(flags: Record<K, FlagValue>) => f
 export const DEFAULT_FEATURE_FLAGS = validateValues({
 	// Developer flags
 	developerMode: false,
+	demoMode: false,
 	showVersionFilesInTable: false,
 	// showAdsWithPlus: false,
 	alwaysShowChecklistAsPopup: true,
@@ -28,33 +29,33 @@ export const DEFAULT_FEATURE_FLAGS = validateValues({
 	projectTypesPrimaryNav: false,
 	enableMedalPromotion: true,
 	hidePlusPromoInUserMenu: false,
-	oldProjectCards: true,
-	newProjectCards: false,
 	projectBackground: false,
 	searchBackground: false,
 	advancedDebugInfo: false,
+	FilesRefreshButton: false,
 	showProjectPageDownloadModalServersPromo: false,
 	showProjectPageCreateServersTooltip: true,
 	showProjectPageQuickServerButton: false,
 	newProjectGeneralSettings: false,
 	newProjectEnvironmentSettings: true,
+	serverRamAsBytesAlwaysOn: false,
+	archonSentryCapture: false,
 	hideRussiaCensorshipBanner: false,
-	// advancedRendering: true,
-	// externalLinksNewTab: true,
-	// notUsingBlockers: false,
-	// hideModrinthAppPromos: false,
-	// preferredDarkTheme: 'dark',
-	// hideStagingBanner: false,
-
-	// Project display modes
-	// modSearchDisplayMode: 'list',
-	// pluginSearchDisplayMode: 'list',
-	// resourcePackSearchDisplayMode: 'gallery',
-	// modpackSearchDisplayMode: 'list',
-	// shaderSearchDisplayMode: 'gallery',
-	// dataPackSearchDisplayMode: 'list',
-	// userProjectDisplayMode: 'list',
-	// collectionProjectDisplayMode: 'list',
+	disablePrettyProjectUrlRedirects: false,
+	hidePreviewBanner: false,
+	i18nDebug: false,
+	showDiscoverProjectButtons: false,
+	useV1ContentTabAPI: true,
+	labrinthApiCanary: false,
+	dismissedExternalProjectsInfo: false,
+	modpackPermissionsPage: false,
+	showAllBanners: false,
+	alwaysIgnoreErrorBanner: false,
+	showViewProdRouteBanner: false,
+	showModeratorProjectMemberUi: false,
+	showModeratorPrivateMessageHighlight: true,
+	archonApiStaging: false,
+	showHostingAccessInstanceAuditLog: false,
 } as const)
 
 export type FeatureFlag = keyof typeof DEFAULT_FEATURE_FLAGS
@@ -65,19 +66,20 @@ export type AllFeatureFlags = {
 
 export type PartialFeatureFlags = Partial<AllFeatureFlags>
 
-const COOKIE_OPTIONS = {
-	maxAge: 60 * 60 * 24 * 365 * 10,
-	sameSite: 'lax',
-	secure: true,
-	httpOnly: false,
-	path: '/',
-} satisfies CookieOptions<PartialFeatureFlags>
+const getCookieOptions = () =>
+	({
+		maxAge: 60 * 60 * 24 * 365 * 10,
+		sameSite: 'lax',
+		secure: useRuntimeConfig().public.cookieSecure,
+		httpOnly: false,
+		path: '/',
+	}) satisfies CookieOptions<PartialFeatureFlags>
 
 export const useFeatureFlags = () =>
 	useState<AllFeatureFlags>('featureFlags', () => {
 		const config = useRuntimeConfig()
 
-		const savedFlags = useCookie<PartialFeatureFlags>('featureFlags', COOKIE_OPTIONS)
+		const savedFlags = useCookie<PartialFeatureFlags>('featureFlags', getCookieOptions())
 
 		if (!savedFlags.value) {
 			savedFlags.value = {}
@@ -107,6 +109,6 @@ export const useFeatureFlags = () =>
 
 export const saveFeatureFlags = () => {
 	const flags = useFeatureFlags()
-	const cookie = useCookie<PartialFeatureFlags>('featureFlags', COOKIE_OPTIONS)
+	const cookie = useCookie<PartialFeatureFlags>('featureFlags', getCookieOptions())
 	cookie.value = flags.value
 }

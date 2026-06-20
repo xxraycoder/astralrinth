@@ -11,6 +11,18 @@
   "nags.add-icon.title": {
     "defaultMessage": "Ajouter une icône"
   },
+  "nags.add-java-address.description": {
+    "defaultMessage": "Ajoutez l'adresse IP et le port que les joueurs Java Edition pourront utiliser pour rejoindre votre serveur."
+  },
+  "nags.add-java-address.title": {
+    "defaultMessage": "Ajouter une adresse Java"
+  },
+  "nags.add-links-server.description": {
+    "defaultMessage": "Ajoutez tous les liens pertinents destinés à des utilisateurs extérieurs à Modrinth, tels qu'un site web, une boutique ou une invitation Discord."
+  },
+  "nags.add-links-server.title": {
+    "defaultMessage": "Ajouter des liens externes"
+  },
   "nags.add-links.description": {
     "defaultMessage": "Ajoutez tous les liens pertinents pointant en dehors de Modrinth, tels que le code source, un système de suivi des problèmes ou une invitation Discord."
   },
@@ -18,13 +30,13 @@
     "defaultMessage": "Ajouter des liens externes"
   },
   "nags.all-tags-selected.description": {
-    "defaultMessage": "Vous avez sélectionné les {totalAvailableTags} tags disponibles. Cela va à l’encontre de l’objectif des tags, qui sont censés aider les utilisateurs à trouver des projets pertinents. Veuillez ne sélectionner que les tags qui sont réellement liés à votre projet."
+    "defaultMessage": "Vous avez sélectionné {totalAvailableTags, plural, one {# le tag disponible} other {# tous les tags disponibles}}. Cela va à l'encontre de l'objectif des tags, qui sont destinés à aider les utilisateurs à trouver des projets pertinents. Veuillez ne sélectionner que les tags qui sont pertinents pour votre projet."
   },
   "nags.all-tags-selected.title": {
     "defaultMessage": "Sélectionnez des tags précis"
   },
   "nags.description-too-short.description": {
-    "defaultMessage": "Votre description contient {length} caractères lisibles. Il est recommandé d’en avoir au moins {minChars} pour créer une description claire et informative."
+    "defaultMessage": "Votre description contient {length, plural, one {# caractère lisible} other {# caractères lisibles}}. Il est recommandé d’en avoir au moins {minChars, plural, one {# caractère} other {# caractères}} pour obtenir une description claire et informative."
   },
   "nags.description-too-short.title": {
     "defaultMessage": "Développer la description"
@@ -54,10 +66,16 @@
     "defaultMessage": "Voir la galerie"
   },
   "nags.gpl-license-source-required.description": {
-    "defaultMessage": "Votre {projectType} utilise une licence qui exige que le code source soit disponible. Veuillez fournir un lien vers le code source ou un fichier contenant les sources pour chaque version supplémentaire, ou envisagez d’utiliser une autre licence."
+    "defaultMessage": "Votre {type} utilise une license qui a besoin d'avoir le code source disponible. Merci de mettre un lien au code source ou aux fichiers source pour chaque version additionnelle, ou sinon vous pouvez changer de license."
   },
   "nags.gpl-license-source-required.title": {
     "defaultMessage": "Fournir le code source"
+  },
+  "nags.identical-links.description": {
+    "defaultMessage": "Certains de vos liens externes semblent être identiques. Chaque lien ne devrait être entré qu'une seule fois et avec le type de lien correspondant."
+  },
+  "nags.identical-links.title": {
+    "defaultMessage": "Nettoyer des liens identiques"
   },
   "nags.image-heavy-description.description": {
     "defaultMessage": "Votre description doit contenir suffisamment de texte clair ou de texte alternatif pour les images, afin de rester accessible aux personnes utilisant des lecteurs d’écran ou disposant d’une connexion Internet lente."
@@ -84,13 +102,13 @@
     "defaultMessage": "Ne pas utiliser de raccourcisseurs de liens"
   },
   "nags.long-headers.description": {
-    "defaultMessage": "{count, plural, one {# en-tête} other {# en-têtes}} dans votre description {count, plural, one {est} other {sont}} trop longue(s). Les en-têtes doivent être concis et servir de titres de section, et non de phrases complètes."
+    "defaultMessage": "{count, plural, one {# en-tête} other {# en-têtes}} dans votre description {count, plural, one {est trop long} other {sont trop longs}}. Les en-têtes doivent être concis et servir de titres de section, et non de phrases complètes."
   },
   "nags.long-headers.title": {
     "defaultMessage": "Raccourcir les en-têtes"
   },
   "nags.minecraft-title-clause.description": {
-    "defaultMessage": "Les projets ne doivent pas utiliser la marque Minecraft ni inclure \"Minecraft\" comme élément principal du nom."
+    "defaultMessage": "Les projets ne doivent pas utiliser la marque Minecraft ni inclure « Minecraft » comme élément principal du nom."
   },
   "nags.minecraft-title-clause.title": {
     "defaultMessage": "Éviter la violation de marque"
@@ -114,22 +132,34 @@
     "defaultMessage": "Examinez et traitez toutes les remarques de l’équipe de modération avant de soumettre à nouveau."
   },
   "nags.moderator-feedback.title": {
-    "defaultMessage": "Examiner les retours des modérateurs"
+    "defaultMessage": "Retour de révision"
   },
   "nags.multiple-resolution-tags.description": {
-    "defaultMessage": "Vous avez sélectionné {count} tags de résolution ({tags}). Les packs de ressources ne devraient généralement avoir qu’un seul tag de résolution correspondant à leur résolution principale."
+    "defaultMessage": "Vous avez sélectionné {count, plural, one {# tag de résolution} other {# tags de résolution}} ({tags}). Les packs de ressources ne devraient généralement avoir qu’un seul tag de résolution correspondant à leur résolution principale."
   },
   "nags.multiple-resolution-tags.title": {
     "defaultMessage": "Sélectionner la bonne résolution"
   },
-  "nags.select-environments.description": {
-    "defaultMessage": "Sélectionnez les environnements où votre {projectType} fonctionne."
+  "nags.select-compatibility.description": {
+    "defaultMessage": "Sélectionnez quelles versions votre serveur prend en charge, choisissez un modpack, ou publiez le vôtre."
   },
-  "nags.select-environments.title": {
-    "defaultMessage": "Sélectionner l'environnement"
+  "nags.select-compatibility.title": {
+    "defaultMessage": "Sélectionner la comptabilité"
+  },
+  "nags.select-country.description": {
+    "defaultMessage": "Faites savoir aux joueurs dans quel région se trouve votre serveur."
+  },
+  "nags.select-country.title": {
+    "defaultMessage": "Supprimer une région"
+  },
+  "nags.select-language.description": {
+    "defaultMessage": "Lisyez la ou les langues prises en charge par votre serveur."
+  },
+  "nags.select-language.title": {
+    "defaultMessage": "Sélectionner une langue"
   },
   "nags.select-license.description": {
-    "defaultMessage": "Sélectionnez la licence sous laquelle votre {projectType} est distribué."
+    "defaultMessage": "Sélectionnez la licence votre {type} est distribué."
   },
   "nags.select-license.title": {
     "defaultMessage": "Sélectionner une licence"
@@ -140,11 +170,11 @@
   "nags.select-tags.title": {
     "defaultMessage": "Sélectionner les tags"
   },
+  "nags.server.title": {
+    "defaultMessage": "Visiter les paramètres du serveur"
+  },
   "nags.settings.description.title": {
     "defaultMessage": "Accéder aux paramètres de la description"
-  },
-  "nags.settings.environments.title": {
-    "defaultMessage": "Visiter les paramètres d'environnement"
   },
   "nags.settings.license.title": {
     "defaultMessage": "Accéder aux paramètres de la licence"
@@ -171,25 +201,34 @@
     "defaultMessage": "Nettoyer le résumé"
   },
   "nags.summary-too-short.description": {
-    "defaultMessage": "Votre résumé contient {length} caractères. Il est recommandé d’en avoir au moins {minChars} pour créer un résumé informatif et attrayant."
+    "defaultMessage": "Votre résumé contient {length, plural, one {# caractère} other {# caractères}}. Il est recommandé d’en avoir au moins {minChars, plural, one {# caractère} other {# caractères}} pour obtenir un résumé informatif et attrayant."
   },
   "nags.summary-too-short.title": {
     "defaultMessage": "Développer le résumé"
   },
   "nags.title-contains-technical-info.description": {
-    "defaultMessage": "Garder le nom de votre projet clair le rend plus mémorable et plus facile à trouver. \nLes informations sur la version et le chargeur sont affichées automatiquement avec votre projet."
+    "defaultMessage": "Garder un nom de projet clair le rend plus mémorisable et plus facile à trouver. Les informations de version et de loader sont automatiquement affichées à côté de votre projet."
   },
   "nags.title-contains-technical-info.title": {
     "defaultMessage": "Nettoyer le nom"
   },
+  "nags.too-many-tags-server.description": {
+    "defaultMessage": "Vous avez sélectionné {tagCount, plural, one {# tag} other {# tags}}. Veuillez réduire à {maxTagCount} ou moins pour garantir que votre serveur apparaisse dans les résultats de recherche pertinents."
+  },
+  "nags.too-many-tags-server.title": {
+    "defaultMessage": "Sélectionnez des tags correspondants"
+  },
   "nags.too-many-tags.description": {
-    "defaultMessage": "Vous avez sélectionné {tagCount} tags. Envisagez de réduire à {maxTagCount} ou moins afin que votre projet apparaisse dans les résultats de recherche pertinents."
+    "defaultMessage": "Vous avez sélectionné {tagCount, plural, one {# tag} other {# tags}}. Pensez à réduire à {maxTagCount} ou moins afin que votre projet apparaisse dans des résultats de recherche pertinents."
   },
   "nags.too-many-tags.title": {
     "defaultMessage": "Sélectionnez des tags précis"
   },
   "nags.upload-gallery-image.description": {
-    "defaultMessage": "Au moins une image de la galerie est requise pour présenter le contenu de votre {type}{resourcepackMessage}."
+    "defaultMessage": "Au moins une image dans la galerie est nécessaire pour montrer le contenu de votre {type}."
+  },
+  "nags.upload-gallery-image.resourcepack-type": {
+    "defaultMessage": "Les Packs de ressources, sauf l'audio ou les packs de localisation. Si ceci décrit votre pack, merci d'utiliser des étiquettes appropriées"
   },
   "nags.upload-gallery-image.title": {
     "defaultMessage": "Ajouter une image à la galerie"

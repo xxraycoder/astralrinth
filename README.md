@@ -10,7 +10,7 @@
 > [Русский](readme/ru_ru/README.md)
 
 ## Support channel
-> [Telegram](https://me.astralium.su/ref/telegram_channel)
+> [Telegram](https://astralium.su/product/astralrinth/support)
 
 ---
 
@@ -30,7 +30,7 @@
 
 To install the launcher:
 
-1. Visit the [releases page](https://git.astralium.su/didirus/AstralRinth/releases) to download the correct version for your system.
+1. Visit the [releases page](https://astralium.su/product/astralrinth/source) to download the correct version for your system.
 2. Run the downloaded file or extract and launch it, depending on the format.
 
 ### Downloadable File Extensions
@@ -63,8 +63,8 @@ Avoid using builds with these prefixes — they may be unstable or experimental:
 
 - No ads in the entire launcher.
 - Custom `.svg` vector icons for a distinct UI.
-- Improved compatibility with both licensed and pirate accounts.
-  - Use **official microsoft accounts** or **offline/pirate accounts**.
+- Improved compatibility with both licensed and offline accounts.
+  - Use **official microsoft accounts** or **offline accounts**.
   - Supports license-free access for testing or personal use.
   - No dependence on official authentication services.
 - Discord Rich Presence integration:
@@ -88,7 +88,7 @@ To begin using AstralRinth:
 
 1. **Download Latest Release**
 
-   - Go to the [releases page](https://git.astralium.su/didirus/AstralRinth/releases)
+   - Go to the [releases page](https://astralium.su/product/astralrinth)
    - [How to choose a file](#downloadable-file-extensions)
    - [How to choose a release](#installation-warnings)
 

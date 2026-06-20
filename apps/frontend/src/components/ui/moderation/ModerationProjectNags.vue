@@ -30,9 +30,13 @@
 				</ButtonStyled>
 			</div>
 		</div>
-		<div v-if="!collapsed" class="grid-display width-16 mt-4">
-			<div v-for="nag in visibleNags" :key="nag.id" class="grid-display__item">
-				<span class="flex items-center gap-2 font-semibold">
+		<div v-if="!collapsed" class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-2">
+			<div
+				v-for="nag in visibleNags"
+				:key="nag.id"
+				class="flex flex-col gap-3 rounded-2xl border border-solid border-surface-5 bg-surface-2 p-4"
+			>
+				<span class="flex items-center gap-2 font-medium text-contrast">
 					<component
 						:is="nag.icon || getDefaultIcon(nag.status)"
 						v-tooltip="getStatusTooltip(nag.status)"
@@ -52,7 +56,7 @@
 					:to="`/${project.project_type}/${project.slug ? project.slug : project.id}/${
 						nag.link.path
 					}`"
-					class="goto-link"
+					class="goto-link mt-auto"
 				>
 					{{ getFormattedMessage(nag.link.title) }}
 					<ChevronRightIcon aria-hidden="true" class="featured-header-chevron" />
@@ -78,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Labrinth } from '@modrinth/api-client'
 import {
 	AsteriskIcon,
 	ChevronRightIcon,
@@ -89,9 +94,7 @@ import {
 } from '@modrinth/assets'
 import type { Nag, NagContext, NagStatus } from '@modrinth/moderation'
 import { nags } from '@modrinth/moderation'
-import { ButtonStyled } from '@modrinth/ui'
-import type { Project, User, Version } from '@modrinth/utils'
-import { defineMessages, type MessageDescriptor, useVIntl } from '@vintl/vintl'
+import { ButtonStyled, defineMessages, type MessageDescriptor, useVIntl } from '@modrinth/ui'
 import type { Component } from 'vue'
 import { computed } from 'vue'
 
@@ -99,16 +102,11 @@ interface Tags {
 	rejectedStatuses: string[]
 }
 
-interface Member {
-	accepted?: boolean
-	project_role?: string
-	user?: Partial<User>
-}
-
 interface Props {
-	project: Project
-	versions?: Version[]
-	currentMember?: Member | null
+	project: Labrinth.Projects.v2.Project
+	projectV3: Labrinth.Projects.v3.Project
+	versions?: Labrinth.Versions.v2.Version[]
+	currentMember?: Labrinth.Projects.v3.TeamMember | null
 	collapsed?: boolean
 	routeName?: string
 	tags: Tags
@@ -139,7 +137,7 @@ const messages = defineMessages({
 	resubmitForReviewDesc: {
 		id: 'project-moderation-nags.resubmit-for-review-desc',
 		defaultMessage:
-			"Your project has been {status} by Modrinth's staff. In most cases, you can resubmit for review after addressing the staff's message.",
+			"Your project has been {status, select, rejected {rejected} withheld {withheld} other {{status}}} by Modrinth's staff. In most cases, you can resubmit for review after addressing the staff's message.",
 	},
 	visitModerationPage: {
 		id: 'project-moderation-nags.visit-moderation-page',
@@ -179,8 +177,9 @@ const emit = defineEmits<{
 
 const nagContext = computed<NagContext>(() => ({
 	project: props.project,
+	projectV3: props.projectV3,
 	versions: props.versions,
-	currentMember: props.currentMember as User,
+	currentMember: props.currentMember?.user as Labrinth.Users.v2.User,
 	currentRoute: props.routeName,
 	tags: props.tags,
 	submitProject: submitForReview,
@@ -234,7 +233,7 @@ const visibleNags = computed<Nag[]>(() => {
 			link: {
 				path: 'moderation',
 				title: messages.visitModerationPage,
-				shouldShow: () => props.routeName !== 'type-id-moderation',
+				shouldShow: () => props.routeName !== 'type-project-moderation',
 			},
 		})
 	}

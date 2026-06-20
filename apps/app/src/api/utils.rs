@@ -10,14 +10,12 @@ use crate::api::{Result, TheseusSerializableError};
 use dashmap::DashMap;
 use std::path::{Path, PathBuf};
 use theseus::prelude::canonicalize;
-use theseus::util::utils;
+use theseus::util::astralrinth::utils;
 use url::Url;
 
 pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("utils")
         .invoke_handler(tauri::generate_handler![
-            init_authlib_patching,
-            apply_migration_fix,
             init_update_launcher,
             get_os,
             is_network_metered,
@@ -31,25 +29,7 @@ pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
         .build()
 }
 
-/// [AR] Feature. Ely.by
-#[tauri::command]
-pub async fn init_authlib_patching(
-    minecraft_version: &str,
-    is_mojang: bool,
-) -> Result<bool> {
-    let result =
-        utils::init_authlib_patching(minecraft_version, is_mojang).await?;
-    Ok(result)
-}
-
-/// [AR] Migration. Patch
-#[tauri::command]
-pub async fn apply_migration_fix(eol: &str) -> Result<bool> {
-    let result = utils::apply_migration_fix(eol).await?;
-    Ok(result)
-}
-
-/// [AR] Feature. Updater
+// This code function is modified by AstralRinth
 #[tauri::command]
 pub async fn init_update_launcher(
     download_url: &str,
@@ -123,29 +103,40 @@ pub async fn should_disable_mouseover() -> bool {
 }
 
 #[tauri::command]
-pub fn highlight_in_folder<R: Runtime>(
+pub async fn highlight_in_folder<R: Runtime>(
     app: tauri::AppHandle<R>,
     path: PathBuf,
 ) {
-    if let Err(e) = app.opener().reveal_item_in_dir(path) {
-        tracing::error!("Failed to highlight file in folder: {}", e);
-    }
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Err(e) = app.opener().reveal_item_in_dir(path) {
+            tracing::error!("Failed to highlight file in folder: {}", e);
+        }
+    })
+    .await
+    .ok();
 }
 
 #[tauri::command]
-pub fn open_path<R: Runtime>(app: tauri::AppHandle<R>, path: PathBuf) {
-    if let Err(e) = app.opener().open_path(path.to_string_lossy(), None::<&str>)
-    {
-        tracing::error!("Failed to open path: {}", e);
-    }
+pub async fn open_path<R: Runtime>(app: tauri::AppHandle<R>, path: PathBuf) {
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Err(e) =
+            app.opener().open_path(path.to_string_lossy(), None::<&str>)
+        {
+            tracing::error!("Failed to open path: {}", e);
+        }
+    })
+    .await
+    .ok();
 }
 
 #[tauri::command]
-pub fn show_launcher_logs_folder<R: Runtime>(app: tauri::AppHandle<R>) {
-    let path = DirectoryInfo::launcher_logs_dir().unwrap_or_default();
-    // failure to get folder just opens filesystem
-    // (ie: if in debug mode only and launcher_logs never created)
-    open_path(app, path);
+pub async fn show_launcher_logs_folder<R: Runtime>(app: tauri::AppHandle<R>) {
+    if let Some(d) = DirectoryInfo::global_handle_if_ready() {
+        let path = d.launcher_logs_dir().unwrap_or_default();
+        // failure to get folder just opens filesystem
+        // (ie: if in debug mode only and launcher_logs never created)
+        open_path(app, path).await;
+    }
 }
 
 // Get opening command

@@ -1,22 +1,53 @@
 <template>
-	<div class="mb-3 flex flex-wrap gap-2">
-		<VersionFilterControl
-			ref="versionFilters"
-			:versions="versions"
-			:game-versions="gameVersions"
-			:base-id="`${baseId}-filter`"
-			@update:query="updateQuery"
-		/>
-		<Pagination
-			:page="currentPage"
-			class="ml-auto mt-auto"
-			:count="Math.ceil(filteredVersions.length / pageSize)"
-			@switch-page="switchPage"
-		/>
+	<div class="flex flex-col gap-3 mb-3">
+		<div class="flex flex-wrap justify-between gap-2">
+			<VersionFilterControl
+				ref="versionFilters"
+				:versions="normalizedVersions"
+				:game-versions="gameVersions"
+				:base-id="`${baseId}-filter`"
+				@update:query="updateQuery"
+			/>
+
+			<ButtonStyled v-if="openModal" :color="createVersionButtonSecondary ? 'standard' : 'green'">
+				<button @click="openModal"><PlusIcon /> Create version</button>
+			</ButtonStyled>
+
+			<Pagination
+				v-if="!openModal"
+				:page="currentPage"
+				class="mt-auto"
+				:count="Math.ceil(filteredVersions.length / pageSize)"
+				@switch-page="switchPage"
+			/>
+		</div>
+
+		<div
+			v-if="openModal && filteredVersions.length > pageSize"
+			class="flex flex-wrap justify-between items-center gap-2"
+		>
+			<span>
+				Showing {{ (currentPage - 1) * pageSize + 1 }} to
+				{{ Math.min(currentPage * pageSize, filteredVersions.length) }} of
+				{{ filteredVersions.length }}
+			</span>
+
+			<Pagination
+				:page="currentPage"
+				class="mt-auto"
+				:count="Math.ceil(filteredVersions.length / pageSize)"
+				@switch-page="switchPage"
+			/>
+		</div>
 	</div>
 	<div
 		v-if="versions.length > 0"
-		class="flex flex-col gap-4 rounded-2xl bg-bg-raised px-6 pb-8 pt-4 supports-[grid-template-columns:subgrid]:grid supports-[grid-template-columns:subgrid]:grid-cols-[1fr_min-content] sm:px-8 supports-[grid-template-columns:subgrid]:sm:grid-cols-[min-content_auto_auto_auto_min-content] supports-[grid-template-columns:subgrid]:xl:grid-cols-[min-content_auto_auto_auto_auto_auto_min-content]"
+		class="flex flex-col gap-4 rounded-2xl bg-bg-raised px-6 pb-8 pt-4 supports-[grid-template-columns:subgrid]:grid supports-[grid-template-columns:subgrid]:grid-cols-[1fr_min-content] sm:px-8 supports-[grid-template-columns:subgrid]:sm:grid-cols-[min-content_auto_auto_auto_min-content]"
+		:class="[
+			hasMultipleEnvironments
+				? 'supports-[grid-template-columns:subgrid]:xl:grid-cols-[min-content_auto_auto_auto_auto_auto_auto_min-content] has-environment'
+				: 'supports-[grid-template-columns:subgrid]:xl:grid-cols-[min-content_auto_auto_auto_auto_auto_min-content] no-environment',
+		]"
 	>
 		<div class="versions-grid-row">
 			<div class="w-9 max-sm:hidden"></div>
@@ -30,6 +61,12 @@
 				class="text-sm font-bold text-contrast max-sm:hidden sm:max-xl:collapse sm:max-xl:hidden"
 			>
 				Platforms
+			</div>
+			<div
+				v-if="hasMultipleEnvironments"
+				class="text-sm font-bold text-contrast max-sm:hidden sm:max-xl:collapse sm:max-xl:hidden"
+			>
+				Environment
 			</div>
 			<div
 				class="text-sm font-bold text-contrast max-sm:hidden sm:max-xl:collapse sm:max-xl:hidden"
@@ -50,7 +87,7 @@
 		<template v-for="(version, index) in currentVersions" :key="index">
 			<!-- Row divider -->
 			<div
-				class="versions-grid-row h-px w-full bg-button-bg"
+				class="versions-grid-row h-px w-full bg-surface-5"
 				:class="{
 					'max-sm:!hidden': index === 0,
 				}"
@@ -73,13 +110,18 @@
 							</div>
 						</div>
 						<div
-							class="pointer-events-none relative z-[1] flex flex-col justify-center"
+							class="pointer-events-none relative z-[1] flex flex-col justify-center overflow-hidden min-w-32"
 							:class="{
 								'group-hover:underline': !!versionLink,
 							}"
+							title="`${version.version_number} - ${version.name}`"
 						>
-							<div class="font-bold text-contrast">{{ version.version_number }}</div>
-							<div class="text-xs font-medium">{{ version.name }}</div>
+							<div class="font-bold text-contrast text-ellipsis overflow-hidden">
+								{{ version.version_number }}
+							</div>
+							<div class="text-xs font-medium text-ellipsis overflow-hidden">
+								{{ version.name }}
+							</div>
 						</div>
 					</div>
 					<div class="flex flex-col justify-center gap-2 sm:contents">
@@ -90,7 +132,7 @@
 										v-for="gameVersion in formatVersionsForDisplay(
 											version.game_versions,
 											gameVersions,
-										)"
+										).slice(0, maxGameVersionTags)"
 										:key="`version-tag-${gameVersion}`"
 										v-tooltip="`Toggle filter for ${gameVersion}`"
 										class="z-[1]"
@@ -100,21 +142,72 @@
 									>
 										{{ gameVersion }}
 									</TagItem>
+									<Menu
+										v-if="
+											formatVersionsForDisplay(version.game_versions, gameVersions).length >
+											maxGameVersionTags
+										"
+										:delay="{ hide: 50, show: 0 }"
+										no-auto-focus
+										class="z-[1] cursor-default"
+									>
+										<TagItem tabindex="0">
+											+{{
+												formatVersionsForDisplay(version.game_versions, gameVersions).length -
+												maxGameVersionTags
+											}}
+										</TagItem>
+										<template #popper>
+											<div class="flex gap-1 flex-wrap max-w-[20rem]">
+												<TagItem
+													v-for="gameVersion in formatVersionsForDisplay(
+														version.game_versions,
+														gameVersions,
+													).slice(maxGameVersionTags)"
+													:key="`overflow-version-tag-${gameVersion}`"
+													:action="
+														() =>
+															versionFilters?.toggleFilters('gameVersion', version.game_versions)
+													"
+												>
+													{{ gameVersion }}
+												</TagItem>
+											</div>
+										</template>
+									</Menu>
 								</div>
 							</div>
 							<div class="flex items-center">
 								<div class="flex flex-wrap gap-1">
+									<template v-if="version.noModLoader">
+										<TagItem class="z-[1] border !border-solid border-surface-5">
+											No mod loader
+										</TagItem>
+									</template>
+									<template v-else>
+										<TagItem
+											v-for="platform in version.loaders"
+											:key="`platform-tag-${platform}`"
+											v-tooltip="`Toggle filter for ${platform}`"
+											class="z-[1]"
+											:style="`--_color: var(--color-platform-${platform})`"
+											:action="() => versionFilters?.toggleFilter('platform', platform)"
+										>
+											<component :is="getLoaderIcon(platform)" v-if="getLoaderIcon(platform)" />
+											<FormattedTag :tag="platform" enforce-type="loader" />
+										</TagItem>
+									</template>
+								</div>
+							</div>
+							<div v-if="hasMultipleEnvironments" class="flex items-center">
+								<div class="flex flex-wrap gap-1">
 									<TagItem
-										v-for="platform in version.loaders"
-										:key="`platform-tag-${platform}`"
-										v-tooltip="`Toggle filter for ${platform}`"
-										class="z-[1]"
-										:style="`--_color: var(--color-platform-${platform})`"
-										:action="() => versionFilters?.toggleFilter('platform', platform)"
+										v-for="(tag, tagIdx) in getEnvironmentTags(version.environment)"
+										:key="`env-tag-${tagIdx}`"
+										class="z-[1] text-center"
 									>
-										<!-- eslint-disable-next-line vue/no-v-html -->
-										<svg v-html="loaders.find((x) => x.name === platform)?.icon"></svg>
-										{{ formatCategory(platform) }}
+										<component :is="tag.icon" />
+										{{ formatMessage(tag.label).replace('and', '&') }}
 									</TagItem>
 								</div>
 							</div>
@@ -123,27 +216,24 @@
 							class="flex flex-col justify-center gap-1 max-sm:flex-row max-sm:justify-start max-sm:gap-3 xl:contents"
 						>
 							<div
-								v-tooltip="
-									formatMessage(commonMessages.dateAtTimeTooltip, {
-										date: new Date(version.date_published),
-										time: new Date(version.date_published),
-									})
-								"
+								v-tooltip="formatDateTime(version.date_published)"
 								class="z-[1] flex cursor-help items-center gap-1 text-nowrap font-medium xl:self-center"
 							>
 								<CalendarIcon class="xl:hidden" />
-								{{ formatRelativeTime(version.date_published) }}
+								{{ formatRelativeTime(new Date(version.date_published)) }}
 							</div>
 							<div
 								class="pointer-events-none z-[1] flex items-center gap-1 font-medium xl:self-center"
 							>
 								<DownloadIcon class="xl:hidden" />
-								{{ formatNumber(version.downloads) }}
+								{{ formatCompactNumber(version.downloads) }}
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="flex items-start justify-end gap-1 sm:items-center z-[1]">
+				<div
+					class="flex items-start justify-end gap-1 sm:items-center z-[1] max-[400px]:flex-col max-[400px]:justify-start"
+				>
 					<slot name="actions" :version="version"></slot>
 				</div>
 				<div v-if="showFiles" class="tag-list pointer-events-none relative z-[1] col-span-full">
@@ -169,31 +259,46 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { CalendarIcon, DownloadIcon, StarIcon } from '@modrinth/assets'
+import type { Labrinth } from '@modrinth/api-client'
+import { CalendarIcon, DownloadIcon, getLoaderIcon, PlusIcon, StarIcon } from '@modrinth/assets'
 import {
-	formatBytes,
-	formatCategory,
-	formatNumber,
-	formatVersionsForDisplay,
-	type GameVersionTag,
-	type PlatformTag,
-	type Version,
-} from '@modrinth/utils'
-import { useVIntl } from '@vintl/vintl'
+	AutoLink,
+	ButtonStyled,
+	FormattedTag,
+	Pagination,
+	TagItem,
+	useCompactNumber,
+	useFormatBytes,
+	useFormatDateTime,
+	VersionChannelIndicator,
+	VersionFilterControl,
+} from '@modrinth/ui'
+import { formatVersionsForDisplay, type GameVersionTag, type Version } from '@modrinth/utils'
+import { Menu } from 'floating-vue'
 import { computed, type Ref, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useRelativeTime } from '../../composables'
-import { commonMessages } from '../../utils/common-messages'
-import AutoLink from '../base/AutoLink.vue'
-import TagItem from '../base/TagItem.vue'
-import { Pagination, VersionChannelIndicator, VersionFilterControl } from '../index'
+import { useVIntl } from '../../composables/i18n'
+import { getEnvironmentTags } from './settings/environment/environments'
 
 const { formatMessage } = useVIntl()
 const formatRelativeTime = useRelativeTime()
+const { formatCompactNumber } = useCompactNumber()
+const formatDateTime = useFormatDateTime({
+	timeStyle: 'short',
+	dateStyle: 'long',
+})
+const formatBytes = useFormatBytes()
 
 type VersionWithDisplayUrlEnding = Version & {
 	displayUrlEnding: string
+	environment?: Labrinth.Projects.v3.Environment
+	mrpack_loaders?: string[]
+}
+
+type DisplayVersion = VersionWithDisplayUrlEnding & {
+	noModLoader: boolean
 }
 
 const props = withDefaults(
@@ -207,9 +312,11 @@ const props = withDefaults(
 		versions: VersionWithDisplayUrlEnding[]
 		showFiles?: boolean
 		currentMember?: boolean
-		loaders: PlatformTag[]
+		loaders: Labrinth.Tags.v2.Loader[]
 		gameVersions: GameVersionTag[]
 		versionLink?: (version: Version) => string
+		openModal?: () => void
+		createVersionButtonSecondary?: boolean
 	}>(),
 	{
 		baseId: undefined,
@@ -218,6 +325,51 @@ const props = withDefaults(
 		versionLink: undefined,
 	},
 )
+
+function getModpackLoaders(version: VersionWithDisplayUrlEnding): string[] {
+	const loaders = Array.isArray(version.loaders) ? version.loaders : []
+
+	if (props.project.project_type !== 'modpack') {
+		return loaders
+	}
+
+	const mrpackLoaders = Array.isArray(version.mrpack_loaders) ? version.mrpack_loaders : []
+	if (mrpackLoaders.length) {
+		return mrpackLoaders
+	}
+
+	return loaders.filter((loader) => loader !== 'mrpack')
+}
+
+function getGameVersions(version: VersionWithDisplayUrlEnding): string[] {
+	return Array.isArray(version.game_versions) ? version.game_versions : []
+}
+
+function hasNoModLoader(loaders: string[]): boolean {
+	return (
+		(props.project.project_type === 'modpack' &&
+			loaders.length === 1 &&
+			loaders[0] === 'minecraft') ||
+		loaders.length === 0
+	)
+}
+
+const normalizedVersions = computed<DisplayVersion[]>(() =>
+	props.versions.map((version) => {
+		const loaders = getModpackLoaders(version)
+		const gameVersions = getGameVersions(version)
+		const noModLoader = hasNoModLoader(loaders)
+
+		return {
+			...version,
+			game_versions: gameVersions,
+			loaders: noModLoader ? [] : loaders,
+			noModLoader,
+		}
+	}),
+)
+
+const maxGameVersionTags = 6
 
 const currentPage: Ref<number> = ref(1)
 const pageSize: Ref<number> = ref(20)
@@ -231,8 +383,13 @@ const selectedPlatforms: Ref<string[]> = computed(
 )
 const selectedChannels: Ref<string[]> = computed(() => versionFilters.value?.selectedChannels ?? [])
 
+const hasMultipleEnvironments = computed(() => {
+	const environments = new Set(currentVersions.value.map((v) => v.environment).filter(Boolean))
+	return environments.size > 1
+})
+
 const filteredVersions = computed(() => {
-	return props.versions.filter(
+	return normalizedVersions.value.filter(
 		(version) =>
 			hasAnySelected(version.game_versions, selectedGameVersions.value) &&
 			hasAnySelected(version.loaders, selectedPlatforms.value) &&
@@ -292,6 +449,14 @@ function updateQuery(newQueries: Record<string, string | string[] | undefined | 
 </script>
 <style scoped>
 .versions-grid-row {
-	@apply grid grid-cols-[1fr_min-content] gap-4 supports-[grid-template-columns:subgrid]:col-span-full supports-[grid-template-columns:subgrid]:!grid-cols-subgrid sm:grid-cols-[min-content_1fr_1fr_1fr_min-content] xl:grid-cols-[min-content_1fr_1fr_1fr_1fr_1fr_min-content];
+	@apply grid grid-cols-[1fr_min-content] gap-4 supports-[grid-template-columns:subgrid]:col-span-full supports-[grid-template-columns:subgrid]:!grid-cols-subgrid sm:grid-cols-[min-content_1fr_1fr_1fr_min-content];
+}
+
+.has-environment .versions-grid-row {
+	@apply xl:grid-cols-[min-content_1fr_1fr_1fr_1fr_1fr_1fr_min-content];
+}
+
+.no-environment .versions-grid-row {
+	@apply xl:grid-cols-[min-content_1fr_1fr_1fr_1fr_1fr_min-content];
 }
 </style>

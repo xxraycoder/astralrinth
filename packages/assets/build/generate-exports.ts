@@ -1,3 +1,4 @@
+import { compareImportSources } from '@modrinth/tooling-config/script-utils/import-sort'
 import fs from 'fs'
 import path from 'path'
 
@@ -14,7 +15,12 @@ function toPascalCase(str: string): string {
 		.join('')
 }
 
-function generateIconExports(): { imports: string; exports: string } {
+function generateIconExports(): {
+	imports: string
+	exports: string
+	categoryMap: string
+	loaderMap: string
+} {
 	const packageRoot = path.resolve(__dirname, '..')
 	const iconsDir = path.join(packageRoot, 'icons')
 
@@ -22,13 +28,15 @@ function generateIconExports(): { imports: string; exports: string } {
 		throw new Error(`Icons directory not found: ${iconsDir}`)
 	}
 
-	const files = fs
-		.readdirSync(iconsDir)
-		.filter((file) => file.endsWith('.svg'))
-		.sort()
+	const icons: Array<{ importPath: string; pascalName: string; privateName: string }> = []
+	const categoryMapEntries: Array<{ key: string; value: string }> = []
+	const loaderMapEntries: Array<{ key: string; value: string }> = []
 
-	let imports = ''
-	let exports = ''
+	// Process top-level icons
+	const files = fs.readdirSync(iconsDir).filter((file) => {
+		const filePath = path.join(iconsDir, file)
+		return fs.statSync(filePath).isFile() && file.endsWith('.svg')
+	})
 
 	files.forEach((file) => {
 		const baseName = path.basename(file, '.svg')
@@ -42,19 +50,137 @@ function generateIconExports(): { imports: string; exports: string } {
 			pascalName += 'Icon'
 		}
 
-		const privateName = `_${pascalName}`
+		icons.push({
+			importPath: `./icons/${file}?component`,
+			pascalName,
+			privateName: `_${pascalName}`,
+		})
+	})
 
-		imports += `import ${privateName} from './icons/${file}?component'\n`
+	// Process tag icons from icons/tags/categories/
+	const categoriesDir = path.join(iconsDir, 'tags', 'categories')
+	if (fs.existsSync(categoriesDir)) {
+		const categoryFiles = fs.readdirSync(categoriesDir).filter((file) => file.endsWith('.svg'))
+		categoryFiles.forEach((file) => {
+			const baseName = path.basename(file, '.svg')
+			let pascalName = toPascalCase(baseName)
+
+			if (pascalName === '') {
+				pascalName = 'Unknown'
+			}
+
+			// Prefix with TagCategory
+			pascalName = `TagCategory${pascalName}`
+			if (!pascalName.endsWith('Icon')) {
+				pascalName += 'Icon'
+			}
+
+			icons.push({
+				importPath: `./icons/tags/categories/${file}?component`,
+				pascalName,
+				privateName: `_${pascalName}`,
+			})
+
+			// Add to category map (key is the original filename without extension, lowercase)
+			categoryMapEntries.push({
+				key: baseName.toLowerCase(),
+				value: pascalName,
+			})
+		})
+	}
+
+	// Process tag icons from icons/tags/loaders/
+	const loadersDir = path.join(iconsDir, 'tags', 'loaders')
+	if (fs.existsSync(loadersDir)) {
+		const loaderFiles = fs.readdirSync(loadersDir).filter((file) => file.endsWith('.svg'))
+		loaderFiles.forEach((file) => {
+			const baseName = path.basename(file, '.svg')
+			let pascalName = toPascalCase(baseName)
+
+			if (pascalName === '') {
+				pascalName = 'Unknown'
+			}
+
+			// Prefix with TagLoader
+			pascalName = `TagLoader${pascalName}`
+			if (!pascalName.endsWith('Icon')) {
+				pascalName += 'Icon'
+			}
+
+			icons.push({
+				importPath: `./icons/tags/loaders/${file}?component`,
+				pascalName,
+				privateName: `_${pascalName}`,
+			})
+
+			// Add to loader map (key is the original filename without extension, lowercase)
+			loaderMapEntries.push({
+				key: baseName.toLowerCase(),
+				value: pascalName,
+			})
+		})
+	}
+
+	// Process badge icons from icons/badges/
+	const badgesDir = path.join(iconsDir, 'badges')
+	if (fs.existsSync(badgesDir)) {
+		const badgeFiles = fs.readdirSync(badgesDir).filter((file) => file.endsWith('.svg'))
+		badgeFiles.forEach((file) => {
+			const baseName = path.basename(file, '.svg')
+			let pascalName = toPascalCase(baseName)
+
+			if (pascalName === '') {
+				pascalName = 'Unknown'
+			}
+
+			if (!pascalName.endsWith('Badge')) {
+				pascalName += 'Badge'
+			}
+
+			icons.push({
+				importPath: `./icons/badges/${file}?component`,
+				pascalName,
+				privateName: `_${pascalName}`,
+			})
+		})
+	}
+
+	// Sort by import path using simple-import-sort's algorithm
+	icons.sort((a, b) => compareImportSources(a.importPath, b.importPath))
+
+	// Sort map entries by key for consistent output
+	categoryMapEntries.sort((a, b) => a.key.localeCompare(b.key))
+	loaderMapEntries.sort((a, b) => a.key.localeCompare(b.key))
+
+	let imports = ''
+	let exports = ''
+
+	icons.forEach(({ importPath, pascalName, privateName }) => {
+		imports += `import ${privateName} from '${importPath}'\n`
 		exports += `export const ${pascalName} = ${privateName}\n`
 	})
 
-	return { imports, exports }
+	// Generate category map
+	let categoryMap = 'export const categoryIconMap: Record<string, IconComponent> = {\n'
+	categoryMapEntries.forEach(({ key, value }) => {
+		categoryMap += `\t'${key}': ${value},\n`
+	})
+	categoryMap += '}\n'
+
+	// Generate loader map
+	let loaderMap = 'export const loaderIconMap: Record<string, IconComponent> = {\n'
+	loaderMapEntries.forEach(({ key, value }) => {
+		loaderMap += `\t'${key}': ${value},\n`
+	})
+	loaderMap += '}\n'
+
+	return { imports, exports, categoryMap, loaderMap }
 }
 
 function runTests(): void {
 	console.log('🧪 Running conversion tests...\n')
 
-	const testCases: Array<{ input: string; expected: string }> = [
+	const testCases: Array<{ input: string; expected: string; suffix?: string }> = [
 		{ input: 'align-left', expected: 'AlignLeftIcon' },
 		{ input: 'arrow-big-up-dash', expected: 'ArrowBigUpDashIcon' },
 		{ input: 'check-check', expected: 'CheckCheckIcon' },
@@ -69,13 +195,17 @@ function runTests(): void {
 		{ input: 'list_bulleted', expected: 'ListBulletedIcon' },
 		{ input: 'test.name', expected: 'TestNameIcon' },
 		{ input: 'test-name_final.icon', expected: 'TestNameFinalIcon' },
+		{ input: 'downloads-500m', expected: 'Downloads500mBadge', suffix: 'Badge' },
+		{ input: 'early-modpack', expected: 'EarlyModpackBadge', suffix: 'Badge' },
+		{ input: 'plus', expected: 'PlusBadge', suffix: 'Badge' },
 	]
 
 	let passed = 0
 	let failed = 0
 
-	testCases.forEach(({ input, expected }) => {
-		const result = toPascalCase(input) + (toPascalCase(input).endsWith('Icon') ? '' : 'Icon')
+	testCases.forEach(({ input, expected, suffix = 'Icon' }) => {
+		const base = toPascalCase(input)
+		const result = base.endsWith(suffix) ? base : base + suffix
 		const success = result === expected
 
 		if (success) {
@@ -98,12 +228,19 @@ function generateFiles(): void {
 	try {
 		console.log('🔄 Generating icon exports...')
 
-		const { imports, exports } = generateIconExports()
+		const { imports, exports, categoryMap, loaderMap } = generateIconExports()
 		const output = `// Auto-generated icon imports and exports
 // Do not edit this file manually - run 'pnpm run fix' to regenerate
 
+import type { FunctionalComponent, SVGAttributes } from 'vue'
+
+export type IconComponent = FunctionalComponent<SVGAttributes>
+
 ${imports}
-${exports}`
+${exports}
+
+${categoryMap}
+${loaderMap}`
 
 		const packageRoot = path.resolve(__dirname, '..')
 		const outputPath = path.join(packageRoot, 'generated-icons.ts')
@@ -138,10 +275,34 @@ function getExpectedIconExports(iconsDir: string): string[] {
 		return []
 	}
 
-	return fs
-		.readdirSync(iconsDir)
-		.filter((file) => file.endsWith('.svg'))
-		.map((file) => {
+	const exports: string[] = []
+
+	// Process top-level icons
+	const files = fs.readdirSync(iconsDir).filter((file) => {
+		const filePath = path.join(iconsDir, file)
+		return fs.statSync(filePath).isFile() && file.endsWith('.svg')
+	})
+
+	files.forEach((file) => {
+		const baseName = path.basename(file, '.svg')
+		let pascalName = toPascalCase(baseName)
+
+		if (pascalName === '') {
+			pascalName = 'Unknown'
+		}
+
+		if (!pascalName.endsWith('Icon')) {
+			pascalName += 'Icon'
+		}
+
+		exports.push(pascalName)
+	})
+
+	// Process tag icons from icons/tags/categories/
+	const categoriesDir = path.join(iconsDir, 'tags', 'categories')
+	if (fs.existsSync(categoriesDir)) {
+		const categoryFiles = fs.readdirSync(categoriesDir).filter((file) => file.endsWith('.svg'))
+		categoryFiles.forEach((file) => {
 			const baseName = path.basename(file, '.svg')
 			let pascalName = toPascalCase(baseName)
 
@@ -149,13 +310,57 @@ function getExpectedIconExports(iconsDir: string): string[] {
 				pascalName = 'Unknown'
 			}
 
+			pascalName = `TagCategory${pascalName}`
 			if (!pascalName.endsWith('Icon')) {
 				pascalName += 'Icon'
 			}
 
-			return pascalName
+			exports.push(pascalName)
 		})
-		.sort()
+	}
+
+	// Process tag icons from icons/tags/loaders/
+	const loadersDir = path.join(iconsDir, 'tags', 'loaders')
+	if (fs.existsSync(loadersDir)) {
+		const loaderFiles = fs.readdirSync(loadersDir).filter((file) => file.endsWith('.svg'))
+		loaderFiles.forEach((file) => {
+			const baseName = path.basename(file, '.svg')
+			let pascalName = toPascalCase(baseName)
+
+			if (pascalName === '') {
+				pascalName = 'Unknown'
+			}
+
+			pascalName = `TagLoader${pascalName}`
+			if (!pascalName.endsWith('Icon')) {
+				pascalName += 'Icon'
+			}
+
+			exports.push(pascalName)
+		})
+	}
+
+	// Process badge icons from icons/badges/
+	const badgesDir = path.join(iconsDir, 'badges')
+	if (fs.existsSync(badgesDir)) {
+		const badgeFiles = fs.readdirSync(badgesDir).filter((file) => file.endsWith('.svg'))
+		badgeFiles.forEach((file) => {
+			const baseName = path.basename(file, '.svg')
+			let pascalName = toPascalCase(baseName)
+
+			if (pascalName === '') {
+				pascalName = 'Unknown'
+			}
+
+			if (!pascalName.endsWith('Badge')) {
+				pascalName += 'Badge'
+			}
+
+			exports.push(pascalName)
+		})
+	}
+
+	return exports.sort()
 }
 
 function getActualIconExports(indexFile: string): string[] {
@@ -164,14 +369,15 @@ function getActualIconExports(indexFile: string): string[] {
 	}
 
 	const content = fs.readFileSync(indexFile, 'utf8')
-	const exportMatches = content.match(/export const (\w+Icon) = _\w+Icon/g) || []
+	const exportMatches =
+		content.match(/export const (\w+(?:Icon|Badge)) = _\w+(?:Icon|Badge)/g) || []
 
 	return exportMatches
 		.map((match) => {
-			const result = match.match(/export const (\w+Icon)/)
+			const result = match.match(/export const (\w+(?:Icon|Badge))/)
 			return result ? result[1] : ''
 		})
-		.filter((name) => name.endsWith('Icon'))
+		.filter((name) => name.endsWith('Icon') || name.endsWith('Badge'))
 		.sort()
 }
 

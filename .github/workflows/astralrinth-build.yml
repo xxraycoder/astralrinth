@@ -1,4 +1,4 @@
-name: AstralRinth App build
+name: AstralRinth App Build
 
 on:
   push:
@@ -21,25 +21,54 @@ on:
       - 'packages/assets/**'
       - 'packages/ui/**'
       - 'packages/utils/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.jsonc'
+      - 'mise.toml'
+      - 'rust-toolchain.toml'
   workflow_dispatch:
+
+concurrency:
+  group: astralrinth-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Build
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        # platform: [macos-latest, windows-latest, ubuntu-latest]
-        platform: [windows-latest, ubuntu-latest]
         include:
-          # - platform: macos-latest
-          #   artifact-target-name: universal-apple-darwin
-          - platform: windows-latest
-            artifact-target-name: x86_64-pc-windows-msvc
-          - platform: ubuntu-latest
-            artifact-target-name: x86_64-unknown-linux-gnu
+          - runner: ubuntu-latest
+            label: 🐧 Linux x86_64 Build
+            target: x86_64-unknown-linux-gnu
+            rust_targets: x86_64-unknown-linux-gnu
+            artifact_name: astralrinth-bundle-linux-x86_64
+          - runner: windows-latest
+            label: 🪟 Windows x86_64 Build
+            target: x86_64-pc-windows-msvc
+            rust_targets: x86_64-pc-windows-msvc
+            artifact_name: astralrinth-bundle-windows-x86_64
+          - runner: windows-latest
+            label: 🪟 Windows aarch64 Build
+            target: aarch64-pc-windows-msvc
+            rust_targets: aarch64-pc-windows-msvc
+            artifact_name: astralrinth-bundle-windows-aarch64
+          - runner: macos-latest
+            label: 🍎 macOS x86_64 Build
+            target: x86_64-apple-darwin
+            rust_targets: x86_64-apple-darwin
+            artifact_name: astralrinth-bundle-macos-x86_64
+          - runner: macos-latest
+            label: 🍎 macOS aarch64 Build
+            target: aarch64-apple-darwin
+            rust_targets: aarch64-apple-darwin
+            artifact_name: astralrinth-bundle-macos-aarch64
 
-    runs-on: ${{ matrix.platform }}
+    env:
+      CI: true
 
     steps:
       - name: 📥 Check out code
@@ -63,25 +92,33 @@ jobs:
           fi
 
           if [ "$eol_setting" = "crlf" ]; then
-            echo "⚠️ WARNING: core.eol is set to 'crlf'. Consider unsetting it or setting to 'lf'."
+            echo "⚠️ WARNING: core.eol is set to 'crlf'. Consider unsetting it or setting it to 'lf'."
           fi
 
       - name: 🔍 Check migration files line endings (LF only)
         shell: bash
         run: |
           echo "🔍 Scanning migration SQL files for CR characters (\\r)..."
+
           if grep -Iq $'\r' packages/app-lib/migrations/*.sql; then
-            echo "❌ ERROR: Some migration files contain CR (\\r) characters — expected only LF line endings."
+            echo "❌ ERROR: Some migration files contain CR characters; expected LF-only files."
             exit 1
           fi
-          echo "✅ All migration files use LF line endings"
+
+          echo "✅ All migration files use LF line endings."
 
       - name: 🧰 Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ matrix.artifact-target-name }}
+          target: ${{ matrix.rust_targets }}
 
-      - name: 🧰 Install pnpm
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 🧰 Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: 🧰 Setup Node.js
@@ -90,69 +127,61 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      - name: 🧰 Install Linux build dependencies
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -yq \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            xdg-utils \
-            openjdk-17-jdk
+      - name: 🧰 Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
 
-      - name: ⚙️ Set application environment
-        shell: bash
-        run: |
-          cp packages/app-lib/.env.prod packages/app-lib/.env
+      - name: 🦀 Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+          cache-on-failure: true
 
       - name: 💨 Setup Turbo cache
         uses: rharkor/caching-for-turbo@v1.8
 
-      - name: 🧰 Install dependencies
-        run: pnpm install
-
-      - name: ✍️ Set up Windows code signing (jsign)
-        if: matrix.platform == 'windows-latest' && env.SIGN_WINDOWS_BINARIES == 'true'
+      - name: 🐧 Install Linux build dependencies
+        if: matrix.runner == 'ubuntu-latest'
         shell: bash
         run: |
-          choco install jsign --ignore-dependencies
+          sudo apt-get update
+          sudo apt-get install -yq \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf \
+            xdg-utils
 
-      - name: 🗑️ Clean up cached bundles
+      - name: ⚙️ Set application environment
+        shell: bash
+        run: cp packages/app-lib/.env.prod packages/app-lib/.env
+
+      - name: 📦 Install dependencies
+        shell: bash
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧹 Clean previous bundles
         shell: bash
         run: |
           rm -rf target/release/bundle
           rm -rf target/*/release/bundle || true
 
-      # - name: 🔨 Build macOS app
-      #   if: matrix.platform == 'macos-latest'
-      #   run: pnpm --filter=@modrinth/app run tauri build --target universal-apple-darwin --config tauri-release.conf.json
-      #   env:
-      #     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-      #     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-
-      - name: 🔨 Build Linux app
-        if: matrix.platform == 'ubuntu-latest'
-        run: pnpm --filter=@modrinth/app run tauri build --config tauri-release.conf.json
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-
-      - name: 🔨 Build Windows app
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          $env:JAVA_HOME = "$env:JAVA_HOME_17_X64"
-          pnpm --filter=@modrinth/app run tauri build --config tauri-release.conf.json --verbose --bundles 'nsis'
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - name: 🔨 Build app
+        shell: bash
+        run: mise exec -- pnpm --filter @modrinth/app exec tauri build --target ${{ matrix.target }}
 
       - name: 📤 Upload app bundles
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: App bundle (${{ matrix.artifact-target-name }})
+          name: ${{ matrix.artifact_name }}
           path: |
-            target/release/bundle/**
-            target/*/release/bundle/**
+            target/${{ matrix.target }}/release/bundle/**
+          if-no-files-found: error

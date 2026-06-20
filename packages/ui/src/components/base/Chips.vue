@@ -1,13 +1,21 @@
 <template>
-	<div class="chips">
+	<div class="chips" role="radiogroup" :aria-label="ariaLabel">
 		<Button
 			v-for="item in items"
 			:key="formatLabel(item)"
-			class="btn"
-			:class="{ selected: selected === item, capitalize: capitalize }"
+			v-tooltip="isDisabled(item) ? disabledTooltip : undefined"
+			role="radio"
+			:aria-checked="selected === item"
+			:disabled="isDisabled(item)"
+			class="btn !brightness-100 hover:!brightness-125"
+			:class="{
+				selected: selected === item,
+				capitalize: capitalize,
+				'!px-2.5 !py-1.5': size === 'small',
+			}"
 			@click="toggleItem(item)"
 		>
-			<CheckIcon v-if="selected === item" />
+			<CheckIcon v-if="selected === item && !hideCheckmarkIcon" />
 			<span>{{ formatLabel(item) }}</span>
 		</Button>
 	</div>
@@ -24,14 +32,21 @@ const props = withDefaults(
 		formatLabel?: (item: T) => string
 		neverEmpty?: boolean
 		capitalize?: boolean
+		size?: 'standard' | 'small'
+		ariaLabel?: string
+		disabledItems?: T[]
+		disabledTooltip?: string
+		hideCheckmarkIcon?: boolean
 	}>(),
 	{
 		neverEmpty: true,
 		// Intentional any type, as this default should only be used for primitives (string or number)
 		formatLabel: (item) => item.toString(),
 		capitalize: true,
+		size: 'standard',
 	},
 )
+
 const selected = defineModel<T | null>()
 
 // If one always has to be selected, default to the first one
@@ -39,7 +54,12 @@ if (props.items.length > 0 && props.neverEmpty && !selected.value) {
 	selected.value = props.items[0]
 }
 
+function isDisabled(item: T): boolean {
+	return props.disabledItems?.includes(item) ?? false
+}
+
 function toggleItem(item: T) {
+	if (isDisabled(item)) return
 	if (selected.value === item && !props.neverEmpty) {
 		selected.value = null
 	} else {
@@ -55,6 +75,7 @@ function toggleItem(item: T) {
 	flex-wrap: wrap;
 
 	.btn {
+		border: 1px solid transparent;
 		&.capitalize {
 			text-transform: capitalize;
 		}
@@ -65,17 +86,14 @@ function toggleItem(item: T) {
 		}
 
 		&:focus-visible {
-			outline: 0.25rem solid #ea80ff;
-			border-radius: 0.25rem;
+			outline: 0.25rem solid var(--color-focus-ring);
 		}
 	}
 
 	.selected {
-		color: var(--color-contrast);
+		color: var(--color-brand);
 		background-color: var(--color-brand-highlight);
-		box-shadow:
-			inset 0 0 0 transparent,
-			0 0 0 2px var(--color-brand);
+		border: 1px solid var(--color-brand);
 	}
 }
 </style>

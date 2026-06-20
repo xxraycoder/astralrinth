@@ -200,6 +200,13 @@ pub struct WarningPayload {
     pub message: String,
 }
 
+// This code is modified by AstralRinth
+#[derive(Serialize, Clone)]
+#[cfg(feature = "tauri")]
+pub struct InfoPayload {
+    pub message: String,
+}
+
 #[derive(Serialize, Clone)]
 #[serde(tag = "event")]
 pub enum CommandPayload {
@@ -210,6 +217,9 @@ pub enum CommandPayload {
         id: String,
     },
     InstallModpack {
+        id: String,
+    },
+    InstallServer {
         id: String,
     },
     RunMRPack {
@@ -268,6 +278,29 @@ pub enum FriendPayload {
     UserOffline { id: UserId },
     StatusUpdate { user_status: UserStatus },
     StatusSync,
+}
+
+#[cfg(feature = "tauri")]
+pub use self::log_types::*;
+
+#[cfg(feature = "tauri")]
+mod log_types {
+    use crate::state::Log4jEvent;
+    use serde::Serialize;
+
+    #[derive(Serialize, Clone)]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum LogEvent {
+        Log4j(Log4jEvent),
+        Legacy { message: String },
+    }
+
+    #[derive(Serialize, Clone)]
+    pub struct LogPayload {
+        pub profile_path_id: String,
+        #[serde(flatten)]
+        pub event: LogEvent,
+    }
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -1,19 +1,11 @@
+import type { Labrinth } from '@modrinth/api-client'
 import { loadStripe, type Stripe as StripeJs, type StripeElements } from '@stripe/stripe-js'
 import type { ContactOption } from '@stripe/stripe-js/dist/stripe-js/elements/address'
 import type Stripe from 'stripe'
 import { computed, type Ref, ref } from 'vue'
 
-import type {
-	BasePaymentIntentResponse,
-	ChargeRequestType,
-	CreatePaymentIntentRequest,
-	CreatePaymentIntentResponse,
-	PaymentRequestType,
-	ServerBillingInterval,
-	ServerPlan,
-	UpdatePaymentIntentRequest,
-	UpdatePaymentIntentResponse,
-} from '../utils/billing.ts'
+import type { ServerBillingInterval } from '../components/billing/ModrinthServersPurchaseModal.vue'
+import { getPriceForInterval } from '../utils/product-utils'
 
 // export type CreateElements = (
 //   paymentMethods: Stripe.PaymentMethod[],
@@ -26,17 +18,22 @@ import type {
 
 export const useStripe = (
 	publishableKey: string,
-	customer: Stripe.Customer,
-	paymentMethods: Stripe.PaymentMethod[],
+	customer: Ref<Stripe.Customer | null | undefined>,
+	paymentMethods: Ref<Stripe.PaymentMethod[]>,
 	currency: string,
-	product: Ref<ServerPlan | undefined>,
+	product: Ref<Labrinth.Billing.Internal.Product | undefined>,
 	interval: Ref<ServerBillingInterval>,
 	region: Ref<string | undefined>,
 	project: Ref<string | undefined>,
 	initiatePayment: (
-		body: CreatePaymentIntentRequest | UpdatePaymentIntentRequest,
-	) => Promise<CreatePaymentIntentResponse | UpdatePaymentIntentResponse | null>,
+		body: Labrinth.Billing.Internal.InitiatePaymentRequest,
+	) => Promise<
+		| Labrinth.Billing.Internal.InitiatePaymentResponse
+		| Labrinth.Billing.Internal.EditSubscriptionResponse
+		| null
+	>,
 	onError: (err: Error) => void,
+	affiliateCode?: Ref<string | null>,
 ) => {
 	const stripe = ref<StripeJs | null>(null)
 
@@ -59,18 +56,6 @@ export const useStripe = (
 
 	async function initialize() {
 		stripe.value = await loadStripe(publishableKey)
-	}
-
-	function createIntent(
-		body: CreatePaymentIntentRequest,
-	): Promise<CreatePaymentIntentResponse | null> {
-		return initiatePayment(body) as Promise<CreatePaymentIntentResponse | null>
-	}
-
-	function updateIntent(
-		body: UpdatePaymentIntentRequest,
-	): Promise<UpdatePaymentIntentResponse | null> {
-		return initiatePayment(body) as Promise<UpdatePaymentIntentResponse | null>
 	}
 
 	const planPrices = computed(() => {
@@ -111,7 +96,7 @@ export const useStripe = (
 
 		const contacts: ContactOption[] = []
 
-		paymentMethods.forEach((method) => {
+		paymentMethods.value.forEach((method) => {
 			const addr = method.billing_details?.address
 			if (
 				addr &&
@@ -146,15 +131,22 @@ export const useStripe = (
 	}
 
 	const primaryPaymentMethodId = computed<string | null>(() => {
-		if (customer && customer.invoice_settings && customer.invoice_settings.default_payment_method) {
-			const method = customer.invoice_settings.default_payment_method
+		const customerValue = customer.value
+		const paymentMethodsValue = paymentMethods.value
+
+		if (
+			customerValue &&
+			customerValue.invoice_settings &&
+			customerValue.invoice_settings.default_payment_method
+		) {
+			const method = customerValue.invoice_settings.default_payment_method
 			if (typeof method === 'string') {
 				return method
 			} else {
 				return method.id
 			}
-		} else if (paymentMethods && paymentMethods[0] && paymentMethods[0].id) {
-			return paymentMethods[0].id
+		} else if (paymentMethodsValue[0] && paymentMethodsValue[0].id) {
+			return paymentMethodsValue[0].id
 		} else {
 			return null
 		}
@@ -163,7 +155,7 @@ export const useStripe = (
 	const loadStripeElements = async () => {
 		loadingFailed.value = undefined
 		try {
-			if (!customer && primaryPaymentMethodId.value) {
+			if (!customer.value && primaryPaymentMethodId.value) {
 				paymentMethodLoading.value = true
 				await refreshPaymentIntent(primaryPaymentMethodId.value, false)
 				paymentMethodLoading.value = false
@@ -179,9 +171,9 @@ export const useStripe = (
 				} = createElements({
 					mode: 'payment',
 					currency: currency.toLowerCase(),
-					amount: product.value?.prices.find((x) => x.currency_code === currency)?.prices.intervals[
-						interval.value
-					],
+					amount: product.value
+						? getPriceForInterval(product.value, currency, interval.value)
+						: undefined,
 					paymentMethodCreation: 'manual',
 					setupFutureUsage: 'off_session',
 				})
@@ -204,77 +196,72 @@ export const useStripe = (
 		try {
 			paymentMethodLoading.value = true
 			if (!confirmation) {
-				selectedPaymentMethod.value = paymentMethods.find((x) => x.id === id)
+				selectedPaymentMethod.value = paymentMethods.value.find((x) => x.id === id)
 			}
-
-			const requestType: PaymentRequestType = confirmation
-				? {
-						type: 'confirmation_token',
-						token: id,
-					}
-				: {
-						type: 'payment_method',
-						id: id,
-					}
 
 			if (!product.value) {
 				return handlePaymentError('No product selected')
 			}
 
-			const charge: ChargeRequestType = {
-				type: 'new',
-				product_id: product.value?.id,
-				interval: interval.value,
+			const request: Labrinth.Billing.Internal.InitiatePaymentRequest = {
+				type: confirmation ? 'confirmation_token' : 'payment_method',
+				...(confirmation ? { token: id } : { id }),
+				charge: {
+					type: 'new',
+					product_id: product.value.id,
+					interval: interval.value as Labrinth.Billing.Internal.PriceDuration,
+				},
+				...(paymentIntentId.value ? { existing_payment_intent: paymentIntentId.value } : {}),
+				metadata: {
+					type: 'pyro',
+					server_region: region.value,
+					source: project.value
+						? {
+								project_id: project.value,
+							}
+						: {},
+					...(affiliateCode?.value ? { affiliate_code: affiliateCode.value } : {}),
+				},
 			}
 
-			let result: BasePaymentIntentResponse | null = null
-
-			const metadata: CreatePaymentIntentRequest['metadata'] = {
-				type: 'pyro',
-				server_region: region.value,
-				source: project.value
-					? {
-							project_id: project.value,
-						}
-					: {},
-			}
-
-			if (paymentIntentId.value) {
-				result = await updateIntent({
-					...requestType,
-					charge,
-					existing_payment_intent: paymentIntentId.value,
-					metadata,
-				})
-				if (result) console.log(`Updated payment intent: ${interval.value} for ${result.total}`)
-			} else {
-				const created = await createIntent({
-					...requestType,
-					charge,
-					metadata: metadata,
-				})
-				if (created) {
-					paymentIntentId.value = created.payment_intent_id
-					clientSecret.value = created.client_secret
-					result = created
-					console.log(`Created payment intent: ${interval.value} for ${created.total}`)
-				}
-			}
+			const result = await initiatePayment(request)
 
 			if (!result) {
 				tax.value = 0
 				total.value = 0
 				noPaymentRequired.value = true
 			} else {
+				if (result.payment_intent_id) {
+					paymentIntentId.value = result.payment_intent_id
+				}
+				if (result.client_secret) {
+					clientSecret.value = result.client_secret
+				}
 				tax.value = result.tax
 				total.value = result.total
 				noPaymentRequired.value = false
+
+				console.log(
+					`${paymentIntentId.value ? 'Updated' : 'Created'} payment intent: ${interval.value} for ${result.total}`,
+				)
 			}
 
 			if (confirmation) {
 				confirmationToken.value = id
-				if (result && result.payment_method) {
-					inputtedPaymentMethod.value = result.payment_method
+				if (result && 'payment_method' in result && result.payment_method) {
+					const paymentMethod = (
+						result as {
+							payment_method?: string | Stripe.PaymentMethod
+						}
+					).payment_method
+					if (typeof paymentMethod === 'string') {
+						const method = paymentMethods.value.find((x) => x.id === paymentMethod)
+						if (method) {
+							inputtedPaymentMethod.value = method
+						}
+					} else if (paymentMethod) {
+						inputtedPaymentMethod.value = paymentMethod
+					}
 				}
 			}
 		} catch (err) {
@@ -358,30 +345,42 @@ export const useStripe = (
 
 	const loadingElements = computed(() => elementsLoaded.value < 2)
 
-	async function submitPayment(returnUrl: string) {
+	async function submitPayment(returnUrl?: string): Promise<boolean> {
 		if (noPaymentRequired.value) {
 			completingPurchase.value = false
 			return true
 		}
 		completingPurchase.value = true
-		const secert = clientSecret.value
+		const secret = clientSecret.value
 
-		if (!secert) {
-			return handlePaymentError('No client secret')
+		if (!secret) {
+			handlePaymentError('No client secret')
+			return false
 		}
 
 		if (!stripe.value) {
-			return handlePaymentError('No stripe')
+			handlePaymentError('No stripe')
+			return false
 		}
 
 		submittingPayment.value = true
-		const { error } = await stripe.value.confirmPayment({
-			clientSecret: secert,
-			confirmParams: {
-				confirmation_token: confirmationToken.value,
-				return_url: `${returnUrl}?priceId=${product.value?.prices.find((x) => x.currency_code === currency)?.id}&plan=${interval.value}`,
-			},
-		})
+		const productPrice = product.value?.prices.find((x) => x.currency_code === currency)
+
+		const { error } = returnUrl
+			? await stripe.value.confirmPayment({
+					clientSecret: secret,
+					confirmParams: {
+						confirmation_token: confirmationToken.value,
+						return_url: `${returnUrl}?priceId=${productPrice?.id}&plan=${interval.value}`,
+					},
+				})
+			: await stripe.value.confirmPayment({
+					clientSecret: secret,
+					redirect: 'if_required',
+					confirmParams: {
+						confirmation_token: confirmationToken.value,
+					},
+				})
 
 		if (error) {
 			handlePaymentError(error.message ?? 'Unknown error submitting payment')

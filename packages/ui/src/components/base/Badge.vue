@@ -15,16 +15,16 @@
 
 		<!-- Project statuses -->
 		<template v-else-if="type === 'approved'">
-			<ListIcon aria-hidden="true" /> {{ formatMessage(messages.listedLabel) }}
+			<GlobeIcon aria-hidden="true" /> {{ formatMessage(messages.listedLabel) }}
 		</template>
 		<template v-else-if="type === 'approved-general'">
 			<CheckIcon aria-hidden="true" /> {{ formatMessage(messages.approvedLabel) }}
 		</template>
 		<template v-else-if="type === 'unlisted'">
-			<EyeOffIcon aria-hidden="true" /> {{ formatMessage(messages.unlistedLabel) }}
+			<LinkIcon aria-hidden="true" /> {{ formatMessage(messages.unlistedLabel) }}
 		</template>
 		<template v-else-if="type === 'withheld'">
-			<EyeOffIcon aria-hidden="true" /> {{ formatMessage(messages.withheldLabel) }}
+			<LinkIcon aria-hidden="true" /> {{ formatMessage(messages.withheldLabel) }}
 		</template>
 		<template v-else-if="type === 'private'">
 			<LockIcon aria-hidden="true" /> {{ formatMessage(messages.privateLabel) }}
@@ -69,6 +69,14 @@
 			<XIcon aria-hidden="true" /> {{ formatMessage(messages.closedLabel) }}
 		</template>
 
+		<!-- Technical review verdicts -->
+		<template v-else-if="type === 'safe'">
+			<ShieldCheckIcon aria-hidden="true" /> {{ formatMessage(messages.safeLabel) }}
+		</template>
+		<template v-else-if="type === 'unsafe'">
+			<BugIcon aria-hidden="true" /> {{ formatMessage(messages.unsafeLabel) }}
+		</template>
+
 		<!-- Other -->
 		<template v-else> <span class="circle" /> {{ capitalizeString(type) }} </template>
 	</span>
@@ -78,19 +86,22 @@
 import {
 	ArchiveIcon,
 	BoxIcon,
+	BugIcon,
 	CalendarIcon,
 	CheckIcon,
-	EyeOffIcon,
 	FileTextIcon,
-	ListIcon,
+	GlobeIcon,
+	LinkIcon,
 	LockIcon,
 	ModrinthIcon,
 	ScaleIcon,
+	ShieldCheckIcon,
 	UpdatedIcon,
 	XIcon,
 } from '@modrinth/assets'
 import { capitalizeString } from '@modrinth/utils'
-import { defineMessages, useVIntl } from '@vintl/vintl'
+
+import { defineMessages, useVIntl } from '../../composables/i18n'
 
 const messages = defineMessages({
 	acceptedLabel: {
@@ -123,7 +134,7 @@ const messages = defineMessages({
 	},
 	listedLabel: {
 		id: 'omorphia.component.badge.label.listed',
-		defaultMessage: 'Listed',
+		defaultMessage: 'Public',
 	},
 	moderatorLabel: {
 		id: 'omorphia.component.badge.label.moderator',
@@ -153,6 +164,10 @@ const messages = defineMessages({
 		id: 'omorphia.component.badge.label.returned',
 		defaultMessage: 'Returned',
 	},
+	safeLabel: {
+		id: 'omorphia.component.badge.label.safe',
+		defaultMessage: 'Pass',
+	},
 	scheduledLabel: {
 		id: 'omorphia.component.badge.label.scheduled',
 		defaultMessage: 'Scheduled',
@@ -165,9 +180,13 @@ const messages = defineMessages({
 		id: 'omorphia.component.badge.label.unlisted',
 		defaultMessage: 'Unlisted',
 	},
+	unsafeLabel: {
+		id: 'omorphia.component.badge.label.unsafe',
+		defaultMessage: 'Fail',
+	},
 	withheldLabel: {
 		id: 'omorphia.component.badge.label.withheld',
-		defaultMessage: 'Withheld',
+		defaultMessage: 'Unlisted by staff',
 	},
 })
 const { formatMessage } = useVIntl()
@@ -204,6 +223,7 @@ defineProps<{
 	&.type--rejected,
 	&.type--returned,
 	&.type--failed,
+	&.type--unsafe,
 	&.red {
 		--badge-color: var(--color-red);
 	}
@@ -220,6 +240,7 @@ defineProps<{
 	&.type--admin,
 	&.type--processed,
 	&.type--approved-general,
+	&.type--safe,
 	&.green {
 		--badge-color: var(--color-green);
 	}

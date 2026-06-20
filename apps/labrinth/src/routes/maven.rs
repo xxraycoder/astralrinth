@@ -1,4 +1,5 @@
 use crate::auth::checks::{is_visible_project, is_visible_version};
+use crate::database::PgPool;
 use crate::database::models::legacy_loader_fields::MinecraftGameVersion;
 use crate::database::models::loader_fields::Loader;
 use crate::database::models::project_item::ProjectQueryResult;
@@ -12,7 +13,7 @@ use crate::queue::session::AuthQueue;
 use crate::routes::ApiError;
 use crate::{auth::get_user_from_headers, database};
 use actix_web::{HttpRequest, HttpResponse, get, route, web};
-use sqlx::PgPool;
+use quick_xml::escape::escape;
 use std::collections::HashSet;
 use yaserde::YaSerialize;
 
@@ -241,8 +242,10 @@ fn find_file<'a>(
     version: &'a VersionQueryResult,
     file: &str,
 ) -> Option<&'a FileQueryResult> {
-    if let Some(selected_file) =
-        version.files.iter().find(|x| x.filename == file)
+    if let Some(selected_file) = version
+        .files
+        .iter()
+        .find(|x| x.filename.eq_ignore_ascii_case(file))
     {
         return Some(selected_file);
     }
@@ -259,7 +262,10 @@ fn find_file<'a>(
     }
 
     for fileext in fileexts {
-        if file == format!("{}-{}.{}", &project_id, &vcoords, fileext) {
+        if file.eq_ignore_ascii_case(&format!(
+            "{}-{}.{}",
+            &project_id, &vcoords, fileext
+        )) {
             return version
                 .files
                 .iter()
@@ -313,7 +319,7 @@ pub async fn version_file(
         return Err(ApiError::NotFound);
     }
 
-    if file == format!("{}-{}.pom", &project_id, &vnum) {
+    if file.eq_ignore_ascii_case(&format!("{}-{}.pom", &project_id, &vnum)) {
         let respdata = MavenPom {
             schema_location:
                 "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
@@ -324,7 +330,7 @@ pub async fn version_file(
             artifact_id: project_id,
             version: vnum,
             name: project.inner.name,
-            description: project.inner.description,
+            description: escape(project.inner.summary).into_owned(),
         };
         return Ok(HttpResponse::Ok()
             .content_type("text/xml")

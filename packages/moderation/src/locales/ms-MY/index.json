@@ -11,20 +11,26 @@
   "nags.add-icon.title": {
     "defaultMessage": "Tambah ikon"
   },
+  "nags.add-java-address.description": {
+    "defaultMessage": "Tambahkan alamat IP dan port yang boleh digunakan oleh pemain Edisi Java untuk menyertai pelayan anda."
+  },
+  "nags.add-java-address.title": {
+    "defaultMessage": "Tambah alamat Java"
+  },
+  "nags.add-links-server.description": {
+    "defaultMessage": "Tambahkan sebarang pautan berkaitan yang disasarkan di luar Modrinth, seperti laman sesawang, kedai atau jemputan Discord."
+  },
+  "nags.add-links-server.title": {
+    "defaultMessage": "Tambah pautan luaran"
+  },
   "nags.add-links.description": {
     "defaultMessage": "Tambahkan sebarang pautan berkaitan yang disasarkan di luar Modrinth, seperti kod sumber, penjejak isu atau jemputan Discord."
   },
   "nags.add-links.title": {
     "defaultMessage": "Tambah pautan luaran"
   },
-  "nags.all-tags-selected.description": {
-    "defaultMessage": "Anda telah memilih kesemua {totalAvailableTags} tag yang tersedia. Ini mengalahkan tujuan tag, yang bertujuan untuk membantu pengguna mencari projek yang berkaitan. Sila pilih hanya tag yang berkaitan dengan projek anda."
-  },
   "nags.all-tags-selected.title": {
     "defaultMessage": "Pilih tag yang tepat"
-  },
-  "nags.description-too-short.description": {
-    "defaultMessage": "Panjang keterangan anda ialah {length} aksara yang boleh dibaca. Sekurang-kurangnya {minChars} aksara disyorkan untuk membuat keterangan yang jelas dan bermaklumat."
   },
   "nags.description-too-short.title": {
     "defaultMessage": "Kembangkan keterangan"
@@ -51,13 +57,19 @@
     "defaultMessage": "Tampilkan satu gambar galeri"
   },
   "nags.gallery.title": {
-    "defaultMessage": "Lawat laman galeri"
+    "defaultMessage": "Kunjungi laman galeri"
   },
   "nags.gpl-license-source-required.description": {
-    "defaultMessage": "{projectType} anda menggunakan lesen yang memerlukan kod sumber tersedia. Sila berikan pautan kod sumber atau fail sumber untuk setiap versi tambahan atau pertimbangkan untuk menggunakan lesen yang berbeza."
+    "defaultMessage": "{type} anda menggunakan lesen yang memerlukan kod sumber tersedia. Sila berikan pautan kod sumber atau fail sumber untuk setiap versi tambahan atau pertimbangkan untuk menggunakan lesen yang berbeza."
   },
   "nags.gpl-license-source-required.title": {
     "defaultMessage": "Sediakan kod sumber"
+  },
+  "nags.identical-links.description": {
+    "defaultMessage": "Sesetengah daripada pautan luaran anda kelihatan sama. Setiap pautan hendaklah dimasukkan sekali sahaja dan dengan jenis pautan yang sesuai."
+  },
+  "nags.identical-links.title": {
+    "defaultMessage": "Bersihkan pautan yang serupa"
   },
   "nags.image-heavy-description.description": {
     "defaultMessage": "Keterangan anda harus mengandungi teks biasa atau teks alt gambar yang mencukupi, memastikan ia boleh diakses oleh mereka yang menggunakan pembaca skrin atau dengan sambungan internet yang perlahan."
@@ -83,9 +95,6 @@
   "nags.link-shortener-usage.title": {
     "defaultMessage": "Jangan gunakan pemendek pautan"
   },
-  "nags.long-headers.description": {
-    "defaultMessage": "{count, plural, other {# tajuk}} di dalam keterangan anda {count, plural, other {adalah}} terlalu panjang. Tajuk hendaklah ringkas dan bertindak sebagai tajuk bahagian, bukan ayat penuh."
-  },
   "nags.long-headers.title": {
     "defaultMessage": "Pendekkan tajuk"
   },
@@ -108,28 +117,37 @@
     "defaultMessage": "Pindahkan pautan jemputan Discord"
   },
   "nags.moderation.title": {
-    "defaultMessage": "Lawat bebenang penyederhanaan"
+    "defaultMessage": "Kunjungi bebenang penyederhanaan"
   },
   "nags.moderator-feedback.description": {
     "defaultMessage": "Semak dan tangani semua kebimbangan daripada pasukan penyederhana sebelum menyerahkan semula."
   },
   "nags.moderator-feedback.title": {
-    "defaultMessage": "Semak maklum balas penyederhana"
-  },
-  "nags.multiple-resolution-tags.description": {
-    "defaultMessage": "Anda telah memilih {count} tag resolusi ({tags}). Pek sumber biasanya hanya mempunyai satu tag resolusi yang sepadan dengan resolusi utamanya."
+    "defaultMessage": "Semak maklum balas"
   },
   "nags.multiple-resolution-tags.title": {
     "defaultMessage": "Pilih resolusi yang betul"
   },
-  "nags.select-environments.description": {
-    "defaultMessage": "Pilih persekitaran di mana {projectType} anda berfungsi."
+  "nags.select-compatibility.description": {
+    "defaultMessage": "Pilih versi yang disokong oleh pelayan anda, pilih Pek Mod, atau muat naik milik anda sendiri."
   },
-  "nags.select-environments.title": {
-    "defaultMessage": "Pilih persekitaran"
+  "nags.select-compatibility.title": {
+    "defaultMessage": "Pilih keserasian"
+  },
+  "nags.select-country.description": {
+    "defaultMessage": "Beritahu pemain di rantau mana pelayan anda berada."
+  },
+  "nags.select-country.title": {
+    "defaultMessage": "Pilih rantau"
+  },
+  "nags.select-language.description": {
+    "defaultMessage": "Senaraikan bahasa-bahasa yang disokong oleh pelayan anda."
+  },
+  "nags.select-language.title": {
+    "defaultMessage": "Pilih bahasa"
   },
   "nags.select-license.description": {
-    "defaultMessage": "Pilih lesen yang digunakan untuk pengedaran {projectType} anda."
+    "defaultMessage": "Pilih lesen yang digunakan untuk pengedaran {type} anda."
   },
   "nags.select-license.title": {
     "defaultMessage": "Pilih lesen"
@@ -140,23 +158,23 @@
   "nags.select-tags.title": {
     "defaultMessage": "Pilih tag"
   },
-  "nags.settings.description.title": {
-    "defaultMessage": "Lawat tetapan keterangan"
+  "nags.server.title": {
+    "defaultMessage": "Kunjungi tetapan pelayan"
   },
-  "nags.settings.environments.title": {
-    "defaultMessage": "Lawat tetapan persekitaran"
+  "nags.settings.description.title": {
+    "defaultMessage": "Kunjungi tetapan keterangan"
   },
   "nags.settings.license.title": {
-    "defaultMessage": "Lawat tetapan lesen"
+    "defaultMessage": "Kunjungi tetapan lesen"
   },
   "nags.settings.links.title": {
-    "defaultMessage": "Lawat tetapan pautan"
+    "defaultMessage": "Kunjungi tetapan pautan"
   },
   "nags.settings.tags.title": {
-    "defaultMessage": "Lawat tetapan tag"
+    "defaultMessage": "Kunjungi tetapan tag"
   },
   "nags.settings.title": {
-    "defaultMessage": "Lawat tetapan umum"
+    "defaultMessage": "Kunjungi tetapan umum"
   },
   "nags.summary-same-as-title.description": {
     "defaultMessage": "Ringkasan anda tidak boleh sama dengan Nama projek anda. Adalah penting untuk mencipta Ringkasan yang bermaklumat dan menarik."
@@ -170,26 +188,26 @@
   "nags.summary-special-formatting.title": {
     "defaultMessage": "Bersihkan ringkasan"
   },
-  "nags.summary-too-short.description": {
-    "defaultMessage": "Panjang ringkasan anda ialah {length} aksara. Sekurang-kurangnya {minChars} aksara disyorkan untuk membuat ringkasan yang bermaklumat dan menarik."
-  },
   "nags.summary-too-short.title": {
     "defaultMessage": "Kembangkan ringkasan"
   },
   "nags.title-contains-technical-info.description": {
-    "defaultMessage": "Nama projek anda yang kemas dan diingati akan menjadikannya mudah untuk dicari. Maklumat versi dan pemuat dipaparkan secara automatik bersama projek anda."
+    "defaultMessage": "Nama projek anda yang kemas akan menjadikannya lebih diingati dan mudah untuk dicari. Maklumat versi dan pemuat dipaparkan secara automatik bersama projek anda."
   },
   "nags.title-contains-technical-info.title": {
     "defaultMessage": "Bersihkan nama"
   },
-  "nags.too-many-tags.description": {
-    "defaultMessage": "Anda telah memilih sebanyak {tagCount} tag. Pertimbangkan untuk mengurangkannya kepada {maxTagCount} atau kurang untuk memastikan projek anda dipaparkan dalam hasil carian yang berkaitan."
+  "nags.too-many-tags-server.title": {
+    "defaultMessage": "Pilih tag yang tepat"
   },
   "nags.too-many-tags.title": {
     "defaultMessage": "Pilih tag yang tepat"
   },
   "nags.upload-gallery-image.description": {
-    "defaultMessage": "Sekurang-kurangnya satu gambar galeri diperlukan untuk mempamerkan kandungan {type}{resourcepackMessage} anda."
+    "defaultMessage": "Sekurang-kurangnya satu gambar galeri diperlukan untuk mempamerkan kandungan {type} anda."
+  },
+  "nags.upload-gallery-image.resourcepack-type": {
+    "defaultMessage": "pek sumber anda, melainkan ianya pek audio atau terjemahan. Jika pek ini adalah pek audio atau terjemahan, sila pilih tag yang sesuai"
   },
   "nags.upload-gallery-image.title": {
     "defaultMessage": "Muat naik gambar galeri"
@@ -207,10 +225,9 @@
     "defaultMessage": "Sahkan pautan luaran"
   },
   "nags.versions.title": {
-    "defaultMessage": "Lawat laman versi"
+    "defaultMessage": "Kunjungi laman versi"
   },
   "nags.visit-links-settings.title": {
-    "defaultMessage": "Lawat tetapan pautan"
+    "defaultMessage": "Kunjungi tetapan pautan"
   }
 }
-

@@ -7,13 +7,15 @@ export interface WebNotification {
 	type?: 'error' | 'warning' | 'success' | 'info'
 	errorCode?: string
 	count?: number
+	autoCloseMs?: number | null // null means do not dismiss automatically
 	timer?: NodeJS.Timeout
+	supportData?: Record<string, unknown>
 }
 
 export type NotificationPanelLocation = 'left' | 'right'
 
 export abstract class AbstractWebNotificationManager {
-	protected readonly AUTO_DISMISS_DELAY_MS = 30 * 1000
+	protected readonly DEFAULT_AUTO_DISMISS_DELAY_MS = 30 * 1000
 
 	abstract getNotifications(): WebNotification[]
 	abstract getNotificationLocation(): NotificationPanelLocation
@@ -89,9 +91,13 @@ export abstract class AbstractWebNotificationManager {
 
 		this.clearNotificationTimer(notification)
 
+		if (notification.autoCloseMs === null) return
+
+		const delay = notification.autoCloseMs ?? this.DEFAULT_AUTO_DISMISS_DELAY_MS
+
 		notification.timer = setTimeout(() => {
 			this.removeNotification(notification.id)
-		}, this.AUTO_DISMISS_DELAY_MS)
+		}, delay)
 	}
 
 	stopNotificationTimer = (notification: WebNotification): void => {

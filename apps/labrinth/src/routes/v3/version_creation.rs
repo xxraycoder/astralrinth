@@ -1,5 +1,7 @@
 use super::project_creation::{CreateError, UploadedFile};
 use crate::auth::get_user_from_headers;
+use crate::database::PgPool;
+use crate::database::PgTransaction;
 use crate::database::models::loader_fields::{
     LoaderField, LoaderFieldEnumValue, VersionField,
 };
@@ -9,7 +11,9 @@ use crate::database::models::version_item::{
 };
 use crate::database::models::{self, DBOrganization, image_item};
 use crate::database::redis::RedisPool;
+use crate::env::ENV;
 use crate::file_hosting::{FileHost, FileHostPublicity};
+use crate::models::exp;
 use crate::models::ids::{ImageId, ProjectId, VersionId};
 use crate::models::images::{Image, ImageContext};
 use crate::models::notifications::NotificationBody;
@@ -23,6 +27,7 @@ use crate::models::projects::{DependencyType, ProjectStatus, skip_nulls};
 use crate::models::teams::ProjectPermissions;
 use crate::queue::moderation::AutomatedModerationQueue;
 use crate::queue::session::AuthQueue;
+use crate::util::http::HttpClient;
 use crate::util::routes::read_from_field;
 use crate::util::validate::validation_errors_to_string;
 use crate::validate::{ValidationResult, validate_file};
@@ -35,10 +40,8 @@ use hex::ToHex;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use sha1::Digest;
-use sqlx::postgres::PgPool;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use tracing::error;
 use validator::Validate;
 
 fn default_requested_status() -> VersionStatus {
@@ -110,6 +113,7 @@ pub async fn version_create(
     file_host: Data<Arc<dyn FileHost + Send + Sync>>,
     session_queue: Data<AuthQueue>,
     moderation_queue: web::Data<AutomatedModerationQueue>,
+    http: web::Data<HttpClient>,
 ) -> Result<HttpResponse, CreateError> {
     let mut transaction = client.begin().await?;
     let mut uploaded_files = Vec::new();
@@ -124,6 +128,7 @@ pub async fn version_create(
         &client,
         &session_queue,
         &moderation_queue,
+        &http,
     )
     .await;
 
@@ -150,16 +155,15 @@ pub async fn version_create(
 async fn version_create_inner(
     req: HttpRequest,
     payload: &mut Multipart,
-    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    transaction: &mut PgTransaction<'_>,
     redis: &RedisPool,
     file_host: &dyn FileHost,
     uploaded_files: &mut Vec<UploadedFile>,
     pool: &PgPool,
     session_queue: &AuthQueue,
     moderation_queue: &AutomatedModerationQueue,
+    http: &reqwest::Client,
 ) -> Result<HttpResponse, CreateError> {
-    let cdn_url = dotenvy::var("CDN_URL")?;
-
     let mut initial_version_data = None;
     let mut version_builder = None;
     let mut selected_loaders = None;
@@ -216,7 +220,7 @@ async fn version_create_inner(
                 let project_id: models::DBProjectId = version_create_data.project_id.unwrap().into();
 
                 // Ensure that the project this version is being added to exists
-                if models::DBProject::get_id(project_id, &mut **transaction, redis)
+                if models::DBProject::get_id(project_id, &mut *transaction, redis)
                     .await?
                     .is_none()
                 {
@@ -231,14 +235,14 @@ async fn version_create_inner(
                     project_id,
                     user.id.into(),
                     false,
-                    &mut **transaction,
+                    &mut *transaction,
                 )
                 .await?;
 
                 // Get organization attached, if exists, and the member project permissions
                 let organization = models::DBOrganization::get_associated_organization_project_id(
                     project_id,
-                    &mut **transaction,
+                    &mut *transaction,
                 )
                 .await?;
 
@@ -246,7 +250,7 @@ async fn version_create_inner(
                     models::DBTeamMember::get_from_user_id(
                         organization.team_id,
                         user.id.into(),
-                        &mut **transaction,
+                        &mut *transaction,
                     )
                     .await?
                 } else {
@@ -269,7 +273,7 @@ async fn version_create_inner(
                 let version_id: VersionId = models::generate_version_id(transaction).await?.into();
 
                 let all_loaders =
-                    models::loader_fields::Loader::list(&mut **transaction, redis).await?;
+                    models::loader_fields::Loader::list(&mut *transaction, redis).await?;
                 let loaders = version_create_data
                     .loaders
                     .iter()
@@ -285,10 +289,10 @@ async fn version_create_inner(
                 let loader_ids: Vec<models::LoaderId> = loaders.iter().map(|y| y.id).collect_vec();
 
                 let loader_fields =
-                    LoaderField::get_fields(&loader_ids, &mut **transaction, redis).await?;
+                    LoaderField::get_fields(&loader_ids, &mut *transaction, redis).await?;
                 let mut loader_field_enum_values = LoaderFieldEnumValue::list_many_loader_fields(
                     &loader_fields,
-                    &mut **transaction,
+                    &mut *transaction,
                     redis,
                 )
                 .await?;
@@ -326,6 +330,7 @@ async fn version_create_inner(
                     status: version_create_data.status,
                     requested_status: None,
                     ordering: version_create_data.ordering,
+                    components: exp::VersionSerial::default(),
                 });
 
                 return Ok(());
@@ -355,7 +360,6 @@ async fn version_create_inner(
                 uploaded_files,
                 &mut version.files,
                 &mut version.dependencies,
-                &cdn_url,
                 &content_disposition,
                 version.project_id.into(),
                 version.version_id.into(),
@@ -406,7 +410,7 @@ async fn version_create_inner(
         ",
         builder.project_id as crate::database::models::ids::DBProjectId
     )
-    .fetch(&mut **transaction)
+    .fetch(&mut *transaction)
     .map_ok(|m| models::ids::DBUserId(m.follower_id))
     .try_collect::<Vec<models::ids::DBUserId>>()
     .await?;
@@ -440,7 +444,7 @@ async fn version_create_inner(
         version_number: builder.version_number.clone(),
         project_types: all_project_types,
         games: all_games,
-        changelog: builder.changelog.clone(),
+        changelog: Some(builder.changelog.clone()),
         date_published: Utc::now(),
         downloads: 0,
         version_type: version_data.release_channel,
@@ -451,6 +455,7 @@ async fn version_create_inner(
             .files
             .iter()
             .map(|file| VersionFile {
+                id: None,
                 hashes: file
                     .hashes
                     .iter()
@@ -475,14 +480,15 @@ async fn version_create_inner(
         dependencies: version_data.dependencies,
         loaders: version_data.loaders,
         fields: version_data.fields,
+        components: exp::VersionQuery::default(),
     };
 
     let project_id = builder.project_id;
-    builder.insert(transaction).await?;
+    builder.insert(transaction, http).await?;
 
     for image_id in version_data.uploaded_images {
         if let Some(db_image) =
-            image_item::DBImage::get(image_id.into(), &mut **transaction, redis)
+            image_item::DBImage::get(image_id.into(), &mut *transaction, redis)
                 .await?
         {
             let image: Image = db_image.into();
@@ -503,7 +509,7 @@ async fn version_create_inner(
                 version_id.0 as i64,
                 image_id.0 as i64
             )
-            .execute(&mut **transaction)
+            .execute(&mut *transaction)
             .await?;
 
             image_item::DBImage::clear_cache(image.id.into(), redis).await?;
@@ -540,6 +546,7 @@ pub async fn upload_file_to_version(
     redis: Data<RedisPool>,
     file_host: Data<Arc<dyn FileHost + Send + Sync>>,
     session_queue: web::Data<AuthQueue>,
+    http: web::Data<HttpClient>,
 ) -> Result<HttpResponse, CreateError> {
     let mut transaction = client.begin().await?;
     let mut uploaded_files = Vec::new();
@@ -556,6 +563,7 @@ pub async fn upload_file_to_version(
         &mut uploaded_files,
         version_id,
         &session_queue,
+        &http,
     )
     .await;
 
@@ -583,15 +591,14 @@ async fn upload_file_to_version_inner(
     req: HttpRequest,
     payload: &mut Multipart,
     client: Data<PgPool>,
-    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    transaction: &mut PgTransaction<'_>,
     redis: Data<RedisPool>,
     file_host: &dyn FileHost,
     uploaded_files: &mut Vec<UploadedFile>,
     version_id: models::DBVersionId,
     session_queue: &AuthQueue,
+    http: &reqwest::Client,
 ) -> Result<HttpResponse, CreateError> {
-    let cdn_url = dotenvy::var("CDN_URL")?;
-
     let mut initial_file_data: Option<InitialFileData> = None;
     let mut file_builders: Vec<VersionFileBuilder> = Vec::new();
 
@@ -614,7 +621,7 @@ async fn upload_file_to_version_inner(
     };
 
     let all_loaders =
-        models::loader_fields::Loader::list(&mut **transaction, &redis).await?;
+        models::loader_fields::Loader::list(&mut *transaction, &redis).await?;
     let selected_loaders = version
         .loaders
         .iter()
@@ -629,7 +636,7 @@ async fn upload_file_to_version_inner(
 
     if models::DBProject::get_id(
         version.inner.project_id,
-        &mut **transaction,
+        &mut *transaction,
         &redis,
     )
     .await?
@@ -645,7 +652,7 @@ async fn upload_file_to_version_inner(
             version.inner.project_id,
             user.id.into(),
             false,
-            &mut **transaction,
+            &mut *transaction,
         )
         .await?;
 
@@ -661,7 +668,7 @@ async fn upload_file_to_version_inner(
             models::DBTeamMember::get_from_user_id(
                 organization.team_id,
                 user.id.into(),
-                &mut **transaction,
+                &mut *transaction,
             )
             .await?
         } else {
@@ -741,7 +748,6 @@ async fn upload_file_to_version_inner(
                 uploaded_files,
                 &mut file_builders,
                 &mut dependencies,
-                &cdn_url,
                 &content_disposition,
                 project_id,
                 version_id.into(),
@@ -775,7 +781,7 @@ async fn upload_file_to_version_inner(
         ));
     } else {
         for file in file_builders {
-            file.insert(version_id, &mut *transaction).await?;
+            file.insert(version_id, &mut *transaction, http).await?;
         }
     }
 
@@ -795,7 +801,6 @@ pub async fn upload_file(
     uploaded_files: &mut Vec<UploadedFile>,
     version_files: &mut Vec<VersionFileBuilder>,
     dependencies: &mut Vec<DependencyBuilder>,
-    cdn_url: &str,
     content_disposition: &actix_web::http::header::ContentDisposition,
     project_id: ProjectId,
     version_id: VersionId,
@@ -805,7 +810,7 @@ pub async fn upload_file(
     force_primary: bool,
     file_type: Option<FileType>,
     other_file_names: Vec<String>,
-    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    transaction: &mut PgTransaction<'_>,
     redis: &RedisPool,
 ) -> Result<(), CreateError> {
     let (file_name, file_extension) = get_name_ext(content_disposition)?;
@@ -845,7 +850,7 @@ pub async fn upload_file(
         "sha1",
         project_id.0 as i64
     )
-    .fetch_one(&mut **transaction)
+    .fetch_one(&mut *transaction)
     .await?
     .exists
     .unwrap_or(false);
@@ -890,7 +895,7 @@ pub async fn upload_file(
                     ",
                 &*hashes
             )
-            .fetch_all(&mut **transaction)
+            .fetch_all(&mut *transaction)
             .await?;
 
         for file in &format.files {
@@ -943,13 +948,11 @@ pub async fn upload_file(
         || total_files_len == 1;
 
     let file_path_encode = format!(
-        "data/{}/versions/{}/{}",
-        project_id,
-        version_id,
+        "data/{project_id}/versions/{version_id}/{}",
         urlencoding::encode(file_name)
     );
     let file_path =
-        format!("data/{}/versions/{}/{}", project_id, version_id, &file_name);
+        format!("data/{project_id}/versions/{version_id}/{file_name}");
 
     let upload_data = file_host
         .upload_file(content_type, &file_path, FileHostPublicity::Public, data)
@@ -980,33 +983,9 @@ pub async fn upload_file(
         return Err(CreateError::InvalidInput(msg.to_string()));
     }
 
-    let url = format!("{cdn_url}/{file_path_encode}");
-
-    let client = reqwest::Client::new();
-    let delphi_url = dotenvy::var("DELPHI_URL")?;
-    match client
-        .post(delphi_url)
-        .json(&serde_json::json!({
-            "url": url,
-            "project_id": project_id,
-            "version_id": version_id,
-        }))
-        .send()
-        .await
-    {
-        Ok(res) => {
-            if !res.status().is_success() {
-                error!("Failed to upload file to Delphi: {url}");
-            }
-        }
-        Err(e) => {
-            error!("Failed to upload file to Delphi: {url}: {e}");
-        }
-    }
-
     version_files.push(VersionFileBuilder {
         filename: file_name.to_string(),
-        url: format!("{cdn_url}/{file_path_encode}"),
+        url: format!("{}/{file_path_encode}", ENV.CDN_URL),
         hashes: vec![
             models::version_item::HashBuilder {
                 algorithm: "sha1".to_string(),

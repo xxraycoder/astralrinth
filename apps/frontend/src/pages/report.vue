@@ -1,6 +1,6 @@
 <template>
 	<div class="page">
-		<div class="experimental-styles-within flex flex-col gap-2">
+		<div class="flex flex-col gap-2">
 			<RadialHeader class="top-box mb-2 flex flex-col items-center justify-center" color="orange">
 				<ScaleIcon class="h-12 w-12 text-brand-orange" />
 				<h1 class="m-3 gap-2 text-3xl font-extrabold">
@@ -19,7 +19,7 @@
 			>
 				{{
 					formatMessage(messages.alreadyReportedDescription, {
-						item: reportItem || 'content',
+						item: formatReportItemType(formatMessage, reportItem),
 					})
 				}}
 				<div class="flex gap-2">
@@ -28,7 +28,7 @@
 							<LeftArrowIcon />
 							{{
 								formatMessage(messages.backToItem, {
-									item: reportItem || 'content',
+									item: formatReportItemType(formatMessage, reportItem),
 								})
 							}}
 						</nuxt-link>
@@ -107,7 +107,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="flex flex-col gap-4 rounded-xl bg-bg-raised p-6">
+				<div class="card-shadow flex flex-col gap-4 rounded-xl bg-bg-raised p-6">
 					<template v-if="!prefilled || !currentItemValid">
 						<div class="flex flex-col gap-2">
 							<span class="text-lg font-bold text-contrast">
@@ -131,19 +131,18 @@
 							<span class="text-lg font-bold text-contrast">
 								{{
 									formatMessage(messages.whatContentId, {
-										item: reportItem || 'content',
+										item: formatReportItemType(formatMessage, reportItem),
 									})
 								}}
 							</span>
 							<div class="flex gap-4">
-								<input
+								<StyledInput
 									id="report-item-id"
 									v-model="reportItemID"
-									type="text"
 									placeholder="ex: Dc7EYhxG"
 									autocomplete="off"
 									:disabled="reportItem === ''"
-									class="w-40"
+									wrapper-class="w-40"
 									@blur="
 										() => {
 											prefilled = false
@@ -155,7 +154,11 @@
 								<div v-if="checkingId || checkedId" class="flex items-center gap-1">
 									<template v-if="checkingId">
 										<SpinnerIcon class="animate-spin" />
-										{{ formatMessage(messages.checking, { item: reportItem }) }}...
+										{{
+											formatMessage(messages.checking, {
+												item: formatReportItemType(formatMessage, reportItem),
+											})
+										}}
 									</template>
 									<template v-else-if="checkedId && itemName">
 										<AutoLink
@@ -179,7 +182,7 @@
 										<IssuesIcon />
 										{{
 											formatMessage(messages.couldNotFind, {
-												item: reportItem,
+												item: formatReportItemType(formatMessage, reportItem),
 											})
 										}}
 									</span>
@@ -190,7 +193,7 @@
 					<template v-if="existingReport">
 						{{
 							formatMessage(messages.alreadyReportedDescription, {
-								item: reportItem || 'content',
+								item: formatReportItemType(formatMessage, reportItem),
 							})
 						}}
 						<ButtonStyled color="brand">
@@ -204,7 +207,7 @@
 							<span class="text-lg font-bold text-contrast">
 								{{
 									formatMessage(messages.whatReportReason, {
-										item: reportItem || 'content',
+										item: formatReportItemType(formatMessage, reportItem),
 									})
 								}}
 							</span>
@@ -281,24 +284,29 @@ import {
 	VersionIcon,
 	XCircleIcon,
 } from '@modrinth/assets'
+import { defineMessage } from '@modrinth/ui'
 import {
 	AutoLink,
 	Avatar,
 	ButtonStyled,
+	defineMessages,
+	formatReportItemType,
 	injectNotificationManager,
+	IntlFormatted,
 	MarkdownEditor,
+	type MessageDescriptor,
 	RadialHeader,
 	RadioButtons,
+	StyledInput,
+	useVIntl,
 } from '@modrinth/ui'
 import type { Project, Report, User, Version } from '@modrinth/utils'
-import { defineMessages, type MessageDescriptor, useVIntl } from '@vintl/vintl'
-import { IntlFormatted } from '@vintl/vintl/components'
 
 import { useImageUpload } from '~/composables/image-upload.ts'
 
 const { addNotification } = injectNotificationManager()
 
-const tags = useTags()
+const tags = useGeneratedState()
 const route = useNativeRoute()
 const router = useRouter()
 

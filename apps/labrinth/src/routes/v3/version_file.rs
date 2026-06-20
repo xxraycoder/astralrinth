@@ -1,20 +1,21 @@
 use super::ApiError;
 use crate::auth::checks::{filter_visible_versions, is_visible_version};
 use crate::auth::{filter_visible_projects, get_user_from_headers};
+use crate::database::PgPool;
 use crate::database::ReadOnlyPgPool;
 use crate::database::redis::RedisPool;
 use crate::models::ids::VersionId;
 use crate::models::pats::Scopes;
-use crate::models::projects::VersionType;
+use crate::models::projects::{ProjectStatus, VersionStatus, VersionType};
 use crate::models::teams::ProjectPermissions;
 use crate::queue::session::AuthQueue;
+use crate::routes::internal::delphi;
 use crate::{database, models};
 use actix_web::{HttpRequest, HttpResponse, web};
 use dashmap::DashMap;
 use futures::TryStreamExt;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
 use std::collections::HashMap;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -28,7 +29,10 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     );
     cfg.service(
         web::scope("version_files")
+            // DEPRECATED - use `update_many` instead
+            // see `fn update_files` comment
             .route("update", web::post().to(update_files))
+            .route("update_many", web::post().to(update_files_many))
             .route("update_individual", web::post().to(update_individual_files))
             .route("", web::post().to(get_versions_from_hashes)),
     );
@@ -331,11 +335,60 @@ pub struct ManyUpdateData {
     pub version_types: Option<Vec<VersionType>>,
 }
 
+pub async fn update_files_many(
+    pool: web::Data<ReadOnlyPgPool>,
+    redis: web::Data<RedisPool>,
+    update_data: web::Json<ManyUpdateData>,
+) -> Result<web::Json<HashMap<String, Vec<models::projects::Version>>>, ApiError>
+{
+    update_files_internal(pool, redis, update_data)
+        .await
+        .map(web::Json)
+}
+
+// DEPRECATED - use `update_files_many` instead
+//
+// This returns a `HashMap<String, Version>` where the key is the file hash.
+// But one file hash can have multiple versions associated with it.
+// So you can end up in a situation where:
+// - file with hash H is linked to versions V1, V2
+// - user downloads mod with file hash H
+// - every time the app checks for updates:
+//   - it asks the backend, what is the version of H?
+//   - backend says V1
+//   - the app asks, is there a compatible version newer than V1?
+//   - backend says, yes, V2
+// - user updates to V2, but it's the same file, so it's the same hash H,
+//   and the update button stays
+//
+// By using `update_files_many`, we can have the app know that both V1 and V2
+// are linked to H
+//
+// This endpoint is kept for backwards compat, since it still works in 99% of
+// cases where H only maps to a single version, and for older clients. This
+// endpoint will only take the first version for each file hash.
 pub async fn update_files(
     pool: web::Data<ReadOnlyPgPool>,
     redis: web::Data<RedisPool>,
     update_data: web::Json<ManyUpdateData>,
-) -> Result<HttpResponse, ApiError> {
+) -> Result<web::Json<HashMap<String, models::projects::Version>>, ApiError> {
+    let file_hashes_to_versions =
+        update_files_internal(pool, redis, update_data).await?;
+    let resp = file_hashes_to_versions
+        .into_iter()
+        .filter_map(|(hash, versions)| {
+            let first_version = versions.into_iter().next()?;
+            Some((hash, first_version))
+        })
+        .collect();
+    Ok(web::Json(resp))
+}
+
+async fn update_files_internal(
+    pool: web::Data<ReadOnlyPgPool>,
+    redis: web::Data<RedisPool>,
+    update_data: web::Json<ManyUpdateData>,
+) -> Result<HashMap<String, Vec<models::projects::Version>>, ApiError> {
     let algorithm = update_data
         .algorithm
         .clone()
@@ -353,18 +406,26 @@ pub async fn update_files(
         "
         SELECT v.id version_id, v.mod_id mod_id
         FROM mods m
-        INNER JOIN versions v ON m.id = v.mod_id AND (cardinality($4::varchar[]) = 0 OR v.version_type = ANY($4))
+        INNER JOIN versions v ON m.id = v.mod_id AND (cardinality($4::varchar[]) = 0 OR v.version_type = ANY($4)) AND v.status = ANY($5)
         INNER JOIN version_fields vf ON vf.field_id = 3 AND v.id = vf.version_id
         INNER JOIN loader_field_enum_values lfev ON vf.enum_value = lfev.id AND (cardinality($2::varchar[]) = 0 OR lfev.value = ANY($2::varchar[]))
         INNER JOIN loaders_versions lv ON lv.version_id = v.id
         INNER JOIN loaders l on lv.loader_id = l.id AND (cardinality($3::varchar[]) = 0 OR l.loader = ANY($3::varchar[]))
-        WHERE m.id = ANY($1)
+        WHERE m.id = ANY($1) AND m.status = ANY($6)
         ORDER BY v.date_published ASC
         ",
         &files.iter().map(|x| x.project_id.0).collect::<Vec<_>>(),
         &update_data.game_versions.clone().unwrap_or_default(),
         &update_data.loaders.clone().unwrap_or_default(),
         &update_data.version_types.clone().unwrap_or_default().iter().map(|x| x.to_string()).collect::<Vec<_>>(),
+        &*VersionStatus::iterator()
+            .filter(|x| !x.is_hidden())
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>(),
+        &*ProjectStatus::iterator()
+            .filter(|x| !x.is_hidden())
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>(),
     )
         .fetch(&***pool)
         .try_fold(DashMap::new(), |acc : DashMap<_,Vec<database::models::ids::DBVersionId>>, m| {
@@ -385,21 +446,25 @@ pub async fn update_files(
     )
     .await?;
 
-    let mut response = HashMap::new();
+    let mut response = HashMap::<String, Vec<models::projects::Version>>::new();
     for file in files {
         if let Some(version) = versions
             .iter()
             .find(|x| x.inner.project_id == file.project_id)
             && let Some(hash) = file.hashes.get(&algorithm)
         {
-            response.insert(
-                hash.clone(),
-                models::projects::Version::from(version.clone()),
-            );
+            // add the version info for this file hash
+            // note: one file hash can have multiple versions associated with it
+            // just having a `HashMap<String, Version>` would mean that some version info is lost
+            // so we return a vec of them instead
+            response
+                .entry(hash.clone())
+                .or_default()
+                .push(models::projects::Version::from(version.clone()));
         }
     }
 
-    Ok(HttpResponse::Ok().json(response))
+    Ok(response)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -632,6 +697,9 @@ pub async fn delete_file(
         }
 
         let mut transaction = pool.begin().await?;
+        let was_in_tech_review =
+            delphi::is_project_in_tech_review(row.project_id, &mut transaction)
+                .await?;
 
         sqlx::query!(
             "
@@ -640,7 +708,7 @@ pub async fn delete_file(
             ",
             row.id.0
         )
-        .execute(&mut *transaction)
+        .execute(&mut transaction)
         .await?;
 
         sqlx::query!(
@@ -650,7 +718,14 @@ pub async fn delete_file(
             ",
             row.id.0,
         )
-        .execute(&mut *transaction)
+        .execute(&mut transaction)
+        .await?;
+
+        delphi::send_tech_review_exit_file_deleted_message_if_exited(
+            row.project_id,
+            was_in_tech_review,
+            &mut transaction,
+        )
         .await?;
 
         transaction.commit().await?;

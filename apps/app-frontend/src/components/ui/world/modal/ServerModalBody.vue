@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { TeleportDropdownMenu } from '@modrinth/ui'
-import { defineMessages, type MessageDescriptor, useVIntl } from '@vintl/vintl'
+import {
+	Combobox,
+	defineMessages,
+	type MessageDescriptor,
+	StyledInput,
+	useVIntl,
+} from '@modrinth/ui'
 
 import type { ServerPackStatus } from '@/helpers/worlds.ts'
 
@@ -44,44 +49,55 @@ const messages = defineMessages({
 		id: 'instance.server-modal.placeholder-name',
 		defaultMessage: 'Minecraft Server',
 	},
+	placeholderAddress: {
+		id: 'app.world.server-modal.placeholder-address',
+		defaultMessage: 'example.modrinth.gg',
+	},
+	selectAnOption: {
+		id: 'app.world.server-modal.select-an-option',
+		defaultMessage: 'Select an option',
+	},
 })
 
 defineExpose({ resourcePackOptions })
 </script>
 <template>
-	<div class="w-[450px]">
-		<h2 class="text-lg font-extrabold text-contrast mt-0 mb-1">
-			{{ formatMessage(messages.name) }}
-		</h2>
-		<input
-			v-model="name"
-			type="text"
-			:placeholder="formatMessage(messages.placeholderName)"
-			class="w-full"
-			autocomplete="off"
-		/>
-		<h2 class="text-lg font-extrabold text-contrast mt-3 mb-1">
-			{{ formatMessage(messages.address) }}
-		</h2>
-		<input
-			v-model="address"
-			type="text"
-			placeholder="example.modrinth.gg"
-			class="w-full"
-			autocomplete="off"
-		/>
-		<h2 class="text-lg font-extrabold text-contrast mt-3 mb-1">
-			{{ formatMessage(messages.resourcePack) }}
-		</h2>
-		<div>
-			<TeleportDropdownMenu
+	<div class="space-y-4 w-full">
+		<label class="flex flex-col gap-2">
+			<span class="font-semibold text-contrast">{{ formatMessage(messages.name) }}</span>
+			<StyledInput
+				v-model="name"
+				:placeholder="formatMessage(messages.placeholderName)"
+				autocomplete="off"
+				wrapper-class="w-full"
+			/>
+		</label>
+		<label class="flex flex-col gap-2">
+			<span class="font-semibold text-contrast">{{ formatMessage(messages.address) }}</span>
+			<StyledInput
+				v-model="address"
+				:placeholder="formatMessage(messages.placeholderAddress)"
+				autocomplete="off"
+				wrapper-class="w-full"
+			/>
+		</label>
+		<label class="flex flex-col gap-2">
+			<span class="font-semibold text-contrast">{{ formatMessage(messages.resourcePack) }}</span>
+			<Combobox
 				v-model="resourcePack"
-				:options="resourcePackOptions"
+				:options="
+					resourcePackOptions.map((o) => ({
+						value: o,
+						label: formatMessage(resourcePackOptionMessages[o]),
+					}))
+				"
 				name="Server resource pack"
-				:display-name="
-					(option: ServerPackStatus) => formatMessage(resourcePackOptionMessages[option])
+				:display-value="
+					resourcePack
+						? formatMessage(resourcePackOptionMessages[resourcePack])
+						: formatMessage(messages.selectAnOption)
 				"
 			/>
-		</div>
+		</label>
 	</div>
 </template>

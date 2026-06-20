@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ChangelogEntry } from '@modrinth/ui'
+import { getChangelog, type Product } from '@modrinth/blog'
+import { ChangelogEntry, NavTabs } from '@modrinth/ui'
 import Timeline from '@modrinth/ui/src/components/base/Timeline.vue'
-import { getChangelog, type Product } from '@modrinth/utils'
-
-import NavTabs from '~/components/ui/NavTabs.vue'
 
 const route = useRoute()
 
@@ -38,12 +36,12 @@ const changelogEntries = computed(() =>
 				href: '',
 			},
 			{
-				label: 'Website',
+				label: 'Platform',
 				href: 'web',
 			},
 			{
-				label: 'Servers',
-				href: 'servers',
+				label: 'Hosting',
+				href: 'hosting',
 			},
 			{
 				label: 'App',

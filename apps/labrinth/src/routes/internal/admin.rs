@@ -1,37 +1,36 @@
 use crate::auth::validate::get_user_record_from_bearer_token;
-use crate::database::models::thread_item::ThreadMessageBuilder;
+use crate::database::PgPool;
 use crate::database::redis::RedisPool;
-use crate::models::analytics::Download;
-use crate::models::ids::ProjectId;
+use crate::models::analytics::{Download, DownloadReason};
+use crate::models::ids::{ProjectId, VersionId};
 use crate::models::pats::Scopes;
-use crate::models::threads::MessageBody;
 use crate::queue::analytics::AnalyticsQueue;
-use crate::queue::moderation::AUTOMOD_ID;
 use crate::queue::session::AuthQueue;
 use crate::routes::ApiError;
-use crate::search::SearchConfig;
+use crate::search::SearchBackend;
 use crate::util::date::get_current_tenths_of_ms;
+use crate::util::error::Context;
 use crate::util::guards::admin_key_guard;
+use crate::util::tags::valid_download_tags;
 use actix_web::{HttpRequest, HttpResponse, patch, post, web};
-use modrinth_maxmind::MaxMind;
+use ariadne::ids::base62_impl::parse_base62;
+use eyre::eyre;
 use serde::Deserialize;
-use sqlx::PgPool;
 use std::collections::HashMap;
-use std::fmt::Write;
 use std::net::Ipv4Addr;
+use std::str::FromStr;
 use std::sync::Arc;
-use tracing::info;
+use tracing::trace;
 
-pub fn config(cfg: &mut web::ServiceConfig) {
+pub fn config(cfg: &mut utoipa_actix_web::service_config::ServiceConfig) {
     cfg.service(
-        web::scope("admin")
+        utoipa_actix_web::scope("/admin")
             .service(count_download)
-            .service(force_reindex)
-            .service(delphi_result_ingest),
+            .service(force_reindex),
     );
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct DownloadBody {
     pub url: String,
     pub project_id: ProjectId,
@@ -41,14 +40,108 @@ pub struct DownloadBody {
     pub headers: HashMap<String, String>,
 }
 
+/// Extra data attached to each download request, transmitted through the
+/// [`DOWNLOAD_META_HEADER`] header.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DownloadMeta {
+    pub reason: Option<DownloadReason>,
+    pub game_version: Option<String>,
+    pub loader: Option<String>,
+    pub dependent_on: Option<VersionId>,
+}
+
+pub const DOWNLOAD_META_HEADER: &str = "modrinth-download-meta";
+
+fn parse_download_meta_version(
+    version_id: &str,
+    field: &str,
+) -> Result<VersionId, ApiError> {
+    parse_base62(version_id)
+        .map(VersionId)
+        .wrap_request_err_with(|| {
+            eyre!("invalid `{field}` version id '{version_id}'")
+        })
+}
+
+fn parse_download_meta_from_query(
+    url: &url::Url,
+) -> Result<Option<DownloadMeta>, ApiError> {
+    let mut meta = DownloadMeta {
+        reason: None,
+        game_version: None,
+        loader: None,
+        dependent_on: None,
+    };
+
+    for (key, value) in url.query_pairs() {
+        match key.as_ref() {
+            "mr_download_reason" => {
+                meta.reason =
+                    Some(DownloadReason::from_str(&value).map_err(|_| {
+                        ApiError::Request(eyre!(
+                            "invalid download reason specified"
+                        ))
+                    })?);
+            }
+            "mr_game_version" => {
+                meta.game_version = Some(value.into_owned());
+            }
+            "mr_loader" => {
+                meta.loader = Some(value.into_owned());
+            }
+            "mr_dependent_on" => {
+                meta.dependent_on =
+                    Some(parse_download_meta_version(&value, "dependent_on")?);
+            }
+            _ => {}
+        }
+    }
+
+    Ok((meta.reason.is_some()
+        || meta.game_version.is_some()
+        || meta.loader.is_some()
+        || meta.dependent_on.is_some())
+    .then_some(meta))
+}
+
+async fn resolve_download_attribution_version(
+    pool: &PgPool,
+    redis: &RedisPool,
+    version_id: Option<VersionId>,
+    field: &str,
+) -> Result<u64, ApiError> {
+    let Some(version_id) = version_id else {
+        return Ok(0);
+    };
+
+    let version_id =
+        crate::database::models::ids::DBVersionId::from(version_id);
+
+    crate::database::models::DBVersion::get(version_id, pool, redis)
+        .await
+        .wrap_internal_err("failed to fetch download attribution version")?
+        .ok_or_else(|| {
+            ApiError::Request(eyre!("invalid `{field}` version specified"))
+        })?;
+
+    Ok(version_id.0 as u64)
+}
+
 // This is an internal route, cannot be used without key
+#[utoipa::path(
+    patch,
+    operation_id = "countDownload",
+    responses(
+        (status = 204, description = "Download counted successfully"),
+        (status = 400, description = "Invalid input")
+    )
+)]
 #[patch("/_count-download", guard = "admin_key_guard")]
 #[allow(clippy::too_many_arguments)]
 pub async fn count_download(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     redis: web::Data<RedisPool>,
-    maxmind: web::Data<MaxMind>,
     analytics_queue: web::Data<Arc<AnalyticsQueue>>,
     session_queue: web::Data<AuthQueue>,
     download_body: web::Json<DownloadBody>,
@@ -65,6 +158,7 @@ pub async fn count_download(
         &**pool,
         &redis,
         &session_queue,
+        false,
     )
     .await
     .ok()
@@ -73,10 +167,9 @@ pub async fn count_download(
     let project_id: crate::database::models::ids::DBProjectId =
         download_body.project_id.into();
 
-    let id_option =
-        ariadne::ids::base62_impl::parse_base62(&download_body.version_name)
-            .ok()
-            .map(|x| x as i64);
+    let id_option = parse_base62(&download_body.version_name)
+        .ok()
+        .map(|x| x as i64);
 
     let (version_id, project_id) = if let Some(version) = sqlx::query!(
         "
@@ -116,7 +209,45 @@ pub async fn count_download(
     let ip = crate::util::ip::convert_to_ip_v6(&download_body.ip)
         .unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1).to_ipv6_mapped());
 
-    analytics_queue.add_download(Download {
+    let meta =
+        if let Some(meta) = download_body.headers.get(DOWNLOAD_META_HEADER) {
+            serde_json::from_str::<DownloadMeta>(meta)
+                .map(Some)
+                .wrap_request_err("invalid download meta")?
+        } else {
+            parse_download_meta_from_query(&url)?
+        };
+
+    if let Some(meta) = &meta {
+        let valid_download_tags = valid_download_tags(&pool, &redis)
+            .await
+            .wrap_internal_err("failed to fetch valid download tags")?;
+        if let Some(loader) = &meta.loader
+            && !valid_download_tags.loaders.contains(loader)
+        {
+            return Err(ApiError::Request(eyre!(
+                "invalid download loader specified"
+            )));
+        }
+
+        if let Some(game_version) = &meta.game_version
+            && !valid_download_tags.game_versions.contains(game_version)
+        {
+            return Err(ApiError::Request(eyre!(
+                "invalid download game version specified"
+            )));
+        }
+    }
+
+    let dependent_on_version_id = resolve_download_attribution_version(
+        &pool,
+        &redis,
+        meta.as_ref().and_then(|m| m.dependent_on),
+        "dependent_on",
+    )
+    .await?;
+
+    let download = Download {
         recorded: get_current_tenths_of_ms(),
         domain: url.host_str().unwrap_or_default().to_string(),
         site_path: url.path().to_string(),
@@ -132,7 +263,11 @@ pub async fn count_download(
         project_id: project_id as u64,
         version_id: version_id as u64,
         ip,
-        country: maxmind.query_country(ip).await.unwrap_or_default(),
+        country: download_body
+            .headers
+            .get("cf-ipcountry")
+            .cloned()
+            .unwrap_or_default(),
         user_agent: download_body
             .headers
             .get("user-agent")
@@ -147,114 +282,48 @@ pub async fn count_download(
                     .contains(&&*x.0.to_lowercase())
             })
             .collect(),
-    });
+        reason: meta
+            .as_ref()
+            .and_then(|m| m.reason.as_ref())
+            .map(|s| s.to_string())
+            .unwrap_or_default(),
+        game_version: meta
+            .as_ref()
+            .and_then(|m| m.game_version.as_ref())
+            .map(|s| s.to_string())
+            .unwrap_or_default(),
+        loader: meta
+            .as_ref()
+            .and_then(|m| m.loader.as_ref())
+            .map(|s| s.to_string())
+            .unwrap_or_default(),
+        dependent_on_version_id,
+    };
+    trace!("added download {download:#?}");
+
+    analytics_queue.add_download(download);
 
     Ok(HttpResponse::NoContent().body(""))
 }
 
+#[utoipa::path(
+    post,
+    operation_id = "forceReindex",
+    responses(
+        (status = 204, description = "Search index rebuilt successfully"),
+        (status = 401, description = "Unauthorized")
+    )
+)]
 #[post("/_force_reindex", guard = "admin_key_guard")]
 pub async fn force_reindex(
     pool: web::Data<PgPool>,
     redis: web::Data<RedisPool>,
-    config: web::Data<SearchConfig>,
+    search_backend: web::Data<dyn SearchBackend>,
 ) -> Result<HttpResponse, ApiError> {
-    use crate::search::indexing::index_projects;
     let redis = redis.get_ref();
-    index_projects(pool.as_ref().clone(), redis.clone(), &config).await?;
-    Ok(HttpResponse::NoContent().finish())
-}
-
-#[derive(Deserialize)]
-pub struct DelphiIngest {
-    pub url: String,
-    pub project_id: crate::models::ids::ProjectId,
-    pub version_id: crate::models::ids::VersionId,
-    pub issues: HashMap<String, HashMap<String, String>>,
-}
-
-#[post("/_delphi", guard = "admin_key_guard")]
-pub async fn delphi_result_ingest(
-    pool: web::Data<PgPool>,
-    redis: web::Data<RedisPool>,
-    body: web::Json<DelphiIngest>,
-) -> Result<HttpResponse, ApiError> {
-    if body.issues.is_empty() {
-        info!("No issues found for file {}", body.url);
-        return Ok(HttpResponse::NoContent().finish());
-    }
-
-    let webhook_url = dotenvy::var("DELPHI_SLACK_WEBHOOK")?;
-
-    let project = crate::database::models::DBProject::get_id(
-        body.project_id.into(),
-        &**pool,
-        &redis,
-    )
-    .await?
-    .ok_or_else(|| {
-        ApiError::InvalidInput(format!(
-            "Project {} does not exist",
-            body.project_id
-        ))
-    })?;
-
-    let mut header = format!("Suspicious traces found at {}", body.url);
-
-    for (issue, trace) in &body.issues {
-        for (path, code) in trace {
-            write!(
-                &mut header,
-                "\n issue {issue} found at file {path}: \n ```\n{code}\n```"
-            )
-            .unwrap();
-        }
-    }
-
-    crate::util::webhook::send_slack_project_webhook(
-        body.project_id,
-        &pool,
-        &redis,
-        webhook_url,
-        Some(header),
-    )
-    .await
-    .ok();
-
-    let mut thread_header = format!(
-        "Suspicious traces found at [version {}](https://modrinth.com/project/{}/version/{})",
-        body.version_id, body.project_id, body.version_id
-    );
-
-    for (issue, trace) in &body.issues {
-        for path in trace.keys() {
-            write!(
-                &mut thread_header,
-                "\n\n- issue {issue} found at file {path}"
-            )
-            .unwrap();
-        }
-
-        if trace.is_empty() {
-            write!(&mut thread_header, "\n\n- issue {issue} found").unwrap();
-        }
-    }
-
-    let mut transaction = pool.begin().await?;
-    ThreadMessageBuilder {
-        author_id: Some(crate::database::models::DBUserId(AUTOMOD_ID)),
-        body: MessageBody::Text {
-            body: thread_header,
-            private: true,
-            replying_to: None,
-            associated_images: vec![],
-        },
-        thread_id: project.thread_id,
-        hide_identity: false,
-    }
-    .insert(&mut transaction)
-    .await?;
-
-    transaction.commit().await?;
-
+    search_backend
+        .index_projects(pool.as_ref().clone(), redis.clone())
+        .await
+        .wrap_internal_err("failed to index projects")?;
     Ok(HttpResponse::NoContent().finish())
 }

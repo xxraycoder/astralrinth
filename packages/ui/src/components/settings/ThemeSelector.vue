@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends string">
 import { MoonIcon, RadioButtonCheckedIcon, RadioButtonIcon, SunIcon } from '@modrinth/assets'
-import { defineMessages, useVIntl } from '@vintl/vintl'
 
+import { defineMessages, useVIntl } from '../../composables/i18n'
 const { formatMessage } = useVIntl()
 
 const { updateColorTheme, currentTheme, themeOptions, systemThemeColor } = defineProps<{
@@ -98,7 +98,7 @@ function getPreviewClass(option: T): string {
 <style scoped lang="scss">
 .theme-options {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 	gap: var(--gap-lg);
 
 	.preview {

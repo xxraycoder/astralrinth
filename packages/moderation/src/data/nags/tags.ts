@@ -1,14 +1,15 @@
-import type { Project } from '@modrinth/utils'
-import { defineMessage, useVIntl } from '@vintl/vintl'
+import type { Labrinth } from '@modrinth/api-client'
+import { defineMessage, formatCategory, useVIntl } from '@modrinth/ui'
 
 import type { Nag, NagContext } from '../../types/nags'
 
 const allResolutionTags = ['8x-', '16x', '32x', '48x', '64x', '128x', '256x', '512x+']
 
 const MAX_TAG_COUNT = 8
+const MAX_TAG_COUNT_SERVER = 18
 
 function getCategories(
-	project: Project & { actualProjectType: string },
+	project: Labrinth.Projects.v2.Project & { actualProjectType: string },
 	tags: {
 		categories?: {
 			project_type: string
@@ -23,6 +24,29 @@ function getCategories(
 }
 
 export const tagsNags: Nag[] = [
+	{
+		id: 'select-tags',
+		title: defineMessage({
+			id: 'nags.select-tags.title',
+			defaultMessage: 'Select tags',
+		}),
+		description: defineMessage({
+			id: 'nags.select-tags.description',
+			defaultMessage:
+				'Select the tags that correctly apply to your project to help the right users find it.',
+		}),
+		status: 'suggestion',
+		shouldShow: (context: NagContext) =>
+			context.project.versions.length > 0 && context.project.categories.length < 1,
+		link: {
+			path: 'settings/tags',
+			title: defineMessage({
+				id: 'nags.settings.tags.title',
+				defaultMessage: 'Visit tag settings',
+			}),
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-tags',
+		},
+	},
 	{
 		id: 'too-many-tags',
 		title: defineMessage({
@@ -39,7 +63,7 @@ export const tagsNags: Nag[] = [
 				defineMessage({
 					id: 'nags.too-many-tags.description',
 					defaultMessage:
-						"You've selected {tagCount} tags. Consider reducing to {maxTagCount} or fewer to make sure your project appears in relevant search results.",
+						"You've selected {tagCount, plural, one {# tag} other {# tags}}. Consider reducing to {maxTagCount} or fewer to make sure your project appears in relevant search results.",
 				}),
 				{
 					tagCount,
@@ -49,9 +73,10 @@ export const tagsNags: Nag[] = [
 		},
 		status: 'warning',
 		shouldShow: (context: NagContext) => {
+			if (context.projectV3?.minecraft_java_server) return false
 			const tagCount =
 				context.project.categories.length + (context.project.additional_categories?.length || 0)
-			return tagCount > MAX_TAG_COUNT
+			return tagCount > MAX_TAG_COUNT && !context.projectV3?.minecraft_server
 		},
 		link: {
 			path: 'settings/tags',
@@ -59,7 +84,46 @@ export const tagsNags: Nag[] = [
 				id: 'nags.edit-tags.title',
 				defaultMessage: 'Edit tags',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-tags',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-tags',
+		},
+	},
+	{
+		id: 'too-many-tags-server',
+		title: defineMessage({
+			id: 'nags.too-many-tags-server.title',
+			defaultMessage: 'Select accurate tags',
+		}),
+		description: (context: NagContext) => {
+			const { formatMessage } = useVIntl()
+			const tagCount =
+				context.project.categories.length + (context.project.additional_categories?.length || 0)
+			const maxTagCount = MAX_TAG_COUNT_SERVER
+
+			return formatMessage(
+				defineMessage({
+					id: 'nags.too-many-tags-server.description',
+					defaultMessage:
+						"You've selected {tagCount, plural, one {# tag} other {# tags}}. Please reduce to {maxTagCount} or fewer to make sure your server appears in relevant search results.",
+				}),
+				{
+					tagCount,
+					maxTagCount,
+				},
+			)
+		},
+		status: 'required',
+		shouldShow: (context: NagContext) => {
+			const tagCount =
+				context.project.categories.length + (context.project.additional_categories?.length || 0)
+			return tagCount > MAX_TAG_COUNT_SERVER && context.projectV3?.minecraft_server != null
+		},
+		link: {
+			path: 'settings/tags',
+			title: defineMessage({
+				id: 'nags.edit-tags.title',
+				defaultMessage: 'Edit tags',
+			}),
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-tags',
 		},
 	},
 	{
@@ -82,14 +146,11 @@ export const tagsNags: Nag[] = [
 				defineMessage({
 					id: 'nags.multiple-resolution-tags.description',
 					defaultMessage:
-						"You've selected {count} resolution tags ({tags}). Resource packs should typically only have one resolution tag that matches their primary resolution.",
+						"You've selected {count, plural, one {# resolution tag} other {# resolution tags}} ({tags}). Resource packs should typically only have one resolution tag that matches their primary resolution.",
 				}),
 				{
 					count: resolutionTags.length,
-					tags: sortedTags
-						.join(', ')
-						.replace('8x-', '8x or lower')
-						.replace('512x+', '512x or higher'),
+					tags: sortedTags.map((tag) => formatCategory(formatMessage, tag)).join(', '),
 				},
 			)
 		},
@@ -108,7 +169,7 @@ export const tagsNags: Nag[] = [
 				id: 'nags.edit-tags.title',
 				defaultMessage: 'Edit tags',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-tags',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-tags',
 		},
 	},
 	{
@@ -120,7 +181,7 @@ export const tagsNags: Nag[] = [
 		description: (context: NagContext) => {
 			const { formatMessage } = useVIntl()
 			const categoriesForProjectType = getCategories(
-				context.project as Project & { actualProjectType: string },
+				context.project as Labrinth.Projects.v2.Project & { actualProjectType: string },
 				context.tags,
 			)
 			const totalAvailableTags = categoriesForProjectType.length
@@ -129,7 +190,7 @@ export const tagsNags: Nag[] = [
 				defineMessage({
 					id: 'nags.all-tags-selected.description',
 					defaultMessage:
-						"You've selected all {totalAvailableTags} available tags. This defeats the purpose of tags, which are meant to help users find relevant projects. Please select only the tags that are relevant to your project.",
+						"You've selected all {totalAvailableTags, plural, one {# available tag} other {# available tags}}. This defeats the purpose of tags, which are meant to help users find relevant projects. Please select only the tags that are relevant to your project.",
 				}),
 				{
 					totalAvailableTags,
@@ -139,7 +200,7 @@ export const tagsNags: Nag[] = [
 		status: 'required',
 		shouldShow: (context: NagContext) => {
 			const categoriesForProjectType = getCategories(
-				context.project as Project & { actualProjectType: string },
+				context.project as Labrinth.Projects.v2.Project & { actualProjectType: string },
 				context.tags,
 			)
 			const totalSelectedTags =
@@ -155,7 +216,7 @@ export const tagsNags: Nag[] = [
 				id: 'nags.edit-tags.title',
 				defaultMessage: 'Edit tags',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-tags',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-tags',
 		},
 	},
 ]

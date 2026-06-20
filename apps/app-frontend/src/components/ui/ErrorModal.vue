@@ -6,6 +6,7 @@ import {
 	HammerIcon,
 	LogInIcon,
 	UpdatedIcon,
+	WrenchIcon,
 	XIcon,
 } from '@modrinth/assets'
 import { ButtonStyled, Collapsible, injectNotificationManager } from '@modrinth/ui'
@@ -19,26 +20,21 @@ import { install } from '@/helpers/profile.js'
 import { cancel_directory_change } from '@/helpers/settings.ts'
 import { handleSevereError } from '@/store/error.js'
 
-// [AR] Imports
-import { applyMigrationFix } from '@/helpers/utils.js'
-import { restartApp } from '@/helpers/utils.js'
-
 const { handleError } = injectNotificationManager()
 
 const errorModal = ref()
 const error = ref()
 const closable = ref(true)
 const errorCollapsed = ref(false)
-const migrationFixSuccess = ref(null) // null | true | false
-const migrationFixCallbackModel = ref()
 
 const title = ref('An error occurred')
 const errorType = ref('unknown')
-const supportLink = ref('https://support.modrinth.com')
+const supportLink = ref('https://astralium.su/product/astralrinth/support')
 const metadata = ref({})
 
 defineExpose({
 	async show(errorVal, context, canClose = true, source = null) {
+		console.log(errorVal, context, canClose, source)
 		closable.value = canClose
 
 		if (errorVal.message && errorVal.message.includes('Minecraft authentication error:')) {
@@ -65,7 +61,7 @@ defineExpose({
 			errorType.value = 'directory_move'
 			supportLink.value = 'https://support.modrinth.com'
 
-			if (errorVal.message.includes('directory is not writeable')) {
+			if (errorVal.message.includes('directory is not writable')) {
 				metadata.value.readOnly = true
 			}
 
@@ -78,7 +74,7 @@ defineExpose({
 			supportLink.value = 'https://support.modrinth.com'
 			metadata.value.profilePath = context.profilePath
 		} else if (source === 'state_init') {
-			title.value = 'Error initializing AstralRinth App'
+			title.value = 'Error initializing Modrinth App'
 			errorType.value = 'state_init'
 			supportLink.value = 'https://support.modrinth.com'
 		} else {
@@ -156,37 +152,17 @@ async function copyToClipboard(text) {
 		copied.value = false
 	}, 3000)
 }
-
-async function onApplyMigrationFix(eol) {
-  console.log(`[AR] • Attempting to apply migration ${eol.toUpperCase()} fix`)
-  try {
-    const result = await applyMigrationFix(eol)
-    migrationFixSuccess.value = result === true
-    console.log(`[AR] • Successfully applied migration ${eol.toUpperCase()} fix`, result)
-  } catch (err) {
-    console.error(`[AR] • Failed to apply migration fix:`, err)
-    migrationFixSuccess.value = false
-  } finally {
-    migrationFixCallbackModel.value?.show?.()
-    if (migrationFixSuccess.value === true) {
-      setTimeout(async () => {
-        await restartApp()
-      }, 3000)
-    }
-  }
-}
-
 </script>
 
 <template>
 	<ModalWrapper ref="errorModal" :header="title" :closable="closable">
-		<div class="modal-body">
+		<div class="modal-body max-w-[550px]">
 			<div class="markdown-body">
 				<template v-if="errorType === 'minecraft_auth'">
 					<template v-if="metadata.network">
 						<h3>Network issues</h3>
 						<p>
-							It looks like there were issues with the AstralRinth App connecting to Microsoft's
+							It looks like there were issues with the Modrinth App connecting to Microsoft's
 							servers. This is often the result of a poor connection, so we recommend trying again
 							to see if it works. If issues continue to persist, follow the steps in
 							<a
@@ -200,7 +176,7 @@ async function onApplyMigrationFix(eol) {
 					<template v-else-if="metadata.hostsFile">
 						<h3>Network issues</h3>
 						<p>
-							The AstralRinth App tried to connect to Microsoft / Xbox / Minecraft services, but the
+							The Modrinth App tried to connect to Microsoft / Xbox / Minecraft services, but the
 							remote server rejected the connection. This may indicate that these services are
 							blocked by the hosts file. Please visit
 							<a
@@ -239,7 +215,7 @@ async function onApplyMigrationFix(eol) {
 					<template v-if="metadata.readOnly">
 						<h3>Change directory permissions</h3>
 						<p>
-							It looks like the AstralRinth App is unable to write to the directory you selected.
+							It looks like the Modrinth App is unable to write to the directory you selected.
 							Please adjust the permissions of the directory and try again or cancel the directory
 							change.
 						</p>
@@ -253,7 +229,7 @@ async function onApplyMigrationFix(eol) {
 					</template>
 					<template v-else>
 						<p>
-							The AstralRinth App is unable to migrate to the new directory you selected. Please
+							The Modrinth App is unable to migrate to the new directory you selected. Please
 							contact support for help or cancel the directory change.
 						</p>
 					</template>
@@ -283,7 +259,7 @@ async function onApplyMigrationFix(eol) {
 				</div>
 				<template v-else-if="errorType === 'state_init'">
 					<p>
-						AstralRinth App failed to load correctly. This may be because of a corrupted file, or
+						Modrinth App failed to load correctly. This may be because of a corrupted file, or
 						because the app is missing crucial files.
 					</p>
 					<p>You may be able to fix it through one of the following ways:</p>
@@ -293,7 +269,7 @@ async function onApplyMigrationFix(eol) {
 					</ul>
 				</template>
 				<template v-else-if="errorType === 'no_loader_version'">
-					<p>The AstralRinth App failed to find the loader version for this instance.</p>
+					<p>The Modrinth App failed to find the loader version for this instance.</p>
 					<p>To resolve this, you need to repair the instance. Click the button below to do so.</p>
 					<div class="cta-button">
 						<button class="btn btn-primary" :disabled="loadingRepair" @click="repairInstance">
@@ -305,7 +281,7 @@ async function onApplyMigrationFix(eol) {
 					{{ debugInfo }}
 				</template>
 				<template v-if="hasDebugInfo">
-					<hr />
+					<div class="w-full h-[1px] bg-surface-5 mb-3"></div>
 					<p>
 						If nothing is working and you need help, visit
 						<a :href="supportLink">our support page</a>
@@ -321,100 +297,51 @@ async function onApplyMigrationFix(eol) {
 				<ButtonStyled v-if="closable">
 					<button @click="errorModal.hide()"><XIcon /> Close</button>
 				</ButtonStyled>
-				<ButtonStyled v-if="hasDebugInfo">
-					<button :disabled="copied" @click="copyToClipboard(debugInfo)">
-						<template v-if="copied"> <CheckIcon class="text-green" /> Copied! </template>
-						<template v-else> <CopyIcon /> Copy debug info </template>
-					</button>
-				</ButtonStyled>
 			</div>
 			<template v-if="hasDebugInfo">
-				<div class="bg-button-bg rounded-xl mt-2 overflow-clip">
-					<button
-						class="flex items-center justify-between w-full bg-transparent border-0 px-4 py-3 cursor-pointer"
-						@click="errorCollapsed = !errorCollapsed"
-					>
-						<span class="text-contrast font-extrabold m-0">Debug information:</span>
-						<DropdownIcon
-							class="h-5 w-5 text-secondary transition-transform"
-							:class="{ 'rotate-180': !errorCollapsed }"
-						/>
-					</button>
-					<Collapsible :collapsed="errorCollapsed">
-						<pre class="m-0 px-4 py-3 bg-bg rounded-none whitespace-pre-wrap break-words overflow-x-auto max-w-full"
-							>{{ debugInfo }}</pre>
-					</Collapsible>
-				</div>
-				<template v-if="errorType === 'state_init'">
-        			<h2>⚠️ Migration Issue • Important Notice</h2>
-        			<p>We've detected a problem with our database migration system caused by inconsistent line endings between operating systems (Windows vs. macOS/Linux). This may affect app stability.</p>
-        			<p><strong>What’s happening?</strong> Our migration validator misreads modified migrations when line endings differ (CRLF ↔ LF), which can make the app unusable.</p>
-        			<p><strong>Why?</strong> Git’s automatic line-ending conversions and OS differences can cause these inconsistencies during builds.</p>
-        			<p><strong>What’s next?</strong> We’re working on a permanent fix. In the meantime, you can apply one of the quick fixes below depending on your system.</p>
-        			<h3>Do I need to apply a fix now?</h3>
-					<div>
-						<p class="notice__text">
-							If you're encountering an error while applying migrations, such as "Error while applying migrations: migration XXXXXXXXXX was previously applied but has been modified", or a similar issue with migration, the following actions might help:
-						</p>
-						<p>If none of the above steps help, you can try saving a copy of the file <code>app.db</code> to a safe location, such as <code>%appdata%\Roaming\AstralRinthApp</code>
-							on Windows or <code>~/Library/Application Support/AstralRinthApp</code> on macOS, then deleting the original file and letting the app re-create the database file.
-							Note that this may cause data loss inside the app, so make sure to back up your launcher data before applying this fixes.
-						</p>
+				<div class="flex flex-col gap-2">
+					<div class="w-full h-[1px] bg-surface-5"></div>
+
+					<div class="overflow-clip">
+						<button
+							class="flex items-center justify-between w-full bg-transparent border-0 py-4 cursor-pointer"
+							@click="errorCollapsed = !errorCollapsed"
+						>
+							<span class="flex items-center gap-2 text-contrast font-extrabold m-0">
+								<WrenchIcon class="h-4 w-4" />
+								Debug information
+							</span>
+							<DropdownIcon
+								class="h-5 w-5 text-secondary transition-transform"
+								:class="{ 'rotate-180': !errorCollapsed }"
+							/>
+						</button>
+						<Collapsible :collapsed="errorCollapsed">
+							<div
+								class="p-3 bg-surface-2 rounded-2xl text-xs grid grid-cols-[1fr_auto] max-w-full items-start"
+							>
+								<div
+									class="m-0 p-0 rounded-none bg-transparent text-sm font-mono break-words overflow-auto"
+								>
+									{{ debugInfo }}
+								</div>
+								<ButtonStyled circular>
+									<button
+										v-tooltip="'Copy debug info'"
+										:disabled="copied"
+										@click="copyToClipboard(debugInfo)"
+									>
+										<template v-if="copied"> <CheckIcon class="text-green" /> </template>
+										<template v-else> <CopyIcon /> </template>
+									</button>
+								</ButtonStyled>
+							</div>
+						</Collapsible>
 					</div>
-        		    <div class="flex justify-between">
-        		      <ol class="flex flex-col gap-3">
-        		        <li>
-        		          <ButtonStyled class="neon-button neon">
-        		            <button
-        		              title="Convert all line endings in migration files to LF (Unix-style: \\n)"
-        		              @click="onApplyMigrationFix('lf')"
-        		            >
-        		            	Apply fix for Unix like systems (Debian, Ubuntu, macOS and others)
-        		            </button>
-        		          </ButtonStyled>
-        		        </li>
-        		        <li>
-        		          <ButtonStyled class="neon-button neon">
-        		            <button
-        		              title="Convert all line endings in migration files to CRLF (Windows-style: \\r\\n)"
-        		              @click="onApplyMigrationFix('crlf')"
-        		            >
-								Apply fix for Windows
-        		            </button>
-        		          </ButtonStyled>
-        		        </li>
-        		      </ol>
-        		    </div>
-        		</template>
+				</div>
 			</template>
 		</div>
 	</ModalWrapper>
-	<ModalWrapper
-  	  ref="migrationFixCallbackModel"
-  	  header="💡 Migration fix report"
-  	  :closable="closable">
-  	  <div class="modal-body">
-  	    <h2 class="text-lg font-bold text-contrast space-y-2">
-  	      <template v-if="migrationFixSuccess === true">
-  	        <p class="flex items-center gap-2 neon-text">
-  	        	✅ The migration fix has been applied successfully. Please restart the launcher and try to log in to the game :)
-  	        </p>
-  	        <p class="mt-2 text-sm neon-text">
-				If the problem persists, please try the other fix.
-  	        </p>
-  	      </template>
-
-  	      <template v-else-if="migrationFixSuccess === false">
-  	        <p class="flex items-center gap-2 neon-text">
-  	        	❌ The migration fix failed or had no effect.
-  	        </p>
-  	        <p class="mt-2 text-sm neon-text">
-				If the problem persists, please try the other fix.
-  	        </p>
-  	      </template>
-  	    </h2>
-  	  </div>
-  	</ModalWrapper>
 </template>
 
 <style>
@@ -429,16 +356,6 @@ async function onApplyMigrationFix(eol) {
 </style>
 
 <style scoped lang="scss">
-@import '../../../../../packages/assets/styles/neon-button.scss';
-@import '../../../../../packages/assets/styles/neon-text.scss';
-
-code {
-  background: linear-gradient(90deg, #005eff, #00cfff);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
 .cta-button {
 	display: flex;
 	align-items: center;

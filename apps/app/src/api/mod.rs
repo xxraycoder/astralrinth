@@ -18,6 +18,7 @@ pub mod tags;
 pub mod utils;
 
 pub mod cache;
+pub mod files;
 pub mod friends;
 pub mod worlds;
 

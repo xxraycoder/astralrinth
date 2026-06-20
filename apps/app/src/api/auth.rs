@@ -11,6 +11,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             offline_login,
             elyby_login,
             elyby_auth_authenticate,
+            check_reachable,
             login,
             remove_user,
             get_default_user,
@@ -20,7 +21,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
-/// ### AR • Feature
+/// This code is modified by AstralRinth
 /// Create new offline user
 #[tauri::command]
 pub async fn offline_login(name: &str) -> Result<Credentials> {
@@ -28,7 +29,7 @@ pub async fn offline_login(name: &str) -> Result<Credentials> {
     Ok(credentials)
 }
 
-/// ### AR • Feature
+/// This code is modified by AstralRinth
 /// Create new Ely.by user
 #[tauri::command]
 pub async fn elyby_login(
@@ -40,7 +41,7 @@ pub async fn elyby_login(
     Ok(credentials)
 }
 
-/// ### AR • Feature
+/// This code is modified by AstralRinth
 /// Authenticate Ely.by user
 #[tauri::command]
 pub async fn elyby_auth_authenticate(
@@ -77,6 +78,13 @@ pub async fn elyby_auth_authenticate(
         }
     };
     Ok(text)
+}
+
+/// Checks if the authentication servers are reachable.
+#[tauri::command]
+pub async fn check_reachable() -> Result<()> {
+    minecraft_auth::check_reachable().await?;
+    Ok(())
 }
 
 /// Authenticate a user with Hydra - part 1

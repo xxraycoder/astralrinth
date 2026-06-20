@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { MoreVerticalIcon, TrashIcon, UserIcon, XIcon } from '@modrinth/assets'
-import { Accordion, Avatar, ButtonStyled, OverflowMenu } from '@modrinth/ui'
+import {
+	Accordion,
+	Avatar,
+	ButtonStyled,
+	defineMessages,
+	OverflowMenu,
+	useVIntl,
+} from '@modrinth/ui'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { defineMessages, useVIntl } from '@vintl/vintl'
 import { useTemplateRef } from 'vue'
 
 import ContextMenu from '@/components/ui/ContextMenu.vue'
@@ -100,7 +106,7 @@ const messages = defineMessages({
 		:open-by-default="openByDefault"
 		:force-open="isSearching"
 		:button-class="
-			'pl-4 pr-3 flex w-full items-center bg-transparent border-0 p-0' +
+			'flex w-full items-center bg-transparent border-0 p-0' +
 			(isSearching
 				? ''
 				: ' cursor-pointer hover:brightness-[--hover-brightness] active:scale-[0.98] transition-all')
@@ -116,7 +122,7 @@ const messages = defineMessages({
 				<div
 					v-for="friend in friends"
 					:key="friend.username"
-					class="group grid items-center grid-cols-[auto_1fr_auto] gap-2 hover:bg-button-bg transition-colors rounded-full ml-4 mr-1"
+					class="group grid items-center grid-cols-[auto_1fr_auto] gap-2 hover:bg-button-bg transition-colors rounded-full mr-1"
 					@contextmenu.prevent.stop="
 						(event) => friendOptions?.showMenu(event, friend, createContextMenuOptions(friend))
 					"

@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { ChevronRightIcon, SaveIcon, UndoIcon, XIcon } from '@modrinth/assets'
-import { Avatar, ButtonStyled, commonMessages, injectNotificationManager } from '@modrinth/ui'
-import { defineMessages, useVIntl } from '@vintl/vintl'
+import {
+	Avatar,
+	ButtonStyled,
+	commonMessages,
+	defineMessages,
+	injectNotificationManager,
+	StyledInput,
+	useVIntl,
+} from '@modrinth/ui'
 import { computed, ref } from 'vue'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
@@ -97,12 +104,11 @@ const messages = defineMessages({
 			<h2 class="text-lg font-extrabold text-contrast mt-0 mb-1">
 				{{ formatMessage(messages.name) }}
 			</h2>
-			<input
+			<StyledInput
 				v-model="name"
-				type="text"
 				:placeholder="formatMessage(messages.placeholderName)"
-				class="w-full"
 				autocomplete="off"
+				wrapper-class="w-full"
 			/>
 			<HideFromHomeOption v-model="hideFromHome" class="mt-3" />
 		</div>

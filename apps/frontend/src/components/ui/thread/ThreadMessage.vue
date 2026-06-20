@@ -1,10 +1,11 @@
 <template>
 	<div
-		class="message"
+		class="message px-4 py-3"
 		:class="{
 			'has-body': message.body.type === 'text' && !forceCompact,
 			'no-actions': noLinks,
-			private: message.body.private,
+			private: isPrivateMessage,
+			'show-private-bg': flags.showModeratorPrivateMessageHighlight,
 		}"
 	>
 		<template v-if="members[message.author_id]">
@@ -22,11 +23,6 @@
 				/>
 			</AutoLink>
 			<span :class="`message__author role-${members[message.author_id].role}`">
-				<LockIcon
-					v-if="message.body.private"
-					v-tooltip="'Only visible to moderators'"
-					class="private-icon"
-				/>
 				<AutoLink :to="noLinks ? '' : `/user/${members[message.author_id].username}`">
 					{{ members[message.author_id].username }}
 				</AutoLink>
@@ -35,18 +31,40 @@
 					v-else-if="members[message.author_id].role === 'admin'"
 					v-tooltip="'Modrinth Team'"
 				/>
+				<EyeOffIcon
+					v-if="isPrivateMessage"
+					v-tooltip="'Only visible to moderators'"
+					class="ml-1 text-orange"
+				/>
 				<MicrophoneIcon
 					v-if="report && message.author_id === report.reporter_user?.id"
 					v-tooltip="'Reporter'"
 					class="reporter-icon"
 				/>
+				<span
+					v-if="message.preview"
+					class="border-blue/60 rounded-full border border-solid bg-highlight-blue px-2 py-0.5 text-xs font-semibold text-blue"
+				>
+					Preview
+				</span>
 			</span>
 		</template>
 		<template v-else>
-			<div class="message__icon backed-svg circle moderation-color" :class="{ raised: raised }">
+			<div
+				class="message__icon backed-svg circle moderation-color"
+				:class="{
+					raised: raised,
+					'system-message-icon': ['tech_review_entered', 'tech_review_exit_file_deleted'].includes(
+						message.body.type,
+					),
+				}"
+			>
 				<ScaleIcon />
 			</div>
-			<span class="message__author moderation-color">
+			<span
+				v-if="!['tech_review_entered', 'tech_review_exit_file_deleted'].includes(message.body.type)"
+				class="message__author moderation-color"
+			>
 				Moderator
 				<ScaleIcon v-tooltip="'Moderator'" />
 			</span>
@@ -62,6 +80,12 @@
 				<span v-if="message.body.new_status === 'processing'">
 					submitted the project for review.
 				</span>
+				<span v-else-if="message.body.old_status === 'processing'">
+					reviewed the project and set its status to <Badge :type="message.body.new_status" />.
+				</span>
+				<span v-else-if="message.body.new_status === 'draft'">
+					reverted this project back to a <Badge :type="message.body.new_status" />.
+				</span>
 				<span v-else>
 					changed the project's status from <Badge :type="message.body.old_status" /> to
 					<Badge :type="message.body.new_status" />.
@@ -69,41 +93,62 @@
 			</template>
 			<span v-else-if="message.body.type === 'thread_closure'">closed the thread.</span>
 			<span v-else-if="message.body.type === 'thread_reopen'">reopened the thread.</span>
+			<span v-else-if="message.body.type === 'tech_review'">
+				completed technical review and marked project as
+				<Badge :type="message.body.verdict" />.
+			</span>
+			<span v-else-if="message.body.type === 'tech_review_entered'">
+				The project has entered the technical review queue.
+			</span>
+			<span v-else-if="message.body.type === 'tech_review_exit_file_deleted'">
+				The project has left the technical review queue as all files pending review were deleted by
+				the user.
+			</span>
 		</div>
 		<span class="message__date">
-			<span v-tooltip="$dayjs(message.created).format('MMMM D, YYYY [at] h:mm A')">
+			<span v-tooltip="formatDateTime(message.created)">
 				{{ timeSincePosted }}
 			</span>
 		</span>
 		<div v-if="isStaff(auth.user) && message.author_id === auth.user.id" class="message__actions">
-			<OverflowMenu
-				class="btn btn-transparent icon-only"
-				:options="[
-					{
-						id: 'delete',
-						action: () => deleteMessage(),
-						color: 'red',
-						hoverFilled: true,
-					},
-				]"
-			>
-				<MoreHorizontalIcon />
-				<template #delete> <TrashIcon /> Delete </template>
-			</OverflowMenu>
+			<ButtonStyled circular type="transparent">
+				<OverflowMenu
+					class="btn-dropdown-animation"
+					:options="[
+						{
+							id: 'delete',
+							action: () => deleteMessage(),
+							color: 'red',
+							hoverFilled: true,
+						},
+					]"
+				>
+					<MoreHorizontalIcon />
+					<template #delete> <TrashIcon /> Delete </template>
+				</OverflowMenu>
+			</ButtonStyled>
 		</div>
 	</div>
 </template>
 
 <script setup>
 import {
-	LockIcon,
+	EyeOffIcon,
 	MicrophoneIcon,
 	ModrinthIcon,
 	MoreHorizontalIcon,
 	ScaleIcon,
 	TrashIcon,
 } from '@modrinth/assets'
-import { AutoLink, Avatar, Badge, OverflowMenu, useRelativeTime } from '@modrinth/ui'
+import {
+	AutoLink,
+	Avatar,
+	Badge,
+	ButtonStyled,
+	OverflowMenu,
+	useFormatDateTime,
+	useRelativeTime,
+} from '@modrinth/ui'
 import { renderString } from '@modrinth/utils'
 
 import { isStaff } from '~/helpers/users.js'
@@ -140,6 +185,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update-thread'])
+const flags = useFeatureFlags()
 
 const formattedMessage = computed(() => {
 	const body = renderString(props.message.body.body)
@@ -158,7 +204,21 @@ const formattedMessage = computed(() => {
 })
 
 const formatRelativeTime = useRelativeTime()
+const formatDateTime = useFormatDateTime({
+	timeStyle: 'short',
+	dateStyle: 'long',
+})
+
 const timeSincePosted = ref(formatRelativeTime(props.message.created))
+
+const isPrivateMessage = computed(() => {
+	return (
+		props.message.body.private ||
+		['tech_review', 'tech_review_entered', 'tech_review_exit_file_deleted'].includes(
+			props.message.body.type,
+		)
+	)
+})
 
 async function deleteMessage() {
 	await useBaseFetch(`message/${props.message.id}`, {
@@ -170,15 +230,13 @@ async function deleteMessage() {
 
 <style lang="scss" scoped>
 .message {
-	--gap-size: var(--spacing-card-xs);
 	display: flex;
 	flex-direction: row;
-	gap: var(--gap-size);
+	gap: var(--spacing-card-sm);
 	flex-wrap: wrap;
 	align-items: center;
-	border-radius: var(--size-rounded-card);
-	padding: var(--spacing-card-md);
 	word-break: break-word;
+	position: relative;
 
 	.avatar,
 	.backed-svg {
@@ -186,14 +244,12 @@ async function deleteMessage() {
 	}
 
 	&.has-body {
-		--gap-size: var(--spacing-card-sm);
 		display: grid;
 		grid-template:
 			'icon author actions'
 			'icon body actions'
 			'date date date';
 		grid-template-columns: min-content auto 1fr;
-		column-gap: var(--gap-size);
 		row-gap: var(--spacing-card-xs);
 
 		.message__icon {
@@ -208,11 +264,20 @@ async function deleteMessage() {
 
 	&:not(.no-actions):hover,
 	&:not(.no-actions):focus-within {
-		background-color: var(--color-table-alternate-row);
+		background-color: var(--surface-2-5);
 
 		.message__actions {
 			opacity: 1;
 		}
+	}
+
+	&.private.show-private-bg::before {
+		content: '';
+		inset: 0;
+		position: absolute;
+		background-color: var(--color-orange);
+		opacity: 0.05;
+		pointer-events: none;
 	}
 
 	&.no-actions {
@@ -294,10 +359,6 @@ a:active + .message__author a,
 	color: var(--color-purple);
 }
 
-.private-icon {
-	color: var(--color-gray);
-}
-
 @media screen and (min-width: 600px) {
 	.message {
 		//grid-template:
@@ -311,6 +372,7 @@ a:active + .message__author a,
 				'icon body actions'
 				'date date date';
 			grid-template-columns: min-content auto 1fr;
+			grid-template-rows: min-content 1fr auto;
 		}
 	}
 }
@@ -325,12 +387,16 @@ a:active + .message__author a,
 				'icon author date actions'
 				'icon body body actions';
 			grid-template-columns: min-content auto 1fr;
-			grid-template-rows: min-content 1fr auto;
+			grid-template-rows: min-content 1fr;
 		}
 	}
 }
 
 .private {
 	color: var(--color-icon);
+}
+
+.system-message-icon {
+	--size: 2rem !important;
 }
 </style>

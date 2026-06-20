@@ -11,20 +11,29 @@
   "nags.add-icon.title": {
     "defaultMessage": "Simge ekle"
   },
+  "nags.add-java-address.description": {
+    "defaultMessage": "Java Sürümü oyuncuların sunucunuza girebileceği IP adresi ve portu girin."
+  },
+  "nags.add-java-address.title": {
+    "defaultMessage": "Java adresleri ekle"
+  },
+  "nags.add-links-server.description": {
+    "defaultMessage": "Modrinth'in dışında herhangi ilgili bağlantı ekleyin, website, mağaza veya Discord daveti gibi."
+  },
+  "nags.add-links-server.title": {
+    "defaultMessage": "Dış bağlantı ekle"
+  },
   "nags.add-links.description": {
-    "defaultMessage": "Modrinth'in dışına gönderen herhangi bağlantı ekle. Mesela kaynak kodu, hata takipçisi veya Discord daveti."
+    "defaultMessage": "Modrinth'in dışına gönderen herhangi ilgili bağlantı ekle. Mesela kaynak kodu, hata takipçisi veya Discord daveti."
   },
   "nags.add-links.title": {
     "defaultMessage": "Dış bağlantı ekle"
-  },
-  "nags.all-tags-selected.description": {
-    "defaultMessage": "Mevcut {totalAvailableTags} etiketin tamamını seçtiniz. Etiketlerin amacı, kullanıcıların ilgili projeleri bulmasına yardımcı olmaktır. Lütfen yalnızca projenizle alakalı etiketleri seçiniz."
   },
   "nags.all-tags-selected.title": {
     "defaultMessage": "Uygun etiketleri seç"
   },
   "nags.description-too-short.description": {
-    "defaultMessage": "Açıklamanızda {length} okunabilir karakter var. Açık ve bilgilendirici bir açıklama için en az {minChars} karakter önerilir."
+    "defaultMessage": "Açıklamanız {length, plural, one {# okunabilir karakter} other {# okunabilir karakter}} uzunluğunda. Net ve bilgilendirici bir açıklama oluşturmak için en az {minChars, plural, one {# karakter} other {# karakter}} önerilir."
   },
   "nags.description-too-short.title": {
     "defaultMessage": "Açıklamayı uzat"
@@ -54,10 +63,16 @@
     "defaultMessage": "Galeriye göz at"
   },
   "nags.gpl-license-source-required.description": {
-    "defaultMessage": "Kullandığın lisans kaynak kodunun açık olmasını gerektiriyor. Lütfen kaynak kodun için bir bağlantı veya her sürüm için kaynak dosyası ekle ya da başka bir lisans kullan."
+    "defaultMessage": "Sizin kullandığınız {type} lisansı, kaynak kodunun erişilebilir olmasını gerektiriyor. Lütfen her ek sürüm için bir kaynak kod bağlantısı veya kaynak dosyası sağlayın ya da farklı bir lisans kullanmayı düşünün."
   },
   "nags.gpl-license-source-required.title": {
     "defaultMessage": "Kaynak kodu sun"
+  },
+  "nags.identical-links.description": {
+    "defaultMessage": "Bazı dış bağlantılarınız aynı. Her bağlantı sadece bir kere doğru bağlantı türüyle girilmelidir."
+  },
+  "nags.identical-links.title": {
+    "defaultMessage": "Özdeş bağlantıları temizle"
   },
   "nags.image-heavy-description.description": {
     "defaultMessage": "Açıklaman yeterli düz yazı veya resim açıklamalı içermeli ki ekran okuyucu veya patates internet kullananlar için erişilebilir olsun."
@@ -114,22 +129,31 @@
     "defaultMessage": "Tekrar göndermeden önce moderasyon ekibinin dediği şeyleri gözden geçir"
   },
   "nags.moderator-feedback.title": {
-    "defaultMessage": "Moderasyon ekibini dinle"
-  },
-  "nags.multiple-resolution-tags.description": {
-    "defaultMessage": "{count} tane boyut etiketi seçtin ({tags}). Kaynak paketleri genelde sadece bir boyut etiketine olmalı ve bu etiket birincil boyutları ile aynı olmalı."
+    "defaultMessage": "Geri bildirimleri incele"
   },
   "nags.multiple-resolution-tags.title": {
     "defaultMessage": "Doğru boyutu seç"
   },
-  "nags.select-environments.description": {
-    "defaultMessage": "Projenin çalıştığı ortamları seçin."
+  "nags.select-compatibility.description": {
+    "defaultMessage": "Sunucunuzun desteklediği sürümleri seçin ve bir Mod Paketi seçin ya da kendinizinkini yükleyin."
   },
-  "nags.select-environments.title": {
-    "defaultMessage": "Ortamları seç"
+  "nags.select-compatibility.title": {
+    "defaultMessage": "Uyumluluk seçiniz"
+  },
+  "nags.select-country.description": {
+    "defaultMessage": "Sunucunuzun hangi bölgede bulunduğunu oyunculara belirtin."
+  },
+  "nags.select-country.title": {
+    "defaultMessage": "Bölge seç"
+  },
+  "nags.select-language.description": {
+    "defaultMessage": "Sunucunuz tarafından desteklenen dil veya dilleri seçiniz."
+  },
+  "nags.select-language.title": {
+    "defaultMessage": "Dil seç"
   },
   "nags.select-license.description": {
-    "defaultMessage": "Projenin altında paylaşıldığı lisansı seçin."
+    "defaultMessage": "Lütfen {type} ürününüzün hangi lisans altında dağıtıldığını seçin."
   },
   "nags.select-license.title": {
     "defaultMessage": "Bir lisans seç"
@@ -140,11 +164,11 @@
   "nags.select-tags.title": {
     "defaultMessage": "Etiketleri seç"
   },
+  "nags.server.title": {
+    "defaultMessage": "Sunucu ayarlara göz at"
+  },
   "nags.settings.description.title": {
     "defaultMessage": "Açıklama ayarlarına göz at"
-  },
-  "nags.settings.environments.title": {
-    "defaultMessage": "Ortam ayarlarını ziyaret et"
   },
   "nags.settings.license.title": {
     "defaultMessage": "Lisans ayarlarına göz at"
@@ -170,26 +194,29 @@
   "nags.summary-special-formatting.title": {
     "defaultMessage": "Özetini düzenle"
   },
-  "nags.summary-too-short.description": {
-    "defaultMessage": "Özetin {length} karakter. Bilgilendirici ve ilgi çekici bir özet için en az {minChars} karakter önerilir."
-  },
   "nags.summary-too-short.title": {
     "defaultMessage": "Özeti uzat"
   },
   "nags.title-contains-technical-info.description": {
-    "defaultMessage": "Projenin ismini hatırlanabilir ve kolayca bulunabilir bir şey yap. Sürüm ve yükleyici bilgisi projenin yanında otomatik olarak gözükecek."
+    "defaultMessage": "Projenizin Adını temiz tutmak onu unutulmaz yapar ve bulunmasını kolaylaştırır. Sürüm ve yükleyici bilgileri projenizin yanında otomatik olarak görüntülenir."
   },
   "nags.title-contains-technical-info.title": {
     "defaultMessage": "İsmi düzenle"
   },
-  "nags.too-many-tags.description": {
-    "defaultMessage": "{tagCount} etiket seçtin. Projenin alakalı aramalarda çıkması için {maxTagCount} veya daha az etiket seçtiğine emin ol."
+  "nags.too-many-tags-server.description": {
+    "defaultMessage": "{tagCount,plural,one {#etiket}other {#etiketler}} etiket seçtiniz. Projenizin ilgili arama sonuçlarında görünmesini sağlamak için {maxTagCount} veya daha az etikete indirmeyi düşünün."
+  },
+  "nags.too-many-tags-server.title": {
+    "defaultMessage": "Uygun etiketleri seç"
   },
   "nags.too-many-tags.title": {
     "defaultMessage": "Uygun etiketleri seç"
   },
   "nags.upload-gallery-image.description": {
-    "defaultMessage": "İçeriğini göstermek için en az bir galeri resmi zorunlu."
+    "defaultMessage": "{type} içeriğinizi sergilemek için en az bir galeri görseli gereklidir."
+  },
+  "nags.upload-gallery-image.resourcepack-type": {
+    "defaultMessage": "ses veya yerelleştirme paketleri hariç kaynak paketi. Eğer paketiniz bu tanıma uyuyorsa, lütfen uygun etiketi seçin"
   },
   "nags.upload-gallery-image.title": {
     "defaultMessage": "Galeriye resim yükle"
@@ -213,4 +240,3 @@
     "defaultMessage": "Bağlantı ayarlarına göz at"
   }
 }
-

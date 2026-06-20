@@ -11,6 +11,10 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	download: {
+		type: String,
+		default: null,
+	},
 	action: {
 		type: Function,
 		default: null,
@@ -43,6 +47,10 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	disabled: {
+		type: Boolean,
+		default: false,
+	},
 })
 
 const accentedButton = computed(() =>
@@ -69,6 +77,7 @@ const classes = computed(() => {
 		'btn-hover-filled-only': props.hoverFilledOnly,
 		'btn-outline': props.outline,
 		'color-accent-contrast': accentedButton,
+		disabled: props.disabled,
 	}
 })
 </script>
@@ -78,10 +87,14 @@ const classes = computed(() => {
 		v-if="link && link.startsWith('/')"
 		class="btn"
 		:class="classes"
-		:to="link"
+		:to="disabled ? '' : link"
 		:target="external ? '_blank' : '_self'"
 		@click="
 			(event) => {
+				if (disabled) {
+					event.preventDefault()
+					return
+				}
 				if (action) {
 					action(event)
 				}
@@ -96,10 +109,15 @@ const classes = computed(() => {
 		v-else-if="link"
 		class="btn"
 		:class="classes"
-		:href="link"
+		:href="disabled ? undefined : link"
+		:download="download || undefined"
 		:target="external ? '_blank' : '_self'"
 		@click="
 			(event) => {
+				if (disabled) {
+					event.preventDefault()
+					return
+				}
 				if (action) {
 					action(event)
 				}
@@ -110,7 +128,7 @@ const classes = computed(() => {
 		<ExternalIcon v-if="external && !iconOnly" class="external-icon" />
 		<UnknownIcon v-if="!$slots.default" />
 	</a>
-	<button v-else class="btn" :class="classes" @click="action">
+	<button v-else class="btn" :class="classes" :disabled="disabled" @click="action">
 		<slot />
 		<UnknownIcon v-if="!$slots.default" />
 	</button>

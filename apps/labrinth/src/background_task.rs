@@ -1,16 +1,23 @@
+use crate::database;
+use crate::database::PgPool;
+use crate::database::models::ids::DBUserId;
+use crate::database::models::notification_item::NotificationBuilder;
 use crate::database::redis::RedisPool;
+use crate::models::notifications::NotificationBody;
+use crate::queue::analytics::cache::cache_analytics;
 use crate::queue::billing::{index_billing, index_subscriptions};
 use crate::queue::email::EmailQueue;
 use crate::queue::payouts::{
     PayoutsQueue, index_payouts_notifications,
-    insert_bank_balances_and_webhook, process_payout,
+    insert_bank_balances_and_webhook, process_affiliate_payouts,
+    process_payout, remove_payouts_for_refunded_charges,
 };
-use crate::search::indexing::index_projects;
+use crate::search::SearchBackend;
 use crate::util::anrok;
-use crate::{database, search};
+use actix_web::web;
 use clap::ValueEnum;
-use sqlx::Postgres;
-use tracing::{error, info, warn};
+use eyre::WrapErr;
+use tracing::info;
 
 #[derive(ValueEnum, Debug, Copy, Clone, PartialEq, Eq)]
 #[clap(rename_all = "kebab_case")]
@@ -19,31 +26,47 @@ pub enum BackgroundTask {
     ReleaseScheduled,
     UpdateVersions,
     Payouts,
+    SyncPayoutStatuses,
     IndexBilling,
     IndexSubscriptions,
     Migrations,
     Mail,
+    /// Queries server project analytics (e.g. number of verified plays in last
+    /// 2 weeks for server projects) and caches them in Redis.
+    CacheAnalytics,
+    /// Attempts to ping Minecraft Java servers as if we were a client, to
+    /// collect info on if they're online, game version, description, etc.
+    PingMinecraftJavaServers,
+    /// Queues Discord Creator Club role claim emails for newly eligible users.
+    DiscordRoleEmailCampaign,
 }
 
 impl BackgroundTask {
     #[allow(clippy::too_many_arguments)]
     pub async fn run(
         self,
-        pool: sqlx::Pool<Postgres>,
+        pool: PgPool,
+        ro_pool: PgPool,
         redis_pool: RedisPool,
-        search_config: search::SearchConfig,
+        search_backend: web::Data<dyn SearchBackend>,
         clickhouse: clickhouse::Client,
         stripe_client: stripe::Client,
         anrok_client: anrok::Client,
         email_queue: EmailQueue,
-    ) {
+        mural_client: muralpay::Client,
+    ) -> eyre::Result<()> {
         use BackgroundTask::*;
         match self {
             Migrations => run_migrations().await,
-            IndexSearch => index_search(pool, redis_pool, search_config).await,
+            IndexSearch => {
+                index_search(ro_pool, redis_pool, search_backend).await
+            }
             ReleaseScheduled => release_scheduled(pool).await,
             UpdateVersions => update_versions(pool, redis_pool).await,
             Payouts => payouts(pool, clickhouse, redis_pool).await,
+            SyncPayoutStatuses => {
+                sync_payout_statuses(pool, mural_client).await
+            }
             IndexBilling => {
                 index_billing(
                     stripe_client,
@@ -53,7 +76,7 @@ impl BackgroundTask {
                 )
                 .await;
 
-                update_bank_balances(pool).await;
+                update_bank_balances(pool).await
             }
             IndexSubscriptions => {
                 index_subscriptions(
@@ -62,71 +85,72 @@ impl BackgroundTask {
                     stripe_client,
                     anrok_client,
                 )
-                .await
+                .await;
+                Ok(())
             }
-            Mail => {
-                run_email(email_queue).await;
+            Mail => run_email(email_queue).await,
+            CacheAnalytics => {
+                cache_analytics(&pool, &redis_pool, &clickhouse).await
+            }
+            PingMinecraftJavaServers => {
+                ping_minecraft_java_servers(pool, redis_pool, clickhouse).await
+            }
+            DiscordRoleEmailCampaign => {
+                discord_role_email_campaign(pool, redis_pool).await
             }
         }
     }
 }
 
-pub async fn run_email(email_queue: EmailQueue) {
+pub async fn run_email(email_queue: EmailQueue) -> eyre::Result<()> {
     // Only index for 5 emails at a time, to reduce transaction length,
     // for a total of 100 emails.
     for _ in 0..20 {
         let then = std::time::Instant::now();
 
-        match email_queue.index(5).await {
-            Ok(true) => {
-                info!(
-                    "Indexed email queue in {}ms",
-                    then.elapsed().as_millis()
-                );
-            }
-            Ok(false) => {
-                info!("No more emails to index");
-                break;
-            }
-            Err(error) => {
-                error!(%error, "Failed to index email queue");
-            }
+        let indexed = email_queue
+            .index(5)
+            .await
+            .wrap_err("failed to index email queue")?;
+        if indexed {
+            info!("Indexed email queue in {}ms", then.elapsed().as_millis());
+        } else {
+            info!("No more emails to index");
+            break;
         }
     }
+
+    Ok(())
 }
 
-pub async fn update_bank_balances(pool: sqlx::Pool<Postgres>) {
+pub async fn update_bank_balances(pool: PgPool) -> eyre::Result<()> {
     let payouts_queue = PayoutsQueue::new();
 
-    match insert_bank_balances_and_webhook(&payouts_queue, &pool).await {
-        Ok(_) => info!("Bank balances updated successfully"),
-        Err(error) => error!(%error, "Bank balances update failed"),
-    }
+    insert_bank_balances_and_webhook(&payouts_queue, &pool)
+        .await
+        .wrap_err("failed to update bank balances")?;
+    info!("Bank balances updated successfully");
+    Ok(())
 }
 
-pub async fn run_migrations() {
-    database::check_for_migrations()
-        .await
-        .expect("An error occurred while running migrations.");
+pub async fn run_migrations() -> eyre::Result<()> {
+    database::check_for_migrations().await?;
+    Ok(())
 }
 
 pub async fn index_search(
-    pool: sqlx::Pool<Postgres>,
+    ro_pool: PgPool,
     redis_pool: RedisPool,
-    search_config: search::SearchConfig,
-) {
+    search_backend: web::Data<dyn SearchBackend>,
+) -> eyre::Result<()> {
     info!("Indexing local database");
-    let result = index_projects(pool, redis_pool, &search_config).await;
-    if let Err(e) = result {
-        warn!("Local project indexing failed: {:?}", e);
-    }
-    info!("Done indexing local database");
+    search_backend.index_projects(ro_pool, redis_pool).await
 }
 
-pub async fn release_scheduled(pool: sqlx::Pool<Postgres>) {
+pub async fn release_scheduled(pool: PgPool) -> eyre::Result<()> {
     info!("Releasing scheduled versions/projects!");
 
-    let projects_results = sqlx::query!(
+    sqlx::query!(
         "
         UPDATE mods
         SET status = requested_status
@@ -134,14 +158,11 @@ pub async fn release_scheduled(pool: sqlx::Pool<Postgres>) {
         ",
         crate::models::projects::ProjectStatus::Scheduled.as_str(),
     )
-        .execute(&pool)
-        .await;
+    .execute(&pool)
+    .await
+    .wrap_err("failed syncing scheduled releases for projects")?;
 
-    if let Err(e) = projects_results {
-        warn!("Syncing scheduled releases for projects failed: {:?}", e);
-    }
-
-    let versions_results = sqlx::query!(
+    sqlx::query!(
         "
         UPDATE versions
         SET status = requested_status
@@ -149,55 +170,183 @@ pub async fn release_scheduled(pool: sqlx::Pool<Postgres>) {
         ",
         crate::models::projects::VersionStatus::Scheduled.as_str(),
     )
-        .execute(&pool)
-        .await;
-
-    if let Err(e) = versions_results {
-        warn!("Syncing scheduled releases for versions failed: {:?}", e);
-    }
+    .execute(&pool)
+    .await
+    .wrap_err("failed syncing scheduled releases for versions")?;
 
     info!("Finished releasing scheduled versions/projects");
+    Ok(())
 }
 
 pub async fn update_versions(
-    pool: sqlx::Pool<Postgres>,
+    pool: PgPool,
     redis_pool: RedisPool,
-) {
+) -> eyre::Result<()> {
     info!("Indexing game versions list from Mojang");
-    let result = version_updater::update_versions(&pool, &redis_pool).await;
-    if let Err(e) = result {
-        warn!("Version update failed: {}", e);
-    }
+    version_updater::update_versions(&pool, &redis_pool)
+        .await
+        .wrap_err("failed to update game versions")?;
     info!("Done indexing game versions");
+    Ok(())
 }
 
 pub async fn payouts(
-    pool: sqlx::Pool<Postgres>,
+    pool: PgPool,
     clickhouse: clickhouse::Client,
     redis_pool: RedisPool,
-) {
+) -> eyre::Result<()> {
     info!("Started running payouts");
-    let result = process_payout(&pool, &clickhouse).await;
-    if let Err(e) = result {
-        warn!("Payouts run failed: {:?}", e);
-    }
+    process_payout(&pool, &clickhouse)
+        .await
+        .wrap_err("payout processing failed")?;
 
-    let result = index_payouts_notifications(&pool, &redis_pool).await;
-    if let Err(e) = result {
-        warn!("Payouts notifications indexing failed: {:?}", e);
-    }
+    index_payouts_notifications(&pool, &redis_pool)
+        .await
+        .wrap_err("payout notifications indexing failed")?;
+
+    process_affiliate_payouts(&pool)
+        .await
+        .wrap_err("affiliate payouts processing failed")?;
+
+    remove_payouts_for_refunded_charges(&pool)
+        .await
+        .wrap_err("removing payouts for refunded charges failed")?;
 
     info!("Done running payouts");
+    Ok(())
+}
+
+pub async fn discord_role_email_campaign(
+    pool: PgPool,
+    redis_pool: RedisPool,
+) -> eyre::Result<()> {
+    info!("Started indexing Discord role email campaign");
+
+    let mut txn = pool
+        .begin()
+        .await
+        .wrap_err("failed to begin Discord role email campaign transaction")?;
+
+    let lock_acquired = sqlx::query_scalar!(
+        r#"SELECT pg_try_advisory_xact_lock(hashtextextended('discord_role_email_campaign', 0)) AS "lock_acquired!""#,
+    )
+    .fetch_one(&mut txn)
+    .await
+    .wrap_err("failed to acquire Discord role email campaign lock")?;
+
+    if !lock_acquired {
+        info!("Discord role email campaign is already running");
+        return Ok(());
+    }
+
+    let user_ids = sqlx::query_scalar!(
+        r#"
+        WITH
+          user_project_downloads AS (
+            SELECT
+              tm.user_id,
+              SUM(m.downloads)::BIGINT total_downloads
+            FROM team_members tm
+            INNER JOIN mods m ON m.team_id = tm.team_id
+            WHERE tm.accepted = TRUE
+            GROUP BY tm.user_id
+          )
+        SELECT u.id AS "id!"
+        FROM users u
+        INNER JOIN user_project_downloads upd ON upd.user_id = u.id
+        WHERE u.email IS NOT NULL
+          AND u.email_verified = TRUE
+          AND upd.total_downloads > 20000
+          AND NOT EXISTS (
+            SELECT 1
+            FROM notifications n
+            WHERE n.user_id = u.id
+              AND n.body ->> 'type' = 'discord_role_creator_club'
+          )
+        ORDER BY upd.total_downloads DESC, u.id
+        LIMIT 1000
+        "#,
+    )
+    .fetch_all(&mut txn)
+    .await
+    .wrap_err("failed to fetch Discord role email campaign recipients")?
+    .into_iter()
+    .map(DBUserId)
+    .collect::<Vec<_>>();
+
+    let count = user_ids.len();
+
+    if !user_ids.is_empty() {
+        NotificationBuilder {
+            body: NotificationBody::DiscordRoleCreatorClub,
+        }
+        .insert_many(user_ids, &mut txn, &redis_pool)
+        .await
+        .wrap_err("failed to queue Discord role email notifications")?;
+    }
+
+    txn.commit()
+        .await
+        .wrap_err("failed to commit Discord role email campaign transaction")?;
+
+    info!(count, "Finished indexing Discord role email campaign");
+    Ok(())
+}
+
+pub async fn sync_payout_statuses(
+    pool: PgPool,
+    mural: muralpay::Client,
+) -> eyre::Result<()> {
+    // Mural sets a max limit of 100 for search payouts endpoint
+    const LIMIT: u32 = 100;
+
+    info!("Started syncing payout statuses");
+
+    crate::queue::payouts::mural::sync_pending_payouts_from_mural(
+        &pool, &mural, LIMIT,
+    )
+    .await
+    .wrap_err("failed to sync pending payouts from Mural")?;
+
+    crate::queue::payouts::mural::sync_failed_mural_payouts_to_labrinth(
+        &pool, &mural, LIMIT,
+    )
+    .await
+    .wrap_err("failed to sync failed Mural payouts to Labrinth")?;
+
+    info!("Done syncing payout statuses");
+    Ok(())
+}
+
+pub async fn ping_minecraft_java_servers(
+    pool: PgPool,
+    redis_pool: RedisPool,
+    clickhouse: clickhouse::Client,
+) -> eyre::Result<()> {
+    info!("Started pinging Minecraft Java servers");
+
+    let server_ping_queue = crate::queue::server_ping::ServerPingQueue::new(
+        pool, redis_pool, clickhouse,
+    );
+
+    server_ping_queue
+        .ping_minecraft_java_servers()
+        .await
+        .wrap_err("failed to ping Minecraft Java servers")?;
+    info!("Successfully pinged Minecraft Java servers");
+
+    info!("Done pinging Minecraft Java servers");
+    Ok(())
 }
 
 mod version_updater {
     use std::sync::LazyLock;
 
+    use crate::database::PgPool;
     use crate::database::models::legacy_loader_fields::MinecraftGameVersion;
     use crate::database::redis::RedisPool;
     use chrono::{DateTime, Utc};
     use serde::Deserialize;
-    use sqlx::Postgres;
     use thiserror::Error;
     use tracing::warn;
 
@@ -225,7 +374,7 @@ mod version_updater {
     }
 
     pub async fn update_versions(
-        pool: &sqlx::Pool<Postgres>,
+        pool: &PgPool,
         redis: &RedisPool,
     ) -> Result<(), VersionIndexingError> {
         let input = reqwest::get(

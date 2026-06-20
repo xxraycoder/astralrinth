@@ -1,0 +1,85 @@
+import { useGeneratedState } from '~/composables/generated'
+import { projectQueryOptions } from '~/composables/queries/project'
+import { useAppQueryClient } from '~/composables/query-client'
+import { getProjectTypeForUrlShorthand } from '~/helpers/projects.js'
+import { useServerModrinthClient } from '~/server/utils/api-client'
+
+// All valid project type URL segments
+const PROJECT_TYPES = [
+	'project',
+	'mod',
+	'plugin',
+	'datapack',
+	'shader',
+	'resourcepack',
+	'modpack',
+	'server',
+	'minecraft_java_server',
+]
+
+export default defineNuxtRouteMiddleware(async (to) => {
+	// Only run this middleware on the server - it relies on server-only runtime config
+	if (import.meta.client) return
+
+	const routeProjectParam = to.params.project
+	const projectId = Array.isArray(routeProjectParam) ? routeProjectParam[0] : routeProjectParam
+	const routeType = Array.isArray(to.params.type) ? to.params.type[0] : to.params.type
+
+	// Only handle project routes
+	if (!projectId || !routeType || !PROJECT_TYPES.includes(routeType)) {
+		return
+	}
+
+	const queryClient = useAppQueryClient()
+	const authToken = useCookie('auth-token')
+	const client = useServerModrinthClient({ authToken: authToken.value || undefined })
+	const tags = useGeneratedState()
+
+	try {
+		// Fetch v2 and v3 in parallel — cache both for the page's useQuery calls
+		const [project, projectV3] = await Promise.all([
+			queryClient.fetchQuery(projectQueryOptions.v2(projectId, client)),
+			queryClient.fetchQuery(projectQueryOptions.v3(projectId, client)),
+		])
+
+		// Let page handle 404
+		if (!project) return
+
+		// Cache by slug if we looked up by ID (or vice versa)
+		if (projectId !== project.slug) {
+			queryClient.setQueryData(['project', 'v2', project.slug], project)
+		}
+		if (projectId !== project.id) {
+			queryClient.setQueryData(['project', 'v2', project.id], project)
+		}
+
+		const projectType = projectV3.minecraft_server != null ? 'server' : project.project_type
+		// Determine the correct URL type
+		const correctType = getProjectTypeForUrlShorthand(projectType, project.loaders, tags.value)
+
+		// Preserve the rest of the path (subpages like /versions, /settings, etc.)
+		const pathParts = to.path.split('/')
+		pathParts.splice(0, 3) // Remove '', type, and id
+		const remainder = pathParts.filter((x) => x).join('/')
+
+		// Build the canonical path
+		const canonicalPath = `/${correctType}/${project.slug}${remainder ? `/${remainder}` : ''}`
+
+		// Only redirect if the path actually changed
+		if (to.path !== canonicalPath) {
+			return navigateTo(
+				{
+					path: canonicalPath,
+					query: to.query,
+					hash: to.hash,
+				},
+				{
+					redirectCode: 301,
+					replace: true,
+				},
+			)
+		}
+	} catch {
+		// Let the page handle 404s and other errors
+	}
+})

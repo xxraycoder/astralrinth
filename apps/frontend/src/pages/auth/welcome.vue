@@ -24,10 +24,12 @@
 				:description="formatMessage(messages.subscribeCheckbox)"
 			/>
 
-			<button class="btn btn-primary centered-btn" @click="continueSignUp">
-				{{ formatMessage(commonMessages.continueButton) }}
-				<RightArrowIcon />
-			</button>
+			<ButtonStyled color="brand">
+				<button class="centered-btn" @click="continueSignUp">
+					{{ formatMessage(commonMessages.continueButton) }}
+					<RightArrowIcon />
+				</button>
+			</ButtonStyled>
 
 			<p class="tos-text">
 				<IntlFormatted :message-id="messages.tosLabel">
@@ -49,11 +51,18 @@
 
 <script setup>
 import { RightArrowIcon, WavingRinthbot } from '@modrinth/assets'
-import { Checkbox, commonMessages } from '@modrinth/ui'
-import { IntlFormatted } from '@vintl/vintl/components'
+import {
+	ButtonStyled,
+	Checkbox,
+	commonMessages,
+	defineMessages,
+	IntlFormatted,
+	normalizeChildren,
+	useVIntl,
+} from '@modrinth/ui'
+import { useQueryClient } from '@tanstack/vue-query'
 
-import { normalizeChildren } from '@/utils/vue-children.ts'
-
+const queryClient = useQueryClient()
 const route = useRoute()
 
 const { formatMessage } = useVIntl()
@@ -92,6 +101,7 @@ const subscribe = ref(true)
 onMounted(async () => {
 	await useAuth(route.query.authToken)
 	await useUser()
+	queryClient.clear()
 })
 
 async function continueSignUp() {

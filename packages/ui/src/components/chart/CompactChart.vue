@@ -1,12 +1,21 @@
 <!-- eslint-disable eslint-comments/require-description -->
 <script setup>
-import { formatNumber } from '@modrinth/utils'
 import dayjs from 'dayjs'
-import { defineAsyncComponent, ref } from 'vue'
+import { defineAsyncComponent, onMounted, ref } from 'vue'
 
+import { useFormatNumber } from '../../composables/index.ts'
 import Card from '../base/Card.vue'
 
 const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'))
+
+// apexcharts touches `window` at module load time, so we must not let SSR
+// resolve the async component. Render only after mount on the client.
+const isClient = ref(false)
+onMounted(() => {
+	isClient.value = true
+})
+
+const formatNumber = useFormatNumber()
 
 const props = defineProps({
 	value: {
@@ -124,7 +133,7 @@ const chartOptions = ref({
                 </div>
                 <div class="value">
                   ${props.prefix}
-                  ${formatNumber(value[dataPointIndex], false)}
+                  ${formatNumber(value[dataPointIndex])}
                   ${props.suffix}
                 </div>
               </div>`
@@ -146,6 +155,7 @@ const chartOptions = ref({
 			{{ title }}
 		</div>
 		<VueApexCharts
+			v-if="isClient"
 			ref="chart"
 			type="area"
 			height="120"
@@ -161,10 +171,10 @@ const chartOptions = ref({
 	display: flex;
 	flex-direction: column;
 	gap: var(--gap-xs);
-	border: 1px solid var(--color-button-bg);
+	border: 1px solid var(--color-divider);
 	border-radius: var(--radius-md);
 	background-color: var(--color-raised-bg);
-	box-shadow: var(--shadow-floating);
+	box-shadow: var(--shadow-card);
 	color: var(--color-base);
 	font-size: var(--font-size-nm);
 	width: 100%;
@@ -190,7 +200,7 @@ svg {
 :deep(.apexcharts-yaxistooltip) {
 	background: var(--color-raised-bg) !important;
 	border-radius: var(--radius-sm) !important;
-	border: 1px solid var(--color-button-bg) !important;
+	border: 1px solid var(--color-divider) !important;
 	box-shadow: var(--shadow-floating) !important;
 	font-size: var(--font-size-nm) !important;
 }

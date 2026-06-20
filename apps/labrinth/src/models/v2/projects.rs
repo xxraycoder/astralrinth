@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 /// A project returned from the API
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct LegacyProject {
     /// Relevant V2 fields- these were removed or modified in V3,
     /// and are now part of the dynamic fields system
@@ -231,7 +231,7 @@ impl LegacyProject {
         redis: &RedisPool,
     ) -> Result<Vec<Self>, DatabaseError>
     where
-        E: sqlx::Acquire<'a, Database = sqlx::Postgres>,
+        E: crate::database::Acquire<'a, Database = sqlx::Postgres>,
     {
         let version_ids: Vec<_> = data
             .iter()
@@ -253,7 +253,9 @@ impl LegacyProject {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Copy)]
+#[derive(
+    Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Copy, utoipa::ToSchema,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum LegacySideType {
     Required,
@@ -290,7 +292,7 @@ impl LegacySideType {
 }
 
 /// A specific version of a project
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct LegacyVersion {
     /// Relevant V2 fields- these were removed or modified in V3,
     /// and are now part of the dynamic fields system
@@ -306,7 +308,8 @@ pub struct LegacyVersion {
     pub featured: bool,
     pub name: String,
     pub version_number: String,
-    pub changelog: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub changelog: Option<String>,
     pub changelog_url: Option<String>,
     pub date_published: DateTime<Utc>,
     pub downloads: u32,
@@ -367,7 +370,7 @@ impl From<Version> for LegacyVersion {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, utoipa::ToSchema)]
 pub struct LegacyGalleryItem {
     pub url: String,
     pub raw_url: String,
@@ -392,7 +395,9 @@ impl LegacyGalleryItem {
     }
 }
 
-#[derive(Serialize, Deserialize, Validate, Clone, Eq, PartialEq)]
+#[derive(
+    Serialize, Deserialize, Validate, Clone, Eq, PartialEq, utoipa::ToSchema,
+)]
 pub struct DonationLink {
     pub id: String,
     pub platform: String,

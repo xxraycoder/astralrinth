@@ -11,6 +11,18 @@
   "nags.add-icon.title": {
     "defaultMessage": "Adaugă o pictogramă"
   },
+  "nags.add-java-address.description": {
+    "defaultMessage": "Adăugați adresa IP și portul pe care jucătorii Java Ediție le pot folosi pentru a vă alătura serverului."
+  },
+  "nags.add-java-address.title": {
+    "defaultMessage": "Adăugați o adresă Java"
+  },
+  "nags.add-links-server.description": {
+    "defaultMessage": "Adăugați orice linkuri relevante vizate în afara Modrinth, cum ar fi un site web, un magazin sau o invitație Discord."
+  },
+  "nags.add-links-server.title": {
+    "defaultMessage": "Adăugați linkuri externe"
+  },
   "nags.add-links.description": {
     "defaultMessage": "Adaugă orice link relevant către site-uri din afara Modrinth, cum ar fi codul sursă, un tracker de probleme sau o invitație de Discord."
   },
@@ -18,13 +30,13 @@
     "defaultMessage": "Adaugă link-uri externe"
   },
   "nags.all-tags-selected.description": {
-    "defaultMessage": "Ai selectat toate cele {totalAvailableTags} etichete disponibile. Acest lucru anulează scopul etichetelor, care sunt menite să-i ajute pe utilizatori să găsească proiecte relevante. Te rugăm să selectezi doar etichetele care sunt relevante pentru proiectul tău."
+    "defaultMessage": "Ați selectat toate {totalAvailableTags, plural, one {# tag disponibil} other {# tag-urile disponibile}}. Asta anulează scopul tag-urilor, care sunt folosite pentru a ajuta alți utilizatori să găsească proiecte relevante. Vă rugăm să selectați numai tag/urile care sunt relevante pentru proiectul vostru."
   },
   "nags.all-tags-selected.title": {
     "defaultMessage": "Selectează etichete precise"
   },
   "nags.description-too-short.description": {
-    "defaultMessage": "Descrierea ta are {length} caractere lizibile. Se recomandă cel puțin {minChars} caractere pentru a crea o descriere clară și informativă."
+    "defaultMessage": "Descrierea dumneavoastră este {length, plural, one {# caracter lizibil} other {# caractere lizibile}}. Măcar {minChars, plural, one {# caracter este} other {# caractere sunt}} recomandate pentru a creea o descriere clară și informativă."
   },
   "nags.description-too-short.title": {
     "defaultMessage": "Extinde descrierea"
@@ -53,11 +65,11 @@
   "nags.gallery.title": {
     "defaultMessage": "Vizitează pagina galeriei"
   },
-  "nags.gpl-license-source-required.description": {
-    "defaultMessage": "Proiectul tău {projectType} folosește o licență care necesită codul sursă să fie disponibil. Te rog să furnizezi un link către codul sursă sau un fișier cu surse pentru fiecare versiune suplimentară, sau ia în considerare utilizarea unei alte licențe."
-  },
   "nags.gpl-license-source-required.title": {
     "defaultMessage": "Oferă codul sursă"
+  },
+  "nags.identical-links.description": {
+    "defaultMessage": "Unele dintre linkurile dvs. externe par a fi identice. Fiecare link trebuie introdus o singură dată și cu tipul de link corespunzător."
   },
   "nags.image-heavy-description.description": {
     "defaultMessage": "Descrierea ta ar trebui să conțină suficient text simplu sau text alternativ pentru imagini, pentru a o face accesibilă persoanelor care folosesc cititoare de ecran sau care au o conexiune lentă la internet."
@@ -114,22 +126,28 @@
     "defaultMessage": "Analizează și abordează toate problemele semnalate de echipa de moderare înainte de a retrimite."
   },
   "nags.moderator-feedback.title": {
-    "defaultMessage": "Analizează opinia moderatorilor"
-  },
-  "nags.multiple-resolution-tags.description": {
-    "defaultMessage": "Ai selectat {count} etichete de rezoluție ({tags}). Pachetele de resurse ar trebui să aibă de obicei o singură etichetă de rezoluție care să corespundă rezoluției lor principale."
+    "defaultMessage": "Examinați feedback-ul"
   },
   "nags.multiple-resolution-tags.title": {
     "defaultMessage": "Selectează rezoluția corectă"
   },
-  "nags.select-environments.description": {
-    "defaultMessage": "Selectează mediile pe care funcționează {projectType}."
+  "nags.select-compatibility.description": {
+    "defaultMessage": "Selectați ce versiuni acceptă serverul dvs., alegeți un Modpack sau încărcați-l pe al dvs."
   },
-  "nags.select-environments.title": {
-    "defaultMessage": "Selectează medii"
+  "nags.select-compatibility.title": {
+    "defaultMessage": "Selectați compatibilitatea"
   },
-  "nags.select-license.description": {
-    "defaultMessage": "Selectează licența sub care este distribuit {projectType}."
+  "nags.select-country.description": {
+    "defaultMessage": "Spune-le jucătorilor în ce regiune se află serverul tău."
+  },
+  "nags.select-country.title": {
+    "defaultMessage": "Selectați o regiune"
+  },
+  "nags.select-language.description": {
+    "defaultMessage": "Listați limba sau limbile acceptate de serverul dvs."
+  },
+  "nags.select-language.title": {
+    "defaultMessage": "Selectați o limbă"
   },
   "nags.select-license.title": {
     "defaultMessage": "Selectează o licență"
@@ -140,11 +158,11 @@
   "nags.select-tags.title": {
     "defaultMessage": "Selectează etichete"
   },
+  "nags.server.title": {
+    "defaultMessage": "Accesați setările serverului"
+  },
   "nags.settings.description.title": {
     "defaultMessage": "Vizitează setările descrierii"
-  },
-  "nags.settings.environments.title": {
-    "defaultMessage": "Vizitează setările mediului"
   },
   "nags.settings.license.title": {
     "defaultMessage": "Vizitează setările licenței"
@@ -171,25 +189,28 @@
     "defaultMessage": "Curăță rezumatul"
   },
   "nags.summary-too-short.description": {
-    "defaultMessage": "Sumarul tău are {length} caractere. Cel puțin {minChars} caractere este recomandat pentru a crea un sumar informativ și atractiv."
+    "defaultMessage": "Sumarul dumneavoastră are o lungime de {length, plural, one {# caracter} other {#caractere}}. Minim {minChars, plural, one {# caracter este recomandat} other {#caractere sunt recomandate}} pentru a creea un sumar informativ ți incitant."
   },
   "nags.summary-too-short.title": {
     "defaultMessage": "Extinde rezumatul"
   },
   "nags.title-contains-technical-info.description": {
-    "defaultMessage": "Păstrează numele proiectului clar și memorabil pentru a fi mai ușor de găsit. Informațiile precum versiunea și loader-ul sunt automat afișate împreună cu proiectul tău."
+    "defaultMessage": "Prin a face numele proiectului tău curat îl faci și mai ușor de ținut minte si de găsit. Informații de versiune și loader sunt afișate automatic lângă proiectul dumneavoastră."
   },
   "nags.title-contains-technical-info.title": {
     "defaultMessage": "Curăță numele"
   },
+  "nags.too-many-tags-server.description": {
+    "defaultMessage": "Ați selectat {tagCount, plural,one {#etichetă} other {etichetă}}. Vă rugăm să reduceți la{maxTagCount} sau mai puține pentru a vă asigura că serverul dvs. apare în rezultatele de căutare relevante."
+  },
+  "nags.too-many-tags-server.title": {
+    "defaultMessage": "Selectați etichete precise"
+  },
   "nags.too-many-tags.description": {
-    "defaultMessage": "Ai selectat {tagCount} etichete. Consideră în a le reduce la {maxTagCount} sau mai puține pentru a fii sigur că proiectul tău apare în rezultatele de căutare relevante."
+    "defaultMessage": "Ați selectat {tagCount, plural,one {#etichetă}other {#etichetă}}. Luați în considerare reducerea la {maxTagCount} sau mai puține pentru a vă asigura că proiectul dvs. apare în rezultatele de căutare relevante."
   },
   "nags.too-many-tags.title": {
     "defaultMessage": "Selectează etichete exacte"
-  },
-  "nags.upload-gallery-image.description": {
-    "defaultMessage": "Este necesară cel puțin o singură imagine în galerie pentru a afișa conținutul {type}{resourcepackMessage}."
   },
   "nags.upload-gallery-image.title": {
     "defaultMessage": "Încarcă o imagine în galerie"
@@ -213,4 +234,3 @@
     "defaultMessage": "Vizitează setările link-urilor"
   }
 }
-

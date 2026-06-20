@@ -6,6 +6,7 @@ use crate::auth::checks::{
 };
 use crate::auth::get_user_from_headers;
 use crate::database;
+use crate::database::PgPool;
 use crate::database::models::loader_fields::{
     self, LoaderField, LoaderFieldEnumValue, VersionField,
 };
@@ -24,15 +25,15 @@ use crate::models::projects::{
 use crate::models::projects::{Loader, skip_nulls};
 use crate::models::teams::ProjectPermissions;
 use crate::queue::session::AuthQueue;
-use crate::search::SearchConfig;
-use crate::search::indexing::remove_documents;
+use crate::routes::internal::delphi;
+use crate::search::SearchBackend;
+use crate::util::error::Context;
 use crate::util::img;
 use crate::util::validate::validation_errors_to_string;
-use actix_web::{HttpRequest, HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse, get, web};
 use ariadne::ids::base62_impl::parse_base62;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
 use validator::Validate;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -55,6 +56,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 }
 
 // Given a project ID/slug and a version slug
+#[utoipa::path]
+#[get("/{project_id}/version/{slug}")]
 pub async fn version_project_get(
     req: HttpRequest,
     info: web::Path<(String, String)>,
@@ -121,6 +124,12 @@ pub async fn version_project_get_helper(
 #[derive(Serialize, Deserialize)]
 pub struct VersionIds {
     pub ids: String,
+    #[serde(default = "default_true")]
+    pub include_changelog: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 pub async fn versions_get(
@@ -150,9 +159,15 @@ pub async fn versions_get(
     .map(|x| x.1)
     .ok();
 
-    let versions =
+    let mut versions =
         filter_visible_versions(versions_data, &user_option, &pool, &redis)
             .await?;
+
+    if !ids.include_changelog {
+        for version in &mut versions {
+            version.changelog = None;
+        }
+    }
 
     Ok(HttpResponse::Ok().json(versions))
 }
@@ -163,7 +178,7 @@ pub async fn version_get(
     pool: web::Data<PgPool>,
     redis: web::Data<RedisPool>,
     session_queue: web::Data<AuthQueue>,
-) -> Result<HttpResponse, ApiError> {
+) -> Result<web::Json<models::projects::Version>, ApiError> {
     let id = info.into_inner().0;
     version_get_helper(req, id, pool, redis, session_queue).await
 }
@@ -174,7 +189,7 @@ pub async fn version_get_helper(
     pool: web::Data<PgPool>,
     redis: web::Data<RedisPool>,
     session_queue: web::Data<AuthQueue>,
-) -> Result<HttpResponse, ApiError> {
+) -> Result<web::Json<models::projects::Version>, ApiError> {
     let version_data =
         database::models::DBVersion::get(id.into(), &**pool, &redis).await?;
 
@@ -192,9 +207,7 @@ pub async fn version_get_helper(
     if let Some(data) = version_data
         && is_visible_version(&data.inner, &user_option, &pool, &redis).await?
     {
-        return Ok(
-            HttpResponse::Ok().json(models::projects::Version::from(data))
-        );
+        return Ok(web::Json(models::projects::Version::from(data)));
     }
 
     Err(ApiError::NotFound)
@@ -349,7 +362,7 @@ pub async fn version_edit_helper(
                     name.trim(),
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -363,7 +376,7 @@ pub async fn version_edit_helper(
                     number,
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -377,7 +390,7 @@ pub async fn version_edit_helper(
                     version_type.as_str(),
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -388,7 +401,7 @@ pub async fn version_edit_helper(
                     ",
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
 
                 let builders = dependencies
@@ -417,7 +430,7 @@ pub async fn version_edit_helper(
                     .collect::<Vec<String>>();
 
                 let all_loaders =
-                    loader_fields::Loader::list(&mut *transaction, &redis)
+                    loader_fields::Loader::list(&mut transaction, &redis)
                         .await?;
                 let loader_ids = version_item
                     .loaders
@@ -432,7 +445,7 @@ pub async fn version_edit_helper(
 
                 let loader_fields = LoaderField::get_fields(
                     &loader_ids,
-                    &mut *transaction,
+                    &mut transaction,
                     &redis,
                 )
                 .await?
@@ -453,13 +466,13 @@ pub async fn version_edit_helper(
                     version_id as database::models::ids::DBVersionId,
                     &loader_field_ids
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
 
                 let mut loader_field_enum_values =
                     LoaderFieldEnumValue::list_many_loader_fields(
                         &loader_fields,
-                        &mut *transaction,
+                        &mut transaction,
                         &redis,
                     )
                     .await?;
@@ -497,7 +510,7 @@ pub async fn version_edit_helper(
                     ",
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
 
                 let mut loader_versions = Vec::new();
@@ -505,7 +518,7 @@ pub async fn version_edit_helper(
                     let loader_id =
                         database::models::loader_fields::Loader::get_id(
                             &loader.0,
-                            &mut *transaction,
+                            &mut transaction,
                             &redis,
                         )
                         .await?
@@ -542,7 +555,7 @@ pub async fn version_edit_helper(
                     featured,
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -556,7 +569,7 @@ pub async fn version_edit_helper(
                     body,
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -576,7 +589,7 @@ pub async fn version_edit_helper(
                     *downloads as i32,
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
 
                 let diff = *downloads - (version_item.inner.downloads as u32);
@@ -591,7 +604,7 @@ pub async fn version_edit_helper(
                     version_item.inner.project_id
                         as database::models::ids::DBProjectId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -611,7 +624,7 @@ pub async fn version_edit_helper(
                     status.as_str(),
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -644,7 +657,7 @@ pub async fn version_edit_helper(
                         result.id,
                         file_type.file_type.as_ref().map(|x| x.as_str()),
                     )
-                    .execute(&mut *transaction)
+                    .execute(&mut transaction)
                     .await?;
                 }
             }
@@ -659,7 +672,7 @@ pub async fn version_edit_helper(
                     ordering.to_owned() as Option<i32>,
                     version_id as database::models::ids::DBVersionId,
                 )
-                .execute(&mut *transaction)
+                .execute(&mut transaction)
                 .await?;
             }
 
@@ -715,9 +728,32 @@ pub struct VersionListFilters {
         Returns if it matches any of the values
     */
     pub loader_fields: Option<String>,
+    #[serde(default = "default_true")]
+    pub include_changelog: bool,
 }
 
-pub async fn version_list(
+#[utoipa::path]
+#[get("/{project_id}/version")]
+async fn version_list(
+    req: HttpRequest,
+    info: web::Path<(String,)>,
+    web::Query(filters): web::Query<VersionListFilters>,
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisPool>,
+    session_queue: web::Data<AuthQueue>,
+) -> Result<HttpResponse, ApiError> {
+    version_list_internal(
+        req,
+        info,
+        web::Query(filters),
+        pool,
+        redis,
+        session_queue,
+    )
+    .await
+}
+
+pub async fn version_list_internal(
     req: HttpRequest,
     info: web::Path<(String,)>,
     web::Query(filters): web::Query<VersionListFilters>,
@@ -762,8 +798,6 @@ pub async fn version_list(
         )
         .await?
         .into_iter()
-        .skip(filters.offset.unwrap_or(0))
-        .take(filters.limit.unwrap_or(usize::MAX))
         .filter(|x| {
             let mut bool = true;
 
@@ -788,6 +822,17 @@ pub async fn version_list(
         })
         .collect::<Vec<_>>();
 
+        // Sort before applying limit/offset so that limit=N returns the N newest versions
+        versions.sort_by(|a, b| {
+            b.inner.date_published.cmp(&a.inner.date_published)
+        });
+
+        let versions: Vec<_> = versions
+            .into_iter()
+            .skip(filters.offset.unwrap_or(0))
+            .take(filters.limit.unwrap_or(usize::MAX))
+            .collect();
+
         let mut response = versions
             .iter()
             .filter(|version| {
@@ -797,10 +842,6 @@ pub async fn version_list(
             })
             .cloned()
             .collect::<Vec<_>>();
-
-        versions.sort_by(|a, b| {
-            b.inner.date_published.cmp(&a.inner.date_published)
-        });
 
         // Attempt to populate versions with "auto featured" versions
         if response.is_empty()
@@ -856,9 +897,15 @@ pub async fn version_list(
         });
         response.dedup_by(|a, b| a.inner.id == b.inner.id);
 
-        let response =
+        let mut response =
             filter_visible_versions(response, &user_option, &pool, &redis)
                 .await?;
+
+        if !filters.include_changelog {
+            for version in &mut response {
+                version.changelog = None;
+            }
+        }
 
         Ok(HttpResponse::Ok().json(response))
     } else {
@@ -872,7 +919,7 @@ pub async fn version_delete(
     pool: web::Data<PgPool>,
     redis: web::Data<RedisPool>,
     session_queue: web::Data<AuthQueue>,
-    search_config: web::Data<SearchConfig>,
+    search_backend: web::Data<dyn SearchBackend>,
 ) -> Result<HttpResponse, ApiError> {
     let user = get_user_from_headers(
         &req,
@@ -938,6 +985,12 @@ pub async fn version_delete(
     }
 
     let mut transaction = pool.begin().await?;
+    let was_in_tech_review = delphi::is_project_in_tech_review(
+        version.inner.project_id,
+        &mut transaction,
+    )
+    .await?;
+
     let context = ImageContext::Version {
         version_id: Some(version.inner.id.into()),
     };
@@ -956,6 +1009,14 @@ pub async fn version_delete(
         &mut transaction,
     )
     .await?;
+
+    delphi::send_tech_review_exit_file_deleted_message_if_exited(
+        version.inner.project_id,
+        was_in_tech_review,
+        &mut transaction,
+    )
+    .await?;
+
     transaction.commit().await?;
 
     database::models::DBProject::clear_cache(
@@ -965,8 +1026,10 @@ pub async fn version_delete(
         &redis,
     )
     .await?;
-    remove_documents(&[version.inner.id.into()], &search_config).await?;
-
+    search_backend
+        .remove_documents(&[version.inner.id.into()])
+        .await
+        .wrap_internal_err("failed to remove documents")?;
     if result.is_some() {
         Ok(HttpResponse::NoContent().body(""))
     } else {

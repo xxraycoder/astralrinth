@@ -78,6 +78,7 @@ pub async fn auto_install_java(java_version: u32) -> crate::Result<PathBuf> {
                 ),
                 None,
                 None,
+                None,
                 &state.fetch_semaphore,
                 &state.pool,
             ).await?;
@@ -90,7 +91,9 @@ pub async fn auto_install_java(java_version: u32) -> crate::Result<PathBuf> {
             None,
             None,
             None,
+            None,
             Some((&loading_bar, 80.0)),
+            None,
             &state.fetch_semaphore,
             &state.pool,
         )
@@ -135,7 +138,6 @@ pub async fn auto_install_java(java_version: u32) -> crate::Result<PathBuf> {
         #[cfg(target_os = "macos")]
         {
             base_path = base_path
-                .join(format!("zulu-{java_version}.jre"))
                 .join("Contents")
                 .join("Home")
                 .join("bin")
@@ -181,12 +183,29 @@ pub async fn test_jre(
     Ok(version == major_version)
 }
 
-// Gets maximum memory in KiB.
-pub async fn get_max_memory() -> crate::Result<u64> {
-    Ok(sysinfo::System::new_with_specifics(
+fn system_memory_bytes() -> u64 {
+    sysinfo::System::new_with_specifics(
         RefreshKind::nothing()
             .with_memory(MemoryRefreshKind::nothing().with_ram()),
     )
     .total_memory()
-        / 1024)
+}
+
+/// Recommended default max heap (MiB) for new instances based on system RAM.
+pub fn default_memory_max_mb() -> u32 {
+    const BYTES_PER_GIB: u64 = 1024 * 1024 * 1024;
+    let system_gib = system_memory_bytes() / BYTES_PER_GIB;
+
+    if system_gib < 8 {
+        1024 * 2
+    } else if system_gib >= 24 {
+        1024 * 6
+    } else {
+        1024 * 4
+    }
+}
+
+// Gets maximum memory in KiB.
+pub async fn get_max_memory() -> crate::Result<u64> {
+    Ok(system_memory_bytes() / 1024)
 }

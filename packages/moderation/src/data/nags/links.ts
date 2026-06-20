@@ -1,11 +1,26 @@
-import { formatProjectType } from '@modrinth/utils'
-import { defineMessage, useVIntl } from '@vintl/vintl'
+import { defineMessage, formatProjectTypeSentence, useVIntl } from '@modrinth/ui'
 
 import type { Nag, NagContext } from '../../types/nags'
 
 export const commonLinkDomains = {
-	source: ['github.com', 'gitlab.com', 'bitbucket.org', 'codeberg.org', 'git.sr.ht'],
-	issues: ['github.com', 'gitlab.com', 'bitbucket.org', 'codeberg.org', 'docs.google.com'],
+	source: [
+		'github.com',
+		'gitlab.com',
+		'bitbucket.org',
+		'codeberg.org',
+		'git.sr.ht',
+		'tangled.org',
+		'git.gay',
+	],
+	issues: [
+		'github.com',
+		'gitlab.com',
+		'bitbucket.org',
+		'codeberg.org',
+		'docs.google.com',
+		'tangled.org',
+		'git.gay',
+	],
 	discord: ['discord.gg', 'discord.com', 'dsc.gg'],
 	licenseBlocklist: [
 		'youtube.com',
@@ -61,6 +76,84 @@ export function isUncommonLicenseUrl(url: string | null): boolean {
 
 export const linksNags: Nag[] = [
 	{
+		id: 'add-links',
+		title: defineMessage({
+			id: 'nags.add-links.title',
+			defaultMessage: 'Add external links',
+		}),
+		description: defineMessage({
+			id: 'nags.add-links.description',
+			defaultMessage:
+				'Add any relevant links targeted outside of Modrinth, such as source code, an issue tracker, or a Discord invite.',
+		}),
+		status: 'suggestion',
+		shouldShow: (context: NagContext) => {
+			return (
+				!context.projectV3?.minecraft_server &&
+				Object.keys(context.projectV3?.link_urls ?? {}).length === 0
+			)
+		},
+		link: {
+			path: 'settings/links',
+			title: defineMessage({
+				id: 'nags.settings.links.title',
+				defaultMessage: 'Visit links settings',
+			}),
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
+		},
+	},
+	{
+		id: 'add-links-server',
+		title: defineMessage({
+			id: 'nags.add-links-server.title',
+			defaultMessage: 'Add external links',
+		}),
+		description: defineMessage({
+			id: 'nags.add-links-server.description',
+			defaultMessage:
+				'Add any relevant links targeted outside of Modrinth, such as a website, store, or a Discord invite.',
+		}),
+		status: 'suggestion',
+		shouldShow: (context: NagContext) => {
+			return (
+				!!context.projectV3?.minecraft_server &&
+				Object.keys(context.projectV3?.link_urls ?? {}).length === 0
+			)
+		},
+		link: {
+			path: 'settings/links',
+			title: defineMessage({
+				id: 'nags.settings.links.title',
+				defaultMessage: 'Visit links settings',
+			}),
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
+		},
+	},
+	{
+		id: 'identical-links',
+		title: defineMessage({
+			id: 'nags.identical-links.title',
+			defaultMessage: 'Clean up identical links',
+		}),
+		description: defineMessage({
+			id: 'nags.identical-links.description',
+			defaultMessage:
+				'Some of your external links appear to be identical. Each link should be entered only once and with the appropriate link type.',
+		}),
+		status: 'required',
+		shouldShow: (context: NagContext) =>
+			new Set(Object.values(context.projectV3?.link_urls ?? {}).map((link) => link.url)).size !==
+			Object.values(context.projectV3?.link_urls ?? {}).map((link) => link.url).length,
+		link: {
+			path: 'settings/links',
+			title: defineMessage({
+				id: 'nags.settings.links.title',
+				defaultMessage: 'Visit links settings',
+			}),
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
+		},
+	},
+	{
 		id: 'verify-external-links',
 		title: defineMessage({
 			id: 'nags.verify-external-links.title',
@@ -85,7 +178,7 @@ export const linksNags: Nag[] = [
 				id: 'nags.visit-links-settings.title',
 				defaultMessage: 'Visit links settings',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-links',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
 		},
 	},
 	{
@@ -103,14 +196,16 @@ export const linksNags: Nag[] = [
 		shouldShow: (context: NagContext) =>
 			isDiscordUrl(context.project.source_url ?? null) ||
 			isDiscordUrl(context.project.issues_url ?? null) ||
-			isDiscordUrl(context.project.wiki_url ?? null),
+			isDiscordUrl(context.project.wiki_url ?? null) ||
+			isDiscordUrl(context.projectV3?.link_urls?.site?.url ?? null) ||
+			isDiscordUrl(context.projectV3?.link_urls?.store?.url ?? null),
 		link: {
 			path: 'settings/links',
 			title: defineMessage({
 				id: 'nags.visit-links-settings.title',
 				defaultMessage: 'Visit links settings',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-links',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
 		},
 	},
 	{
@@ -139,6 +234,8 @@ export const linksNags: Nag[] = [
 				isLinkShortener(context.project.issues_url ?? null) ||
 				isLinkShortener(context.project.wiki_url ?? null) ||
 				isLinkShortener(context.project.discord_url ?? null) ||
+				isLinkShortener(context.projectV3?.link_urls?.site?.url ?? null) ||
+				isLinkShortener(context.projectV3?.link_urls?.store?.url ?? null) ||
 				Boolean(context.project.license.url && isLinkShortener(context.project.license.url ?? null))
 			)
 		},
@@ -202,7 +299,7 @@ export const linksNags: Nag[] = [
 				id: 'nags.edit-license.title',
 				defaultMessage: 'Edit license',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings',
 		},
 	},
 	{
@@ -218,10 +315,10 @@ export const linksNags: Nag[] = [
 				defineMessage({
 					id: 'nags.gpl-license-source-required.description',
 					defaultMessage:
-						'Your {projectType} uses a license which requires source code to be available. Please provide a source code link or sources file for each additional version, or consider using a different license.',
+						'Your {type} uses a license which requires source code to be available. Please provide a source code link or sources file for each additional version, or consider using a different license.',
 				}),
 				{
-					projectType: formatProjectType(context.project.project_type).toLowerCase(),
+					type: formatProjectTypeSentence(formatMessage, context.project.project_type),
 				},
 			)
 		},
@@ -276,7 +373,7 @@ export const linksNags: Nag[] = [
 				id: 'nags.visit-links-settings.title',
 				defaultMessage: 'Visit links settings',
 			}),
-			shouldShow: (context: NagContext) => context.currentRoute !== 'type-id-settings-links',
+			shouldShow: (context: NagContext) => context.currentRoute !== 'type-project-settings-links',
 		},
 	},
 ]

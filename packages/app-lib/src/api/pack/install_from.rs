@@ -1,11 +1,16 @@
 use crate::State;
+use crate::api::profile;
 use crate::data::ModLoader;
 use crate::event::emit::{emit_loading, init_loading};
 use crate::event::{LoadingBarId, LoadingBarType};
-use crate::state::{CachedEntry, LinkedData, ProfileInstallStage, SideType};
-use crate::util::fetch::{fetch, fetch_advanced, write_cached_icon};
-use crate::util::io;
-
+use crate::state::{
+    CacheBehaviour, CachedEntry, LinkedData, Profile, ProfileInstallStage,
+    SideType,
+};
+use crate::util::fetch::{
+    DownloadMeta, DownloadReason, fetch, fetch_advanced, sha1_file_async,
+    write_cached_icon,
+};
 use path_util::SafeRelativeUtf8UnixPathBuf;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
@@ -105,6 +110,7 @@ pub struct CreatePackProfile {
     pub icon: Option<PathBuf>,          // the icon for the profile
     pub icon_url: Option<String>, // the URL icon for a profile (ONLY USED FOR TEMPORARY PROFILES)
     pub linked_data: Option<LinkedData>, // the linked project ID (mainly for modpacks)- used for updating
+    pub unknown_file: bool, // true when pack file isn't found on Modrinth via hash lookup
     pub skip_install_profile: Option<bool>,
     pub no_watch: Option<bool>,
 }
@@ -120,6 +126,7 @@ impl Default for CreatePackProfile {
             icon: None,
             icon_url: None,
             linked_data: None,
+            unknown_file: false,
             skip_install_profile: Some(true),
             no_watch: Some(false),
         }
@@ -127,10 +134,20 @@ impl Default for CreatePackProfile {
 }
 
 #[derive(Clone)]
+pub enum CreatePackFile {
+    Bytes(bytes::Bytes),
+    // Local packs can be larger than available memory, so keep them file-backed.
+    Path(PathBuf),
+}
+
+#[derive(Clone)]
 pub struct CreatePack {
-    pub file: bytes::Bytes,
+    pub file: CreatePackFile,
     pub description: CreatePackDescription,
 }
+
+// The hash lookup only gates the unknown-pack warning, so avoid a long blocking scan for huge local packs.
+const MAX_LOCAL_FILE_HASH_LOOKUP_SIZE: u64 = 1024 * 1024 * 1024;
 
 #[derive(Clone, Debug)]
 pub struct CreatePackDescription {
@@ -142,16 +159,16 @@ pub struct CreatePackDescription {
     pub profile_path: String,
 }
 
-pub fn get_profile_from_pack(
+pub async fn get_profile_from_pack(
     location: CreatePackLocation,
-) -> CreatePackProfile {
+) -> crate::Result<CreatePackProfile> {
     match location {
         CreatePackLocation::FromVersionId {
             project_id,
             version_id,
             title,
             icon_url,
-        } => CreatePackProfile {
+        } => Ok(CreatePackProfile {
             name: title,
             icon_url,
             linked_data: Some(LinkedData {
@@ -160,7 +177,7 @@ pub fn get_profile_from_pack(
                 locked: true,
             }),
             ..Default::default()
-        },
+        }),
         CreatePackLocation::FromFile { path } => {
             let file_name = path
                 .file_stem()
@@ -168,10 +185,38 @@ pub fn get_profile_from_pack(
                 .to_string_lossy()
                 .to_string();
 
-            CreatePackProfile {
+            let is_known_file = if tokio::fs::metadata(&path).await?.len()
+                <= MAX_LOCAL_FILE_HASH_LOOKUP_SIZE
+            {
+                let state = State::get().await?;
+                let (_, hash) = sha1_file_async(&path).await?;
+                match CachedEntry::get_file_many(
+                    &[&hash],
+                    Some(CacheBehaviour::StaleWhileRevalidateSkipOffline),
+                    &state.pool,
+                    &state.api_semaphore,
+                )
+                .await
+                {
+                    Ok(files) => !files.is_empty(),
+                    Err(err) => {
+                        tracing::warn!(
+                            "Failed to check Modrinth file hash for {}: {}",
+                            path.display(),
+                            err
+                        );
+                        false
+                    }
+                }
+            } else {
+                false
+            };
+
+            Ok(CreatePackProfile {
                 name: file_name,
+                unknown_file: !is_known_file,
                 ..Default::default()
-            }
+            })
         }
     }
 }
@@ -185,11 +230,11 @@ pub async fn generate_pack_from_version_id(
     icon_url: Option<String>,
     profile_path: String,
 
-    // Existing loading bar. Unlike when existing_loading_bar is used, this one is pre-initialized with PackFileDownload
-    // For example, you might use this if multiple packs are being downloaded at once and you want to use the same loading bar
     initialized_loading_bar: Option<LoadingBarId>,
+    reason: DownloadReason,
 ) -> crate::Result<CreatePack> {
     let state = State::get().await?;
+    let has_icon_url = icon_url.is_some();
 
     let loading_bar = if let Some(bar) = initialized_loading_bar {
         emit_loading(&bar, 0.0, Some("Downloading pack file"))?;
@@ -198,7 +243,7 @@ pub async fn generate_pack_from_version_id(
         init_loading(
             LoadingBarType::PackFileDownload {
                 profile_path: profile_path.clone(),
-                pack_name: title,
+                pack_name: title.clone(),
                 icon: icon_url,
                 pack_version: version_id.clone(),
             },
@@ -211,7 +256,7 @@ pub async fn generate_pack_from_version_id(
     emit_loading(&loading_bar, 0.0, Some("Fetching version"))?;
     let version = CachedEntry::get_version(
         &version_id,
-        None,
+        Some(CacheBehaviour::Bypass),
         &state.pool,
         &state.api_semaphore,
     )
@@ -222,6 +267,24 @@ pub async fn generate_pack_from_version_id(
         )
     })?;
     emit_loading(&loading_bar, 10.0, None)?;
+
+    // Update profile with correct loader and game version from the API version metadata,
+    // so the UI shows accurate info while the pack file is still downloading.
+    if let Some(game_version) = version.game_versions.first() {
+        let loader = version
+            .loaders
+            .first()
+            .map(|l| ModLoader::from_string(l))
+            .unwrap_or(ModLoader::Vanilla);
+        let game_version = game_version.clone();
+        let profile_path_clone = profile_path.clone();
+        profile::edit(&profile_path_clone, |prof| {
+            prof.game_version.clone_from(&game_version);
+            prof.loader = loader;
+            async { Ok(()) }
+        })
+        .await?;
+    }
 
     let (url, hash) =
         if let Some(file) = version.files.iter().find(|x| x.primary) {
@@ -238,13 +301,32 @@ pub async fn generate_pack_from_version_id(
             )
         })?;
 
+    let profile =
+        Profile::get(&profile_path, &state.pool)
+            .await?
+            .ok_or_else(|| {
+                crate::ErrorKind::UnmanagedProfileError(
+                    profile_path.to_string(),
+                )
+                .as_error()
+            })?;
+
+    let download_meta = DownloadMeta {
+        reason,
+        game_version: profile.game_version.clone(),
+        loader: profile.loader.as_str().to_string(),
+        dependent_on: Some(version_id.clone()),
+    };
+
     let file = fetch_advanced(
         Method::GET,
         &url,
         hash.map(|x| &**x),
         None,
         None,
+        Some(&download_meta),
         Some((&loading_bar, 70.0)),
+        None,
         &state.fetch_semaphore,
         &state.pool,
     )
@@ -264,37 +346,59 @@ pub async fn generate_pack_from_version_id(
         )
     })?;
 
-    emit_loading(&loading_bar, 10.0, Some("Retrieving icon"))?;
-    let icon = if let Some(icon_url) = project.icon_url {
-        let state = State::get().await?;
-        let icon_bytes =
-            fetch(&icon_url, None, &state.fetch_semaphore, &state.pool).await?;
-
-        let filename = icon_url.rsplit('/').next();
-
-        if let Some(filename) = filename {
-            Some(
-                write_cached_icon(
-                    filename,
-                    &state.directories.caches_dir(),
-                    icon_bytes,
-                    &state.io_semaphore,
-                )
-                .await?,
+    // Only fetch the pack icon when icon_url is provided (new profile).
+    // When installing to an existing profile (e.g. server projects),
+    // icon_url is None and we preserve the profile's existing icon.
+    let icon = if has_icon_url {
+        emit_loading(&loading_bar, 10.0, Some("Retrieving icon"))?;
+        let fetched = if let Some(icon_url) = project.icon_url {
+            let state = State::get().await?;
+            let icon_bytes = fetch(
+                &icon_url,
+                None,
+                None,
+                None,
+                &state.fetch_semaphore,
+                &state.pool,
             )
+            .await?;
+
+            let filename = icon_url.rsplit('/').next();
+
+            if let Some(filename) = filename {
+                Some(
+                    write_cached_icon(
+                        filename,
+                        &state.directories.caches_dir(),
+                        icon_bytes,
+                        &state.io_semaphore,
+                    )
+                    .await?,
+                )
+            } else {
+                None
+            }
         } else {
             None
-        }
+        };
+        emit_loading(&loading_bar, 10.0, None)?;
+        fetched
     } else {
+        emit_loading(&loading_bar, 20.0, None)?;
         None
     };
-    emit_loading(&loading_bar, 10.0, None)?;
+
+    // Set the icon immediately so the UI shows it during download.
+    if let Some(ref icon_path) = icon {
+        let _ =
+            profile::edit_icon(&profile_path, Some(icon_path.as_path())).await;
+    }
 
     Ok(CreatePack {
-        file,
+        file: CreatePackFile::Bytes(file),
         description: CreatePackDescription {
             icon,
-            override_title: None,
+            override_title: Some(title),
             project_id: Some(project_id),
             version_id: Some(version_id),
             existing_loading_bar: Some(loading_bar),
@@ -309,9 +413,8 @@ pub async fn generate_pack_from_file(
     path: PathBuf,
     profile_path: String,
 ) -> crate::Result<CreatePack> {
-    let file = io::read(&path).await?;
     Ok(CreatePack {
-        file: bytes::Bytes::from(file),
+        file: CreatePackFile::Path(path),
         description: CreatePackDescription {
             icon: None,
             override_title: None,
@@ -398,10 +501,12 @@ pub async fn set_profile_information(
             })
         }
 
-        prof.icon_path = description
-            .icon
-            .clone()
-            .map(|x| x.to_string_lossy().to_string());
+        // Only update the icon if the pack provides one.
+        // When installing to an existing profile, icon is None
+        // and we preserve the profile's existing icon.
+        if let Some(ref icon) = description.icon {
+            prof.icon_path = Some(icon.to_string_lossy().to_string());
+        }
         prof.game_version.clone_from(game_version);
         prof.loader_version = loader_version.clone().map(|x| x.id);
         prof.loader = mod_loader;

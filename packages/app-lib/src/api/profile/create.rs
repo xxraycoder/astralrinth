@@ -1,7 +1,9 @@
 //! Theseus profile management interface
 use crate::launcher::get_loader_version_from_profile;
 use crate::settings::Hooks;
-use crate::state::{LauncherFeatureVersion, LinkedData, ProfileInstallStage};
+use crate::state::{
+    LauncherFeatureVersion, LinkedData, ProfileInstallStage, ReleaseChannel,
+};
 use crate::util::io::{self, canonicalize};
 use crate::{ErrorKind, pack, profile};
 pub use crate::{State, state::Profile};
@@ -83,6 +85,7 @@ pub async fn profile_create(
         loader_version: loader.map(|x| x.id),
         groups: Vec::new(),
         linked_data,
+        preferred_update_channel: ReleaseChannel::Release,
         created: Utc::now(),
         modified: Utc::now(),
         last_played: None,
@@ -103,14 +106,32 @@ pub async fn profile_create(
 
     let result = async {
         if let Some(ref icon) = icon_path {
-            let bytes =
-                io::read(state.directories.caches_dir().join(icon)).await?;
+            let (bytes, file_name) = if icon.starts_with("https://")
+                || icon.starts_with("http://")
+            {
+                let fetched = crate::util::fetch::fetch(
+                    icon,
+                    None,
+                    None,
+                    None,
+                    &state.fetch_semaphore,
+                    &state.pool,
+                )
+                .await?;
+                let name =
+                    icon.rsplit('/').next().unwrap_or("icon").to_string();
+                (fetched, name)
+            } else {
+                let data =
+                    io::read(state.directories.caches_dir().join(icon)).await?;
+                (bytes::Bytes::from(data), icon.clone())
+            };
             profile
                 .set_icon(
                     &state.directories.caches_dir(),
                     &state.io_semaphore,
-                    bytes::Bytes::from(bytes),
-                    icon,
+                    bytes,
+                    &file_name,
                 )
                 .await?;
         }

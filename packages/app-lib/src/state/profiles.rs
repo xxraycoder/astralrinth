@@ -2,7 +2,8 @@ use super::settings::{Hooks, MemorySettings, WindowSize};
 use crate::profile::get_full_path;
 use crate::state::server_join_log::JoinLogEntry;
 use crate::state::{
-    CacheBehaviour, CachedEntry, CachedFileHash, cache_file_hash,
+    CacheBehaviour, CachedEntry, CachedFile, CachedFileHash, KnownModrinthFile,
+    ReleaseChannel, Version, cache_file_hash,
 };
 use crate::util;
 use crate::util::fetch::{FetchSemaphore, IoSemaphore, write_cached_icon};
@@ -12,7 +13,7 @@ use dashmap::DashMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::path::Path;
@@ -39,6 +40,7 @@ pub struct Profile {
     pub groups: Vec<String>,
 
     pub linked_data: Option<LinkedData>,
+    pub preferred_update_channel: ReleaseChannel,
 
     pub created: DateTime<Utc>,
     pub modified: DateTime<Utc>,
@@ -295,6 +297,7 @@ struct ProfileQueryResult {
     linked_project_id: Option<String>,
     linked_version_id: Option<String>,
     locked: Option<i64>,
+    preferred_update_channel: String,
     created: i64,
     modified: i64,
     last_played: Option<i64>,
@@ -344,6 +347,9 @@ impl TryFrom<ProfileQueryResult> for Profile {
             } else {
                 None
             },
+            preferred_update_channel: ReleaseChannel::from_key(
+                &x.preferred_update_channel,
+            ),
             created: Utc
                 .timestamp_opt(x.created, 0)
                 .single()
@@ -394,7 +400,7 @@ macro_rules! select_profiles_with_predicate {
                 path, install_stage, launcher_feature_version, name, icon_path,
                 game_version, protocol_version, mod_loader, mod_loader_version,
                 json(groups) as "groups!: serde_json::Value",
-                linked_project_id, linked_version_id, locked,
+                linked_project_id, linked_version_id, locked, preferred_update_channel,
                 created, modified, last_played,
                 submitted_time_played, recent_time_played,
                 override_java_path,
@@ -407,6 +413,33 @@ macro_rules! select_profiles_with_predicate {
             $param
         )
     };
+}
+
+struct InitialScanFile {
+    path: String,
+    file_name: String,
+    project_type: ProjectType,
+    size: u64,
+    cache_key: String,
+}
+
+fn is_scannable_project_file(
+    project_type: ProjectType,
+    file_name: &str,
+) -> bool {
+    let Some(extension) = Path::new(file_name.trim_end_matches(".disabled"))
+        .extension()
+        .and_then(|ext| ext.to_str())
+    else {
+        return false;
+    };
+
+    match project_type {
+        ProjectType::Mod => extension.eq_ignore_ascii_case("jar"),
+        ProjectType::DataPack
+        | ProjectType::ResourcePack
+        | ProjectType::ShaderPack => extension.eq_ignore_ascii_case("zip"),
+    }
 }
 
 impl Profile {
@@ -465,6 +498,7 @@ impl Profile {
         let linked_data_version_id =
             self.linked_data.as_ref().map(|x| x.version_id.clone());
         let linked_data_locked = self.linked_data.as_ref().map(|x| x.locked);
+        let preferred_update_channel = self.preferred_update_channel.key();
 
         let created = self.created.timestamp();
         let modified = self.modified.timestamp();
@@ -487,7 +521,7 @@ impl Profile {
                 path, install_stage, name, icon_path,
                 game_version, mod_loader, mod_loader_version,
                 groups,
-                linked_project_id, linked_version_id, locked,
+                linked_project_id, linked_version_id, locked, preferred_update_channel,
                 created, modified, last_played,
                 submitted_time_played, recent_time_played,
                 override_java_path, override_extra_launch_args, override_custom_env_vars,
@@ -499,13 +533,13 @@ impl Profile {
                 $1, $2, $3, $4,
                 $5, $6, $7,
                 jsonb($8),
-                $9, $10, $11,
-                $12, $13, $14,
-                $15, $16,
-                $17, jsonb($18), jsonb($19),
-                $20, $21, $22, $23,
-                $24, $25, $26,
-                $27, $28
+                $9, $10, $11, $12,
+                $13, $14, $15,
+                $16, $17,
+                $18, jsonb($19), jsonb($20),
+                $21, $22, $23, $24,
+                $25, $26, $27,
+                $28, $29
             )
             ON CONFLICT (path) DO UPDATE SET
                 install_stage = $2,
@@ -521,28 +555,29 @@ impl Profile {
                 linked_project_id = $9,
                 linked_version_id = $10,
                 locked = $11,
+                preferred_update_channel = $12,
 
-                created = $12,
-                modified = $13,
-                last_played = $14,
+                created = $13,
+                modified = $14,
+                last_played = $15,
 
-                submitted_time_played = $15,
-                recent_time_played = $16,
+                submitted_time_played = $16,
+                recent_time_played = $17,
 
-                override_java_path = $17,
-                override_extra_launch_args = jsonb($18),
-                override_custom_env_vars = jsonb($19),
-                override_mc_memory_max = $20,
-                override_mc_force_fullscreen = $21,
-                override_mc_game_resolution_x = $22,
-                override_mc_game_resolution_y = $23,
+                override_java_path = $18,
+                override_extra_launch_args = jsonb($19),
+                override_custom_env_vars = jsonb($20),
+                override_mc_memory_max = $21,
+                override_mc_force_fullscreen = $22,
+                override_mc_game_resolution_x = $23,
+                override_mc_game_resolution_y = $24,
 
-                override_hook_pre_launch = $24,
-                override_hook_wrapper = $25,
-                override_hook_post_exit = $26,
+                override_hook_pre_launch = $25,
+                override_hook_wrapper = $26,
+                override_hook_post_exit = $27,
 
-                protocol_version = $27,
-                launcher_feature_version = $28
+                protocol_version = $28,
+                launcher_feature_version = $29
             ",
             self.path,
             install_stage,
@@ -555,6 +590,7 @@ impl Profile {
             linked_data_project_id,
             linked_data_version_id,
             linked_data_locked,
+            preferred_update_channel,
             created,
             modified,
             last_played,
@@ -640,6 +676,10 @@ impl Profile {
                             && let Some(file_name) = subdirectory
                                 .file_name()
                                 .and_then(|x| x.to_str())
+                            && is_scannable_project_file(
+                                project_type,
+                                file_name,
+                            )
                         {
                             let file_size = subdirectory
                                 .metadata()
@@ -713,9 +753,15 @@ impl Profile {
         let file_updates = file_hashes
             .iter()
             .filter_map(|file| {
-                all.iter()
-                    .find(|prof| file.path.contains(&prof.path))
-                    .map(|profile| Self::get_cache_key(file, profile))
+                all.iter().find(|prof| file.path.contains(&prof.path)).map(
+                    |profile| {
+                        Self::get_cache_key(
+                            file,
+                            profile,
+                            profile.preferred_update_channel,
+                        )
+                    },
+                )
             })
             .collect::<Vec<_>>();
 
@@ -909,15 +955,330 @@ impl Profile {
         pool: &SqlitePool,
         fetch_semaphore: &FetchSemaphore,
     ) -> crate::Result<DashMap<String, ProfileFile>> {
-        let path = crate::api::profile::get_full_path(&self.path).await?;
+        self.get_projects_inner(
+            cache_behaviour,
+            pool,
+            fetch_semaphore,
+            None,
+            None,
+        )
+        .await
+    }
 
-        struct InitialScanFile {
-            path: String,
-            file_name: String,
-            project_type: ProjectType,
-            size: u64,
-            cache_key: String,
+    pub async fn get_projects_excluding_modpack_files(
+        &self,
+        excluded_hashes: &HashSet<String>,
+        excluded_project_ids: &HashSet<String>,
+        cache_behaviour: Option<CacheBehaviour>,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+    ) -> crate::Result<DashMap<String, ProfileFile>> {
+        self.get_projects_inner(
+            cache_behaviour,
+            pool,
+            fetch_semaphore,
+            Some(excluded_hashes),
+            Some(excluded_project_ids),
+        )
+        .await
+    }
+
+    async fn get_projects_inner(
+        &self,
+        cache_behaviour: Option<CacheBehaviour>,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+        excluded_hashes: Option<&HashSet<String>>,
+        excluded_project_ids: Option<&HashSet<String>>,
+    ) -> crate::Result<DashMap<String, ProfileFile>> {
+        let (keys, file_hashes) =
+            self.scan_and_hash(pool, fetch_semaphore).await?;
+
+        let excluded_hashes = excluded_hashes.filter(|ids| !ids.is_empty());
+        let excluded_project_ids =
+            excluded_project_ids.filter(|ids| !ids.is_empty());
+
+        let file_hashes = file_hashes
+            .into_iter()
+            .filter(|hash| {
+                excluded_hashes
+                    .is_none_or(|excluded| !excluded.contains(&hash.hash))
+            })
+            .collect::<Vec<_>>();
+
+        let (file_hashes, file_info_by_hash, file_updates) =
+            if let Some(excluded_project_ids) = excluded_project_ids {
+                let file_hashes_ref =
+                    file_hashes.iter().map(|x| &*x.hash).collect::<Vec<_>>();
+                let file_info = CachedEntry::get_file_many(
+                    &file_hashes_ref,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let file_info_by_hash: HashMap<String, CachedFile> = file_info
+                    .into_iter()
+                    .map(|f| (f.hash.clone(), f))
+                    .collect();
+                let file_info_by_hash = Self::resolve_installed_file_metadata(
+                    &file_hashes,
+                    &keys,
+                    file_info_by_hash,
+                    self,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let file_hashes = file_hashes
+                    .into_iter()
+                    .filter(|hash| {
+                        file_info_by_hash.get(&hash.hash).is_none_or(|file| {
+                            !excluded_project_ids.contains(&file.project_id)
+                        })
+                    })
+                    .collect::<Vec<_>>();
+
+                let installed_channels = Self::get_installed_update_channels(
+                    &file_info_by_hash,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let file_updates = file_hashes
+                    .iter()
+                    .filter(|x| file_info_by_hash.contains_key(&x.hash))
+                    .map(|x| {
+                        Self::get_cache_key(
+                            x,
+                            self,
+                            self.effective_update_channel(
+                                installed_channels.get(&x.hash).copied(),
+                            ),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                let file_updates_ref =
+                    file_updates.iter().map(|x| &**x).collect::<Vec<_>>();
+                let file_updates = CachedEntry::get_file_update_many(
+                    &file_updates_ref,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                (file_hashes, file_info_by_hash, file_updates)
+            } else {
+                let file_hashes_ref =
+                    file_hashes.iter().map(|x| &*x.hash).collect::<Vec<_>>();
+                let file_info = CachedEntry::get_file_many(
+                    &file_hashes_ref,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let file_info_by_hash: HashMap<String, CachedFile> = file_info
+                    .into_iter()
+                    .map(|f| (f.hash.clone(), f))
+                    .collect();
+                let file_info_by_hash = Self::resolve_installed_file_metadata(
+                    &file_hashes,
+                    &keys,
+                    file_info_by_hash,
+                    self,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let installed_channels = Self::get_installed_update_channels(
+                    &file_info_by_hash,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                let file_updates = file_hashes
+                    .iter()
+                    .filter(|x| file_info_by_hash.contains_key(&x.hash))
+                    .map(|x| {
+                        Self::get_cache_key(
+                            x,
+                            self,
+                            self.effective_update_channel(
+                                installed_channels.get(&x.hash).copied(),
+                            ),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                let file_updates_ref =
+                    file_updates.iter().map(|x| &**x).collect::<Vec<_>>();
+                let file_updates = CachedEntry::get_file_update_many(
+                    &file_updates_ref,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+
+                (file_hashes, file_info_by_hash, file_updates)
+            };
+
+        let mut keys_by_path: HashMap<String, InitialScanFile> =
+            keys.into_iter().map(|k| (k.path.clone(), k)).collect();
+
+        let mut updates_by_hash: HashMap<String, Vec<String>> = HashMap::new();
+        for update in file_updates {
+            updates_by_hash
+                .entry(update.hash)
+                .or_default()
+                .push(update.update_version_id);
         }
+
+        let files = DashMap::new();
+
+        for hash in file_hashes {
+            let file = file_info_by_hash.get(&hash.hash).cloned();
+            let trimmed = hash.path.trim_end_matches(".disabled");
+
+            if let Some(initial_file) = keys_by_path.remove(trimmed) {
+                let path = format!(
+                    "{}/{}",
+                    initial_file.project_type.get_folder(),
+                    initial_file.file_name
+                );
+
+                let update_version_id = if let Some(metadata) = &file {
+                    let update_ids =
+                        updates_by_hash.remove(&hash.hash).unwrap_or_default();
+
+                    if !update_ids.contains(&metadata.version_id) {
+                        update_ids.into_iter().next()
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                let file = ProfileFile {
+                    update_version_id,
+                    hash: hash.hash,
+                    file_name: initial_file.file_name,
+                    size: initial_file.size,
+                    metadata: file.map(|x| FileMetadata {
+                        project_id: x.project_id,
+                        version_id: x.version_id,
+                    }),
+                    project_type: initial_file.project_type,
+                };
+                files.insert(path, file);
+            }
+        }
+
+        Ok(files)
+    }
+
+    async fn get_installed_update_channels(
+        file_info_by_hash: &HashMap<String, CachedFile>,
+        cache_behaviour: Option<CacheBehaviour>,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+    ) -> crate::Result<HashMap<String, ReleaseChannel>> {
+        let version_ids = file_info_by_hash
+            .values()
+            .map(|file| file.version_id.as_str())
+            .collect::<HashSet<_>>();
+
+        if version_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let version_ids_ref = version_ids.iter().copied().collect::<Vec<_>>();
+        let versions = CachedEntry::get_version_many(
+            &version_ids_ref,
+            cache_behaviour,
+            pool,
+            fetch_semaphore,
+        )
+        .await?;
+        let channels_by_version_id = versions
+            .into_iter()
+            .map(|version| {
+                (
+                    version.id,
+                    ReleaseChannel::from_version_type(&version.version_type),
+                )
+            })
+            .collect::<HashMap<_, _>>();
+
+        Ok(file_info_by_hash
+            .iter()
+            .filter_map(|(hash, file)| {
+                channels_by_version_id
+                    .get(&file.version_id)
+                    .copied()
+                    .map(|channel| (hash.clone(), channel))
+            })
+            .collect())
+    }
+
+    fn effective_update_channel(
+        &self,
+        installed_channel: Option<ReleaseChannel>,
+    ) -> ReleaseChannel {
+        installed_channel.map_or(self.preferred_update_channel, |channel| {
+            self.preferred_update_channel.least_stable(channel)
+        })
+    }
+
+    pub async fn get_installed_project_ids(
+        &self,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+    ) -> crate::Result<Vec<String>> {
+        let (_keys, file_hashes) =
+            self.scan_and_hash(pool, fetch_semaphore).await?;
+
+        let file_hashes_ref =
+            file_hashes.iter().map(|x| &*x.hash).collect::<Vec<_>>();
+
+        let file_info = CachedEntry::get_file_many(
+            &file_hashes_ref,
+            None,
+            pool,
+            fetch_semaphore,
+        )
+        .await?;
+
+        let project_ids: Vec<String> = file_info
+            .into_iter()
+            .map(|f| f.project_id)
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        Ok(project_ids)
+    }
+
+    async fn scan_and_hash(
+        &self,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+    ) -> crate::Result<(Vec<InitialScanFile>, Vec<CachedFileHash>)> {
+        let path = crate::api::profile::get_full_path(&self.path).await?;
 
         let mut keys = vec![];
 
@@ -934,6 +1295,7 @@ impl Profile {
                     if subdirectory.is_file()
                         && let Some(file_name) =
                             subdirectory.file_name().and_then(|x| x.to_str())
+                        && is_scannable_project_file(project_type, file_name)
                     {
                         let file_size = subdirectory
                             .metadata()
@@ -967,87 +1329,16 @@ impl Profile {
         )
         .await?;
 
-        let file_updates = file_hashes
-            .iter()
-            .map(|x| Self::get_cache_key(x, self))
-            .collect::<Vec<_>>();
-
-        let file_hashes_ref =
-            file_hashes.iter().map(|x| &*x.hash).collect::<Vec<_>>();
-        let file_updates_ref =
-            file_updates.iter().map(|x| &**x).collect::<Vec<_>>();
-        let (mut file_info, file_updates) = tokio::try_join!(
-            CachedEntry::get_file_many(
-                &file_hashes_ref,
-                cache_behaviour,
-                pool,
-                fetch_semaphore,
-            ),
-            CachedEntry::get_file_update_many(
-                &file_updates_ref,
-                cache_behaviour,
-                pool,
-                fetch_semaphore,
-            )
-        )?;
-
-        let files = DashMap::new();
-
-        for hash in file_hashes {
-            let info_index = file_info.iter().position(|x| x.hash == hash.hash);
-            let file = info_index.map(|x| file_info.remove(x));
-
-            if let Some(initial_file_index) = keys
-                .iter()
-                .position(|x| x.path == hash.path.trim_end_matches(".disabled"))
-            {
-                let initial_file = keys.remove(initial_file_index);
-
-                let path = format!(
-                    "{}/{}",
-                    initial_file.project_type.get_folder(),
-                    initial_file.file_name
-                );
-
-                let update_version_id = if let Some(update) = file_updates
-                    .iter()
-                    .find(|x| x.hash == hash.hash)
-                    .map(|x| x.update_version_id.clone())
-                {
-                    if let Some(metadata) = &file {
-                        if metadata.version_id != update {
-                            Some(update)
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                };
-
-                let file = ProfileFile {
-                    update_version_id,
-                    hash: hash.hash,
-                    file_name: initial_file.file_name,
-                    size: initial_file.size,
-                    metadata: file.map(|x| FileMetadata {
-                        project_id: x.project_id,
-                        version_id: x.version_id,
-                    }),
-                    project_type: initial_file.project_type,
-                };
-                files.insert(path, file);
-            }
-        }
-
-        Ok(files)
+        Ok((keys, file_hashes))
     }
 
-    fn get_cache_key(file: &CachedFileHash, profile: &Profile) -> String {
+    fn get_cache_key(
+        file: &CachedFileHash,
+        profile: &Profile,
+        channel: ReleaseChannel,
+    ) -> String {
         format!(
-            "{}-{}-{}",
+            "{}-{}-{}-{}",
             file.hash,
             file.project_type
                 .filter(|x| *x != ProjectType::Mod)
@@ -1055,18 +1346,222 @@ impl Profile {
                     || profile.loader.as_str().to_string(),
                     |x| x.get_loaders().join("+")
                 ),
+            channel.key(),
             profile.game_version
         )
+    }
+
+    async fn resolve_installed_file_metadata(
+        file_hashes: &[CachedFileHash],
+        scan_files: &[InitialScanFile],
+        mut file_info_by_hash: HashMap<String, CachedFile>,
+        profile: &Profile,
+        cache_behaviour: Option<CacheBehaviour>,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+    ) -> crate::Result<HashMap<String, CachedFile>> {
+        let scan_files_by_path: HashMap<&str, &InitialScanFile> = scan_files
+            .iter()
+            .map(|file| (file.path.as_str(), file))
+            .collect();
+        struct MetadataCandidate {
+            hash: String,
+            project_id: String,
+            version_id: String,
+            file_name: String,
+            project_type: ProjectType,
+        }
+
+        let mut candidates = Vec::new();
+        let mut version_ids = HashSet::new();
+
+        for file_hash in file_hashes {
+            if let (Some(project_id), Some(version_id)) =
+                (&file_hash.project_id, &file_hash.version_id)
+            {
+                file_info_by_hash.insert(
+                    file_hash.hash.clone(),
+                    CachedFile {
+                        hash: file_hash.hash.clone(),
+                        project_id: project_id.clone(),
+                        version_id: version_id.clone(),
+                    },
+                );
+                continue;
+            }
+
+            let Some(file_info) = file_info_by_hash.get(&file_hash.hash) else {
+                continue;
+            };
+
+            let Some(scan_file) = scan_files_by_path
+                .get(file_hash.path.trim_end_matches(".disabled"))
+            else {
+                continue;
+            };
+
+            version_ids.insert(file_info.version_id.clone());
+            candidates.push(MetadataCandidate {
+                hash: file_hash.hash.clone(),
+                project_id: file_info.project_id.clone(),
+                version_id: file_info.version_id.clone(),
+                file_name: scan_file.file_name.clone(),
+                project_type: scan_file.project_type,
+            });
+        }
+
+        let version_ids_ref =
+            version_ids.iter().map(|id| id.as_str()).collect::<Vec<_>>();
+        let versions_by_id: HashMap<String, Version> =
+            CachedEntry::get_version_many(
+                &version_ids_ref,
+                None,
+                pool,
+                fetch_semaphore,
+            )
+            .await?
+            .into_iter()
+            .map(|version| (version.id.clone(), version))
+            .collect();
+
+        let mut project_versions_by_id: HashMap<String, Option<Vec<Version>>> =
+            HashMap::new();
+
+        for candidate in candidates {
+            if versions_by_id.get(&candidate.version_id).is_some_and(
+                |version| {
+                    Self::version_matches_file(
+                        version,
+                        &candidate.hash,
+                        &candidate.file_name,
+                        candidate.project_type,
+                        profile,
+                    )
+                },
+            ) {
+                continue;
+            }
+
+            if !project_versions_by_id.contains_key(&candidate.project_id) {
+                let versions = CachedEntry::get_project_versions(
+                    &candidate.project_id,
+                    cache_behaviour,
+                    pool,
+                    fetch_semaphore,
+                )
+                .await?;
+                project_versions_by_id
+                    .insert(candidate.project_id.clone(), versions);
+            }
+
+            let Some(Some(versions)) =
+                project_versions_by_id.get(&candidate.project_id)
+            else {
+                continue;
+            };
+
+            if let Some(version) = Self::find_matching_file_version(
+                versions,
+                &candidate.hash,
+                &candidate.file_name,
+                candidate.project_type,
+                profile,
+            ) {
+                file_info_by_hash.insert(
+                    candidate.hash.clone(),
+                    CachedFile {
+                        hash: candidate.hash,
+                        project_id: version.project_id.clone(),
+                        version_id: version.id.clone(),
+                    },
+                );
+            }
+        }
+
+        Ok(file_info_by_hash)
+    }
+
+    fn find_matching_file_version<'a>(
+        versions: &'a [Version],
+        hash: &str,
+        file_name: &str,
+        project_type: ProjectType,
+        profile: &Profile,
+    ) -> Option<&'a Version> {
+        versions.iter().find(|version| {
+            Self::version_matches_file(
+                version,
+                hash,
+                file_name,
+                project_type,
+                profile,
+            )
+        })
+    }
+
+    fn version_matches_file(
+        version: &Version,
+        hash: &str,
+        file_name: &str,
+        project_type: ProjectType,
+        profile: &Profile,
+    ) -> bool {
+        version.game_versions.contains(&profile.game_version)
+            && Self::version_loaders_match_profile(
+                version,
+                project_type,
+                profile,
+            )
+            && version.files.iter().any(|file| {
+                file.hashes.get("sha1").is_some_and(|sha1| sha1 == hash)
+                    && (file.primary
+                        || file.filename
+                            == file_name.trim_end_matches(".disabled"))
+            })
+    }
+
+    fn version_loaders_match_profile(
+        version: &Version,
+        project_type: ProjectType,
+        profile: &Profile,
+    ) -> bool {
+        if project_type == ProjectType::Mod {
+            version
+                .loaders
+                .iter()
+                .any(|loader| loader == profile.loader.as_str())
+        } else {
+            version.loaders.iter().any(|loader| {
+                project_type.get_loaders().contains(&loader.as_str())
+            })
+        }
     }
 
     #[tracing::instrument(skip(pool))]
     pub async fn add_project_version(
         profile_path: &str,
         version_id: &str,
+        reason: util::fetch::DownloadReason,
+        dependent_on_version_id: Option<String>,
         pool: &SqlitePool,
         fetch_semaphore: &FetchSemaphore,
         io_semaphore: &IoSemaphore,
     ) -> crate::Result<String> {
+        let profile =
+            Self::get(profile_path, pool).await?.ok_or_else(|| {
+                crate::ErrorKind::UnmanagedProfileError(
+                    profile_path.to_string(),
+                )
+                .as_error()
+            })?;
+
+        let download_meta = util::fetch::DownloadMeta {
+            reason,
+            game_version: profile.game_version.clone(),
+            loader: profile.loader.as_str().to_string(),
+            dependent_on: dependent_on_version_id,
+        };
+
         let version =
             CachedEntry::get_version(version_id, None, pool, fetch_semaphore)
                 .await?
@@ -1092,6 +1587,8 @@ impl Profile {
         let bytes = util::fetch::fetch(
             &file.url,
             file.hashes.get("sha1").map(|x| &**x),
+            Some(&download_meta),
+            None,
             fetch_semaphore,
             pool,
         )
@@ -1103,6 +1600,10 @@ impl Profile {
             bytes,
             file.hashes.get("sha1").map(|x| &**x),
             ProjectType::get_from_loaders(version.loaders.clone()),
+            Some(KnownModrinthFile {
+                project_id: &version.project_id,
+                version_id: &version.id,
+            }),
             io_semaphore,
             pool,
         )
@@ -1118,6 +1619,7 @@ impl Profile {
         bytes: bytes::Bytes,
         hash: Option<&str>,
         project_type: Option<ProjectType>,
+        known_modrinth_file: Option<KnownModrinthFile<'_>>,
         io_semaphore: &IoSemaphore,
         exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     ) -> crate::Result<String> {
@@ -1165,6 +1667,7 @@ impl Profile {
             &project_path,
             hash,
             Some(project_type),
+            known_modrinth_file,
             exec,
         )
         .await?;
@@ -1176,20 +1679,41 @@ impl Profile {
     }
 
     /// Toggle a project's disabled state.
+    ///
+    /// Accepts either a bare file name (e.g. `mymod.jar`) or a relative
+    /// path (`mods/mymod.jar`). The function resolves the current on-disk
+    /// path (enabled or disabled) before renaming, so callers don't need
+    /// to track the `.disabled` suffix.
     #[tracing::instrument]
     pub async fn toggle_disable_project(
         profile_path: &str,
         project_path: &str,
     ) -> crate::Result<String> {
-        let path = crate::api::profile::get_full_path(profile_path).await?;
+        let base = crate::api::profile::get_full_path(profile_path).await?;
 
-        let new_path = if project_path.ends_with(".disabled") {
-            project_path.trim_end_matches(".disabled").to_string()
+        let trimmed = project_path.trim_end_matches(".disabled");
+
+        // Resolve the actual current path on disk
+        let current_path = if base.join(project_path).exists() {
+            project_path.to_string()
+        } else if base.join(format!("{trimmed}.disabled")).exists() {
+            format!("{trimmed}.disabled")
+        } else if base.join(trimmed).exists() {
+            trimmed.to_string()
         } else {
-            format!("{project_path}.disabled")
+            return Err(crate::ErrorKind::FSError(format!(
+                "Could not find project file for '{project_path}' in profile"
+            ))
+            .into());
         };
 
-        io::rename_or_move(&path.join(project_path), &path.join(&new_path))
+        let new_path = if current_path.ends_with(".disabled") {
+            current_path.trim_end_matches(".disabled").to_string()
+        } else {
+            format!("{current_path}.disabled")
+        };
+
+        io::rename_or_move(&base.join(&current_path), &base.join(&new_path))
             .await?;
 
         Ok(new_path)

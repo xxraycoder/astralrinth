@@ -1,3 +1,5 @@
+import { defineMessages, useVIntl } from '@modrinth/ui'
+
 export const scopeMessages = defineMessages({
 	userReadEmailLabel: {
 		id: 'scopes.userReadEmail.label',
@@ -197,7 +199,7 @@ export const scopeMessages = defineMessages({
 	},
 	patCreateDescription: {
 		id: 'scopes.patCreate.description',
-		defaultMessage: 'Create personal API tokens',
+		defaultMessage: 'Create personal access tokens',
 	},
 	patReadLabel: {
 		id: 'scopes.patRead.label',
@@ -205,7 +207,7 @@ export const scopeMessages = defineMessages({
 	},
 	patReadDescription: {
 		id: 'scopes.patRead.description',
-		defaultMessage: 'View created API tokens',
+		defaultMessage: 'View created personal access tokens',
 	},
 	patWriteLabel: {
 		id: 'scopes.patWrite.label',
@@ -213,7 +215,7 @@ export const scopeMessages = defineMessages({
 	},
 	patWriteDescription: {
 		id: 'scopes.patWrite.description',
-		defaultMessage: 'Edit personal API tokens',
+		defaultMessage: 'Edit personal access tokens',
 	},
 	patDeleteLabel: {
 		id: 'scopes.patDelete.label',
@@ -221,7 +223,7 @@ export const scopeMessages = defineMessages({
 	},
 	patDeleteDescription: {
 		id: 'scopes.patDelete.description',
-		defaultMessage: 'Delete your personal API tokens',
+		defaultMessage: 'Delete your personal access tokens',
 	},
 	sessionReadLabel: {
 		id: 'scopes.sessionRead.label',
@@ -317,7 +319,58 @@ export const scopeMessages = defineMessages({
 	},
 	sessionAccessDescription: {
 		id: 'scopes.sessionAccess.description',
-		defaultMessage: 'Access modrinth-issued sessions',
+		defaultMessage: 'Access Modrinth-issued sessions',
+	},
+})
+
+export const scopeCategoryMessages = defineMessages({
+	categoryUserAccount: {
+		id: 'scopes.category.user-account',
+		defaultMessage: 'User account',
+	},
+	categoryProjects: {
+		id: 'scopes.category.projects',
+		defaultMessage: 'Projects',
+	},
+	categoryVersions: {
+		id: 'scopes.category.versions',
+		defaultMessage: 'Versions',
+	},
+	categoryCollections: {
+		id: 'scopes.category.collections',
+		defaultMessage: 'Collections',
+	},
+	categoryOrganizations: {
+		id: 'scopes.category.organizations',
+		defaultMessage: 'Organizations',
+	},
+	categoryReports: {
+		id: 'scopes.category.reports',
+		defaultMessage: 'Reports',
+	},
+	categoryThreads: {
+		id: 'scopes.category.threads',
+		defaultMessage: 'Threads',
+	},
+	categoryPats: {
+		id: 'scopes.category.pats',
+		defaultMessage: 'PATs',
+	},
+	categorySessions: {
+		id: 'scopes.category.sessions',
+		defaultMessage: 'Sessions',
+	},
+	categoryNotifications: {
+		id: 'scopes.category.notifications',
+		defaultMessage: 'Notifications',
+	},
+	categoryPayouts: {
+		id: 'scopes.category.payouts',
+		defaultMessage: 'Payouts',
+	},
+	categoryAnalytics: {
+		id: 'scopes.category.analytics',
+		defaultMessage: 'Analytics',
 	},
 })
 

@@ -1,8 +1,64 @@
 {
 	"articles": [
 		{
+			"title": "Modrinth joins Spark Universe",
+			"summary": "The next chapter. What it means and why we think it’s right for Modrinth.",
+			"thumbnail": "https://modrinth.com/news/article/joining-spark-universe/thumbnail.webp",
+			"date": "2026-06-15T14:00:00.000Z",
+			"link": "https://modrinth.com/news/article/joining-spark-universe"
+		},
+		{
+			"title": "Manage servers together",
+			"summary": "Add other users to your server, assign roles, and track what’s changed.",
+			"thumbnail": "https://modrinth.com/news/article/server-access/thumbnail.webp",
+			"date": "2026-06-04T15:59:11.000Z",
+			"link": "https://modrinth.com/news/article/server-access"
+		},
+		{
+			"title": "Pride 2026 Fundraiser: Matching up to $10,000",
+			"summary": "Celebrating our community and working together to make a difference.",
+			"thumbnail": "https://modrinth.com/news/article/pride-campaign-2026/thumbnail.webp",
+			"date": "2026-06-01T16:00:00.000Z",
+			"link": "https://modrinth.com/news/article/pride-campaign-2026"
+		},
+		{
+			"title": "Project Analytics are good now",
+			"summary": "Get deeper insights into how people are using your projects with breakdowns, filtering, and more!",
+			"thumbnail": "https://modrinth.com/news/article/analytics-overhaul/thumbnail.webp",
+			"date": "2026-05-29T20:00:00.000Z",
+			"link": "https://modrinth.com/news/article/analytics-overhaul"
+		},
+		{
+			"title": "Modrinth Hosting in the App",
+			"summary": "Buy, setup, and manage your server all in the Modrinth App.",
+			"thumbnail": "https://modrinth.com/news/article/modrinth-hosting-in-app/thumbnail.webp",
+			"date": "2026-04-12T21:30:00.000Z",
+			"link": "https://modrinth.com/news/article/modrinth-hosting-in-app"
+		},
+		{
+			"title": "Content Management Overhaul",
+			"summary": "Overhauled content management for both Modrinth Hosting servers and Modrinth App instances.",
+			"thumbnail": "https://modrinth.com/news/article/content-management-overhaul/thumbnail.webp",
+			"date": "2026-03-17T20:15:00.000Z",
+			"link": "https://modrinth.com/news/article/content-management-overhaul"
+		},
+		{
+			"title": "Introducing Server Projects",
+			"summary": "A new project type made for seamless modded multiplayer on Modrinth.",
+			"thumbnail": "https://modrinth.com/news/article/introducing-server-projects/thumbnail.webp",
+			"date": "2026-03-04T01:30:00.000Z",
+			"link": "https://modrinth.com/news/article/introducing-server-projects"
+		},
+		{
+			"title": "Streamlined Version Creation",
+			"summary": "Version creation is now dramatically more intelligent and easier for creators.",
+			"thumbnail": "https://modrinth.com/news/article/streamlined-version-creation/thumbnail.webp",
+			"date": "2025-12-18T20:50:00.000Z",
+			"link": "https://modrinth.com/news/article/streamlined-version-creation"
+		},
+		{
 			"title": "More Ways to Withdraw",
-			"summary": "Coming soon: new withdraw options and a redesigned revenue dashboard",
+			"summary": "New withdraw options and a redesigned revenue dashboard",
 			"thumbnail": "https://modrinth.com/news/article/creator-withdrawals-overhaul/thumbnail.webp",
 			"date": "2025-10-27T23:30:00.000Z",
 			"link": "https://modrinth.com/news/article/creator-withdrawals-overhaul"

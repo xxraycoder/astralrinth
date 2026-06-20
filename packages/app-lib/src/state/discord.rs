@@ -1,17 +1,17 @@
-// [AR] Feature
+// This code is modified by AstralRinth
 use std::{
     sync::{atomic::AtomicBool, Arc},
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use discord_rich_presence::{
-    activity::{Activity, Assets, Timestamps}, // [AR] Feature
+    activity::{Activity, Assets, Timestamps}, // This code is modified by AstralRinth
     DiscordIpc, DiscordIpcClient,
 };
-use rand::seq::SliceRandom; // [AR] Feature
+use rand::seq::SliceRandom; // This code is modified by AstralRinth
 use tokio::sync::RwLock;
 
-use crate::util::utils; // [AR] Feature
+use crate::util::astralrinth::utils;
 use crate::State;
 
 pub struct DiscordGuard {
@@ -19,21 +19,33 @@ pub struct DiscordGuard {
     connected: Arc<AtomicBool>,
 }
 
-pub(crate) const ACTIVE_STATE: [&str; 6] = [
+pub(crate) const ACTIVE_STATE: [&str; 12] = [
     "Explores",
     "Travels with",
     "Pirating",
     "Investigating the",
     "Engaged in",
     "Conducting",
+    "Charting",
+    "Raiding",
+    "Navigating through",
+    "Hunting treasures in",
+    "Mapping",
+    "Uncovering secrets of",
 ];
-pub(crate) const INACTIVE_STATE: [&str; 6] = [
+pub(crate) const INACTIVE_STATE: [&str; 12] = [
     "Idling...",
     "Waiting for the pirate team...",
     "Taking a break...",
     "Resting...",
     "On standby...",
     "In a holding pattern...",
+    "Watching the stars...",
+    "Sharpening the cutlass...",
+    "Checking the compass...",
+    "Planning the next voyage...",
+    "Guarding the treasure map...",
+    "Listening to sea shanties...",
 ];
 
 impl DiscordGuard {
@@ -103,7 +115,7 @@ impl DiscordGuard {
             utils::read_package_json().expect("Failed to read package.json");
 
         let build_info = format!("AR • v{}", launcher.version);
-        let build_download = "https://astralium.su/get/ar";
+        let build_download = "https://astralium.su/product/astralrinth";
 
         let time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -116,7 +128,7 @@ impl DiscordGuard {
                     .large_image("astralrinth_logo")
                     .large_text(&build_info)
                     .small_image("astralrinth_logo")
-                    .small_text(&build_download),
+                    .small_text(build_download),
             )
             .timestamps(Timestamps::new().start(time));
 

@@ -8,7 +8,7 @@ and launching Modrinth mod packs
 #![deny(unused_must_use)]
 
 #[macro_use]
-pub mod util; // [AR] Refactor
+pub mod util;
 
 mod api;
 mod error;
@@ -25,9 +25,15 @@ pub use event::{
 };
 pub use logger::start_logger;
 pub use state::State;
+pub use util::fetch::DownloadReason;
 
-pub const LAUNCHER_USER_AGENT: &str = concat!(
-    "modrinth/theseus/",
-    env!("CARGO_PKG_VERSION"),
-    " (support@modrinth.com)"
-);
+pub fn launcher_user_agent() -> String {
+    const LAUNCHER_BASE_USER_AGENT: &str =
+        concat!("modrinth/theseus/", env!("CARGO_PKG_VERSION"),);
+
+    format!(
+        "{} ({}; support@modrinth.com)",
+        LAUNCHER_BASE_USER_AGENT,
+        std::env::consts::OS
+    )
+}

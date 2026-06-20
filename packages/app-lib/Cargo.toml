@@ -7,10 +7,11 @@ edition.workspace = true
 [dependencies]
 ariadne = { workspace = true }
 async-compression = { workspace = true, features = ["gzip", "tokio"] }
+async-minecraft-ping = { workspace = true, features = ["srv"] }
 async-recursion = { workspace = true }
 async-tungstenite = { workspace = true, features = [
   "tokio-runtime",
-  "tokio-rustls-webpki-roots",
+  "tokio-rustls-webpki-roots"
 ] }
 async-walkdir = { workspace = true }
 async_zip = { workspace = true, features = [
@@ -36,9 +37,11 @@ dunce = { workspace = true }
 either = { workspace = true }
 encoding_rs = { workspace = true }
 enumset = { workspace = true }
+eyre = { workspace = true }
 flate2 = { workspace = true }
 fs4 = { workspace = true, features = ["tokio"] }
 futures = { workspace = true, features = ["alloc", "async-await"] }
+futures-lite = { workspace = true }
 heck = { workspace = true }
 hickory-resolver = { workspace = true }
 indicatif = { workspace = true, optional = true }
@@ -46,6 +49,7 @@ itertools = { workspace = true }
 notify = { workspace = true }
 notify-debouncer-mini = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa"] }
+parking_lot = { workspace = true }
 paste = { workspace = true }
 path-util = { workspace = true }
 phf = { workspace = true }
@@ -95,12 +99,7 @@ tokio = { workspace = true, features = [
   "sync",
   "time",
 ] }
-tokio-util = { workspace = true, features = [
-  "compat",
-  "io",
-  "io-util",
-  "time",
-] }
+tokio-util = { workspace = true, features = ["compat", "io", "io-util", "time"] }
 tracing = { workspace = true }
 tracing-error = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["chrono", "env-filter"] }

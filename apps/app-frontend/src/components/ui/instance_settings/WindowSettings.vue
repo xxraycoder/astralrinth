@@ -1,51 +1,54 @@
 <script setup lang="ts">
-import { Checkbox, injectNotificationManager, Toggle } from '@modrinth/ui'
-import { defineMessages, useVIntl } from '@vintl/vintl'
+import {
+	Checkbox,
+	defineMessages,
+	injectNotificationManager,
+	StyledInput,
+	Toggle,
+	useVIntl,
+} from '@modrinth/ui'
 import { computed, type Ref, ref, watch } from 'vue'
 
 import { edit } from '@/helpers/profile'
 import { get } from '@/helpers/settings.ts'
+import { injectInstanceSettings } from '@/providers/instance-settings'
 
-import type { AppSettings, InstanceSettingsTabProps } from '../../../helpers/types'
+import type { AppSettings } from '../../../helpers/types'
 
 const { handleError } = injectNotificationManager()
 const { formatMessage } = useVIntl()
 
-const props = defineProps<InstanceSettingsTabProps>()
+const { instance } = injectInstanceSettings()
 
 const globalSettings = (await get().catch(handleError)) as AppSettings
 
 const overrideWindowSettings = ref(
-	!!props.instance.game_resolution || !!props.instance.force_fullscreen,
+	!!instance.value.game_resolution || !!instance.value.force_fullscreen,
 )
 const resolution: Ref<[number, number]> = ref(
-	props.instance.game_resolution ?? (globalSettings.game_resolution.slice() as [number, number]),
+	instance.value.game_resolution ?? (globalSettings.game_resolution.slice() as [number, number]),
 )
 const fullscreenSetting: Ref<boolean> = ref(
-	props.instance.force_fullscreen ?? globalSettings.force_fullscreen,
+	instance.value.force_fullscreen ?? globalSettings.force_fullscreen,
 )
 
 const editProfileObject = computed(() => {
-	const editProfile: {
-		force_fullscreen?: boolean
-		game_resolution?: [number, number]
-	} = {}
-
-	if (overrideWindowSettings.value) {
-		editProfile.force_fullscreen = fullscreenSetting.value
-
-		if (!fullscreenSetting.value) {
-			editProfile.game_resolution = resolution.value
+	if (!overrideWindowSettings.value) {
+		return {
+			force_fullscreen: null,
+			game_resolution: null,
 		}
 	}
-
-	return editProfile
+	return {
+		force_fullscreen: fullscreenSetting.value,
+		game_resolution: fullscreenSetting.value ? null : resolution.value,
+	}
 })
 
 watch(
 	[overrideWindowSettings, resolution, fullscreenSetting],
 	async () => {
-		await edit(props.instance.path, editProfileObject.value)
+		await edit(instance.value.path, editProfileObject.value)
 	},
 	{ deep: true },
 )
@@ -91,22 +94,14 @@ const messages = defineMessages({
 </script>
 
 <template>
-	<div>
+	<div class="flex flex-col gap-6">
 		<Checkbox
 			v-model="overrideWindowSettings"
 			:label="formatMessage(messages.customWindowSettings)"
-			@update:model-value="
-				(value) => {
-					if (!value) {
-						resolution = globalSettings.game_resolution
-						fullscreenSetting = globalSettings.force_fullscreen
-					}
-				}
-			"
 		/>
-		<div class="mt-2 flex items-center gap-4 justify-between">
-			<div>
-				<h2 class="m-0 mb-1 text-lg font-extrabold text-contrast">
+		<div class="flex items-center gap-4 justify-between">
+			<div class="flex flex-col gap-1">
+				<h2 class="m-0 text-lg font-semibold text-contrast">
 					{{ formatMessage(messages.fullscreen) }}
 				</h2>
 				<p class="m-0">
@@ -125,16 +120,16 @@ const messages = defineMessages({
 			/>
 		</div>
 
-		<div class="mt-4 flex items-center gap-4 justify-between">
-			<div>
-				<h2 class="m-0 mb-1 text-lg font-extrabold text-contrast">
+		<div class="flex items-center gap-4 justify-between">
+			<div class="flex flex-col gap-1">
+				<h2 class="m-0 text-lg font-semibold text-contrast">
 					{{ formatMessage(messages.width) }}
 				</h2>
 				<p class="m-0">
 					{{ formatMessage(messages.widthDescription) }}
 				</p>
 			</div>
-			<input
+			<StyledInput
 				id="width"
 				v-model="resolution[0]"
 				autocomplete="off"
@@ -144,16 +139,16 @@ const messages = defineMessages({
 			/>
 		</div>
 
-		<div class="mt-4 flex items-center gap-4 justify-between">
-			<div>
-				<h2 class="m-0 mb-1 text-lg font-extrabold text-contrast">
+		<div class="flex items-center gap-4 justify-between">
+			<div class="flex flex-col gap-1">
+				<h2 class="m-0 text-lg font-semibold text-contrast">
 					{{ formatMessage(messages.height) }}
 				</h2>
 				<p class="m-0">
 					{{ formatMessage(messages.heightDescription) }}
 				</p>
 			</div>
-			<input
+			<StyledInput
 				id="height"
 				v-model="resolution[1]"
 				autocomplete="off"

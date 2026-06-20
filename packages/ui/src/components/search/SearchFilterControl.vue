@@ -1,5 +1,5 @@
 <template>
-	<div class="experimental-styles-within flex flex-wrap items-center gap-1 empty:hidden">
+	<div class="flex flex-wrap items-center gap-1 empty:hidden">
 		<TagItem
 			v-if="selectedItems.length > 1"
 			class="transition-transform active:scale-[0.95]"
@@ -22,7 +22,11 @@
 				(x) => x.provided && !overriddenProvidedFilterTypes.includes(x.type),
 			)"
 			:key="`provided-filter-${providedItem.type}-${providedItem.option}`"
-			v-tooltip="formatMessage(providedMessage ?? defaultProvidedMessage)"
+			v-tooltip="
+				typeof providedMessage === 'string'
+					? providedMessage
+					: formatMessage(providedMessage ?? defaultProvidedMessage)
+			"
 			:style="{ '--_bg-color': `var(--color-raised-bg)` }"
 		>
 			<LockIcon />
@@ -33,9 +37,9 @@
 
 <script setup lang="ts">
 import { BanIcon, LockIcon, XCircleIcon, XIcon } from '@modrinth/assets'
-import { defineMessage, type MessageDescriptor, useVIntl } from '@vintl/vintl'
 import { computed, type ComputedRef } from 'vue'
 
+import { defineMessage, type MessageDescriptor, useVIntl } from '../../composables/i18n'
 import type { FilterOption, FilterType, FilterValue } from '../../utils/search'
 import TagItem from '../base/TagItem.vue'
 
@@ -47,7 +51,7 @@ const props = defineProps<{
 	filters: FilterType[]
 	providedFilters: FilterValue[]
 	overriddenProvidedFilterTypes: string[]
-	providedMessage?: MessageDescriptor
+	providedMessage?: MessageDescriptor | string
 }>()
 
 const defaultProvidedMessage = defineMessage({

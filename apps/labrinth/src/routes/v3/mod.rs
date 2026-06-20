@@ -3,6 +3,7 @@ use crate::util::cors::default_cors;
 use actix_web::{HttpResponse, web};
 use serde_json::json;
 
+pub mod analytics_event;
 pub mod analytics_get;
 pub mod collections;
 pub mod friends;
@@ -36,7 +37,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .configure(images::config)
             .configure(notifications::config)
             .configure(organizations::config)
-            .configure(project_creation::config)
             .configure(projects::config)
             .configure(reports::config)
             .configure(shared_instance_version_creation::config)
@@ -47,7 +47,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .configure(threads::config)
             .configure(users::config)
             .configure(version_file::config)
-            .configure(payouts::config)
             .configure(versions::config)
             .configure(friends::config),
     );
@@ -60,6 +59,22 @@ pub fn utoipa_config(
         utoipa_actix_web::scope("/v3/analytics")
             .wrap(default_cors())
             .configure(analytics_get::config),
+    );
+    cfg.service(
+        utoipa_actix_web::scope("/v3/analytics-event")
+            .wrap(default_cors())
+            .configure(analytics_event::config),
+    );
+    cfg.service(
+        utoipa_actix_web::scope("/v3/payout")
+            .wrap(default_cors())
+            .configure(payouts::config),
+    );
+    cfg.service(
+        utoipa_actix_web::scope("/v3/project")
+            .wrap(default_cors())
+            .configure(projects::utoipa_config)
+            .configure(project_creation::config),
     );
 }
 

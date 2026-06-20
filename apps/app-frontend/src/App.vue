@@ -1,106 +1,242 @@
 <script setup>
 import {
-	ArrowBigUpDashIcon,
+	AuthFeature,
+	ModrinthApiError,
+	NodeAuthFeature,
+	nodeAuthState,
+	PanelVersionFeature,
+	TauriModrinthClient,
+	VerboseLoggingFeature,
+} from '@modrinth/api-client'
+import {
 	ChangeSkinIcon,
 	CompassIcon,
-	DownloadIcon,
 	ExternalIcon,
 	HomeIcon,
 	LeftArrowIcon,
 	LibraryIcon,
 	LogInIcon,
 	LogOutIcon,
-	MaximizeIcon,
-	MinimizeIcon,
 	NewspaperIcon,
 	NotepadTextIcon,
 	PlusIcon,
-	RefreshCwIcon,
-	RestoreIcon,
 	RightArrowIcon,
+	ServerStackIcon,
 	SettingsIcon,
 	UserIcon,
 	WorldIcon,
 	XIcon,
 } from '@modrinth/assets'
 import {
+	Admonition,
 	Avatar,
-	Button,
 	ButtonStyled,
 	commonMessages,
+	ContentInstallModal,
+	ContentUpdaterModal,
+	CreationFlowModal,
+	defineMessages,
+	I18nDebugPanel,
+	LoadingBar,
 	NewsArticleCard,
 	NotificationPanel,
 	OverflowMenu,
-	ProgressSpinner,
-	provideNotificationManager
+	PopupNotificationPanel,
+	provideModalBehavior,
+	provideModrinthClient,
+	provideNotificationManager,
+	providePageContext,
+	providePopupNotificationManager,
+	useDebugLogger,
+	useHostingIntercom,
+	useVIntl,
 } from '@modrinth/ui'
 import { renderString } from '@modrinth/utils'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
 import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
-import { defineMessages, useVIntl } from '@vintl/vintl'
 import { $fetch } from 'ofetch'
-import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
-import ModrinthLoadingIndicator from '@/components/LoadingIndicatorBar.vue'
 import AccountsCard from '@/components/ui/AccountsCard.vue'
+import AppActionBar from '@/components/ui/AppActionBar.vue'
 import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
 import ErrorModal from '@/components/ui/ErrorModal.vue'
 import FriendsList from '@/components/ui/friends/FriendsList.vue'
-import IncompatibilityWarningModal from '@/components/ui/install_flow/IncompatibilityWarningModal.vue'
-import InstallConfirmModal from '@/components/ui/install_flow/InstallConfirmModal.vue'
-import ModInstallModal from '@/components/ui/install_flow/ModInstallModal.vue'
-import InstanceCreationModal from '@/components/ui/InstanceCreationModal.vue'
+import AddServerToInstanceModal from '@/components/ui/install_flow/AddServerToInstanceModal.vue'
+import UnknownPackWarningModal from '@/components/ui/install_flow/UnknownPackWarningModal.vue'
+import MinecraftAuthErrorModal from '@/components/ui/minecraft-auth-error-modal/MinecraftAuthErrorModal.vue'
 import AppSettingsModal from '@/components/ui/modal/AppSettingsModal.vue'
 import AuthGrantFlowWaitModal from '@/components/ui/modal/AuthGrantFlowWaitModal.vue'
+import InstallToPlayModal from '@/components/ui/modal/InstallToPlayModal.vue'
+import ModpackAlreadyInstalledModal from '@/components/ui/modal/ModpackAlreadyInstalledModal.vue'
+import UpdateToPlayModal from '@/components/ui/modal/UpdateToPlayModal.vue'
 import NavButton from '@/components/ui/NavButton.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
-import RunningAppBar from '@/components/ui/RunningAppBar.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
-import URLConfirmModal from '@/components/ui/URLConfirmModal.vue'
+import WindowControls from '@/components/ui/WindowControls.vue'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
-import { debugAnalytics, optOutAnalytics, trackEvent } from '@/helpers/analytics'
-import { get_user } from '@/helpers/cache.js'
-import { command_listener, warning_listener } from '@/helpers/events.js'
-import { useFetch } from '@/helpers/fetch.js'
+import { config } from '@/config'
+import { check_reachable } from '@/helpers/auth.js'
+import { get_user, get_version } from '@/helpers/cache.js'
+import { command_listener, info_listener, notification_listener, warning_listener } from '@/helpers/events.js'
 import { cancelLogin, get as getCreds, login, logout } from '@/helpers/mr_auth.ts'
+import { create_profile_and_install_from_file } from '@/helpers/pack'
 import { list } from '@/helpers/profile.js'
+import { mergeUrlQuery, parseModrinthLink } from '@/helpers/project-links.ts'
 import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
 import { get_opening_command, initialize_state } from '@/helpers/state'
-import {
-	getOS,
-	isDev
-} from '@/helpers/utils.js'
-import {
-	provideAppUpdateDownloadProgress
-} from '@/providers/download-progress.ts'
+import { getOS, isDev } from '@/helpers/utils.js'
+import i18n from '@/i18n.config'
+import { createContentInstall, provideContentInstall } from '@/providers/content-install'
+import { provideAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
+import { createServerInstall, provideServerInstall } from '@/providers/server-install'
+import { setupProviders } from '@/providers/setup'
+import { setupAuthProvider } from '@/providers/setup/auth'
+import { setupLoadingStateProvider } from '@/providers/setup/loading-state'
 import { useError } from '@/store/error.js'
-import { useInstall } from '@/store/install.js'
-import { useLoading, useTheming } from '@/store/state'
+import { useTheming } from '@/store/state'
 
-import { create_profile_and_install_from_file } from './helpers/pack'
 import { generateSkinPreviews } from './helpers/rendering/batch-skin-renderer'
 import { get_available_capes, get_available_skins } from './helpers/skins'
 import { AppNotificationManager } from './providers/app-notifications'
+import { AppPopupNotificationManager } from './providers/app-popup-notifications'
 
-// [AR] Imports
-import { get, set } from '@/helpers/settings.ts'
-import { getRemote, updateState } from '@/helpers/update.js'
+// This code line modified by AstralRinth
+import { fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
 
 const themeStore = useTheming()
+const router = useRouter()
+const route = useRoute()
+const APP_LEFT_NAV_WIDTH = '4rem'
+const APP_SIDEBAR_WIDTH = 300
+const INTERCOM_BUBBLE_DEFAULT_PADDING = 20
+// This code line modified by AstralRinth
+const filteredNewsPhrases = [
+	'LGBT',
+	'LGBTQ',
+	'LGBTQ+',
+	'LGBTQIA+',
+	'gay',
+	'lesbian',
+	'bisexual',
+	'pansexual',
+	'asexual',
+	'aromantic',
+	'transgender',
+	'nonbinary',
+	'intersex',
+	'homosexual',
+	'homosexuality',
+	'pride',
+]
+const credentials = ref()
+const sidebarToggled = ref(true)
+const unsubscribeSidebarToggle = themeStore.$subscribe(() => {
+	sidebarToggled.value = !themeStore.toggleSidebar
+})
+const forceSidebar = computed(
+	() => route.path.startsWith('/browse') || route.path.startsWith('/project'),
+)
+const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
+const hostingRouteActive = computed(() => route.path.startsWith('/hosting'))
+const hostingIntercomIdentityKey = computed(() => {
+	const rawServerId = route.params.id
+	const serverId = Array.isArray(rawServerId) ? rawServerId[0] : rawServerId
+	const userId = credentials.value?.user_id ?? credentials.value?.user?.id ?? 'anonymous'
+	return `${userId}:${serverId ?? 'hosting'}`
+})
+const hostingIntercom = useHostingIntercom({
+	enabled: computed(() => hostingRouteActive.value && !!credentials.value?.session),
+	appId: 'ykeritl9',
+	fetchToken: fetchIntercomToken,
+	identityKey: hostingIntercomIdentityKey,
+	horizontalPadding: computed(() =>
+		sidebarVisible.value
+			? APP_SIDEBAR_WIDTH + INTERCOM_BUBBLE_DEFAULT_PADDING
+			: INTERCOM_BUBBLE_DEFAULT_PADDING,
+	),
+})
 
 const notificationManager = new AppNotificationManager()
 provideNotificationManager(notificationManager)
 const { handleError, addNotification } = notificationManager
 
+const popupNotificationManager = new AppPopupNotificationManager()
+providePopupNotificationManager(popupNotificationManager)
+const { addPopupNotification } = popupNotificationManager
+
+const settingsModal = ref(null)
+
+const appVersion = getVersion()
+const tauriApiClient = new TauriModrinthClient({
+	userAgent: async () => `modrinth/theseus/${await appVersion} (support@modrinth.com)`,
+	labrinthBaseUrl: config.labrinthBaseUrl,
+	archonBaseUrl: config.archonBaseUrl,
+	features: [
+		new NodeAuthFeature({
+			getAuth: () => nodeAuthState.getAuth?.() ?? null,
+			refreshAuth: async () => {
+				if (nodeAuthState.refreshAuth) {
+					await nodeAuthState.refreshAuth()
+				}
+			},
+		}),
+		new AuthFeature({
+			token: async () => (await getCreds())?.session,
+		}),
+		new PanelVersionFeature(),
+		new VerboseLoggingFeature(),
+	],
+})
+provideModrinthClient(tauriApiClient)
+const { data: authenticatedModrinthUser } = useQuery({
+	queryKey: computed(() => ['authenticated-user', 'campaigns', credentials.value?.user?.id]),
+	queryFn: () => tauriApiClient.labrinth.users_v3.getAuthenticated(),
+	enabled: () => !!credentials.value?.session,
+	retry: false,
+})
+providePageContext({
+	hierarchicalSidebarAvailable: ref(true),
+	floatingActionBarOffsets: {
+		left: ref(APP_LEFT_NAV_WIDTH),
+		right: computed(() => (sidebarVisible.value ? `${APP_SIDEBAR_WIDTH}px` : '0px')),
+	},
+	intercomBubble: hostingIntercom.intercomBubble,
+	featureFlags: {
+		serverRamAsBytesAlwaysOn: computed(() =>
+			themeStore.getFeatureFlag('server_ram_as_bytes_always_on'),
+		),
+	},
+	openExternalUrl: (url) => openUrl(url),
+})
+provideModalBehavior({
+	noblur: computed(() => !themeStore.advancedRendering),
+})
+
+const {
+	installationModal,
+	unknownPackWarningModal,
+	fetchExistingInstanceNames,
+	handleCreate,
+	handleBrowseModpacks,
+	searchModpacks,
+	getProjectVersions,
+	getLoaderManifest,
+	setModpackAlreadyInstalledModal,
+	handleModpackDuplicateCreateAnyway,
+	handleModpackDuplicateGoToInstance,
+} = setupProviders(notificationManager, popupNotificationManager)
+
 const news = ref([])
 const availableSurvey = ref(false)
-
-const urlModal = ref(null)
+const displayedServerInviteNotifications = new Set()
 
 const offline = ref(!navigator.onLine)
 window.addEventListener('offline', () => {
@@ -114,6 +250,7 @@ const showOnboarding = ref(false)
 const nativeDecorations = ref(false)
 
 const os = ref('')
+const isDevEnvironment = ref(false)
 
 const stateInitialized = ref(false)
 
@@ -121,9 +258,47 @@ const criticalErrorMessage = ref()
 
 const isMaximized = ref(false)
 
+const authUnreachableDebug = useDebugLogger('AuthReachableChecker')
+const authServerQuery = useQuery({
+	queryKey: ['authServerReachability'],
+	queryFn: async () => {
+		await check_reachable()
+		authUnreachableDebug('Auth servers are reachable')
+		return true
+	},
+	refetchInterval: 5 * 60 * 1000, // 5 minutes
+	retry: false,
+	refetchOnWindowFocus: false,
+})
+
+const authUnreachable = computed(() => {
+	if (authServerQuery.isError.value && !authServerQuery.isLoading.value) {
+		console.warn('Failed to reach auth servers', authServerQuery.error.value)
+		return true
+	}
+	return false
+})
+
+// This code is modified by AstralRinth
 onMounted(async () => {
 	await useCheckDisableMouseover()
-	await getRemote(false) // [AR] Check for updates
+	// This code line modified by AstralRinth
+	await fetchRemote()
+	if (isUpdateAvailable.value) {
+		addPopupNotification({
+			title: formatMessage(messages.launcherUpdateAvailableTitle),
+			text: formatMessage(messages.launcherUpdateAvailableText),
+			type: 'info',
+			autoCloseMs: 12000,
+			buttons: [
+				{
+					label: formatMessage(messages.launcherUpdateAvailableAction),
+					action: () => settingsModal.value?.showUpdateModal?.(),
+					color: 'brand',
+				},
+			],
+		})
+	}
 
 	document.querySelector('body').addEventListener('click', handleClick)
 	document.querySelector('body').addEventListener('auxclick', handleAuxClick)
@@ -132,46 +307,72 @@ onMounted(async () => {
 onUnmounted(async () => {
 	document.querySelector('body').removeEventListener('click', handleClick)
 	document.querySelector('body').removeEventListener('auxclick', handleAuxClick)
+	unsubscribeSidebarToggle()
 })
 
 const { formatMessage } = useVIntl()
+
 const messages = defineMessages({
-	updateInstalledToastTitle: {
-		id: 'app.update.complete-toast.title',
-		defaultMessage: 'Version {version} was successfully installed!',
+	authUnreachableHeader: {
+		id: 'app.auth-servers.unreachable.header',
+		defaultMessage: 'Cannot reach authentication servers',
 	},
-	updateInstalledToastText: {
-		id: 'app.update.complete-toast.text',
-		defaultMessage: 'Click here to view the changelog.',
+	authUnreachableBody: {
+		id: 'app.auth-servers.unreachable.body',
+		defaultMessage:
+			'Minecraft authentication servers may be down right now. Check your internet connection and try again later.',
 	},
-	reloadToUpdate: {
-		id: 'app.update.reload-to-update',
-		defaultMessage: 'Reload to install update',
+	launcherUpdateAvailableTitle: {
+		id: 'astralrinth.app.launcher-update.available.title',
+		defaultMessage: 'Launcher update available',
 	},
-	downloadUpdate: {
-		id: 'app.update.download-update',
-		defaultMessage: 'Download update',
+	launcherUpdateAvailableText: {
+		id: 'astralrinth.app.launcher-update.available.text',
+		defaultMessage: 'New version of AstralRinth is available for download.',
 	},
-	downloadingUpdate: {
-		id: 'app.update.downloading-update',
-		defaultMessage: 'Downloading update ({percent}%)',
+	launcherUpdateAvailableAction: {
+		id: 'astralrinth.app.launcher-update.available.action',
+		defaultMessage: 'View update',
 	},
 })
 
-async function setupApp() {
-	// [AR] Patched
-	const settings = await get()
-  	settings.personalized_ads = false
-  	settings.telemetry = false
-  	await set(settings)
+// This code line modified by AstralRinth
+function shouldHideNewsArticle(article) {
+	const haystack = [
+		article?.title,
+		article?.summary,
+		article?.description,
+		article?.excerpt,
+	]
+		.filter(Boolean)
+		.join(' ')
+		.toLowerCase()
 
-	stateInitialized.value = true
+	return filteredNewsPhrases.some((phrase) => haystack.includes(phrase.toLowerCase()))
+}
+
+// This code is modified by AstralRinth
+async function setupApp() {
+	// This code line modified by AstralRinth
+	const settings = await getSettings()
+	// This code line modified by AstralRinth
+	settings.personalized_ads = false
+	// This code line modified by AstralRinth
+	settings.telemetry = false
+	// This code line modified by AstralRinth
+	await setSettings(settings)
+	// This code line modified by AstralRinth
+	console.info('[AstralRinth] Privacy hard-patch applied', {
+		telemetry: settings.telemetry,
+		personalized_ads: settings.personalized_ads,
+	})
+
 	const {
 		native_decorations,
 		theme,
-		telemetry,
-		personalized_ads,
+		locale,
 		collapsed_navigation,
+		hide_nametag_skins_page,
 		advanced_rendering,
 		onboarded,
 		default_page,
@@ -181,13 +382,20 @@ async function setupApp() {
 		pending_update_toast_for_version,
 	} = await getSettings()
 
+	// Initialize locale from saved settings
+	if (locale) {
+		i18n.global.locale.value = locale
+	}
+
 	if (default_page === 'Library') {
 		await router.push('/library')
 	}
 
 	os.value = await getOS()
 	const dev = await isDev()
+	isDevEnvironment.value = dev
 	const version = await getVersion()
+	const upstreamVersion = version.length > 2 ? version.slice(0, -2) : version
 	showOnboarding.value = !onboarded
 
 	nativeDecorations.value = native_decorations
@@ -196,26 +404,17 @@ async function setupApp() {
 	themeStore.setThemeState(theme)
 	themeStore.collapsedNavigation = collapsed_navigation
 	themeStore.advancedRendering = advanced_rendering
+	themeStore.hideNametagSkinsPage = hide_nametag_skins_page
 	themeStore.toggleSidebar = toggle_sidebar
 	themeStore.devMode = developer_mode
 	themeStore.featureFlags = feature_flags
+	stateInitialized.value = true
 
 	isMaximized.value = await getCurrentWindow().isMaximized()
 
 	await getCurrentWindow().onResized(async () => {
 		isMaximized.value = await getCurrentWindow().isMaximized()
 	})
-
-	// [AR] Patched
-	if (!telemetry) {
-  	  console.info("[AR] • Telemetry disabled by default (Hard patched).")
-  	  optOutAnalytics()
-  	}
-  	if (!personalized_ads) {
-  	  console.info("[AR] • Personalized ads disabled by default (Hard patched).")
-  	}
-	if (dev) debugAnalytics()
-	trackEvent('Launched', { version, dev, onboarded })
 
 	if (!dev) document.addEventListener('contextmenu', (event) => event.preventDefault())
 
@@ -234,11 +433,16 @@ async function setupApp() {
 		}),
 	)
 
-	useFetch(
-		`https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
-		'criticalAnnouncements',
-		true,
+	await info_listener((e) =>
+		addNotification({
+			title: 'Info',
+			text: e.message,
+			type: 'info',
+			autoCloseMs: 8000,
+		}),
 	)
+
+	fetch(`https://api.modrinth.com/appCriticalAnnouncement.json?version=${upstreamVersion}`)
 		.then((response) => response.json())
 		.then((res) => {
 			if (res && res.header && res.body) {
@@ -247,26 +451,25 @@ async function setupApp() {
 		})
 		.catch(() => {
 			console.log(
-				`No critical announcement found at https://api.modrinth.com/appCriticalAnnouncement.json?version=${version}`,
+				`No critical announcement found at https://api.modrinth.com/appCriticalAnnouncement.json?version=${upstreamVersion}`,
 			)
 		})
 
-	useFetch(`https://modrinth.com/news/feed/articles.json`, 'news', true)
+	fetch(`https://modrinth.com/news/feed/articles.json`)
 		.then((response) => response.json())
 		.then((res) => {
 			if (res && res.articles) {
-				// Format expected by NewsArticleCard component.
 				news.value = res.articles
+					.filter((article) => !shouldHideNewsArticle(article))
 					.map((article) => ({
 						...article,
 						path: article.link,
-						thumbnail: article.thumbnail,
-						title: article.title,
-						summary: article.summary,
-						date: article.date,
 					}))
 					.slice(0, 4)
 			}
+		})
+		.catch((error) => {
+			console.error('Failed to fetch news articles', error)
 		})
 
 	get_opening_command().then(handleCommand)
@@ -313,33 +516,196 @@ const handleClose = async () => {
 	await getCurrentWindow().close()
 }
 
-const router = useRouter()
-router.afterEach((to, from, failure) => {
-	trackEvent('PageView', { path: to.path, fromPath: from.path, failed: failure })
-})
-const route = useRoute()
-
-const loading = useLoading()
+const loading = setupLoadingStateProvider()
 loading.setEnabled(false)
+let initialLoadToken = loading.begin()
+let routerToken = null
+let suspenseToken = null
+
+let suspensePending = false
+
+const sidebarOverlayScrollbarsOptions = Object.freeze({
+	overflow: {
+		x: 'hidden',
+		y: 'scroll',
+	},
+})
+
+router.beforeEach(() => {
+	suspensePending = false
+	if (routerToken) loading.end(routerToken)
+	routerToken = loading.begin()
+})
+router.afterEach((to, from, failure) => {
+	setTimeout(() => {
+		if (!suspensePending && stateInitialized.value) {
+			if (initialLoadToken) {
+				loading.end(initialLoadToken)
+				initialLoadToken = null
+			}
+			if (routerToken) {
+				loading.end(routerToken)
+				routerToken = null
+			}
+		}
+	}, 100)
+})
+
+function onSuspensePending() {
+	suspensePending = true
+	if (suspenseToken) loading.end(suspenseToken)
+	suspenseToken = loading.begin()
+}
+
+function onSuspenseResolve() {
+	if (suspenseToken) {
+		loading.end(suspenseToken)
+		suspenseToken = null
+	}
+	if (routerToken) {
+		loading.end(routerToken)
+		routerToken = null
+	}
+}
+
+const queryClient = useQueryClient()
+
+watch(stateInitialized, (ready) => {
+	if (ready) {
+		if (initialLoadToken) {
+			loading.end(initialLoadToken)
+			initialLoadToken = null
+		}
+		if (routerToken) {
+			loading.end(routerToken)
+			routerToken = null
+		}
+
+		queryClient.prefetchQuery({
+			queryKey: ['servers'],
+			queryFn: async () => {
+				const response = await tauriApiClient.archon.servers_v0.list({ limit: 100 })
+				const hasMedalServers = response.servers.some((s) => s.is_medal)
+				if (hasMedalServers) {
+					const subscriptions = await tauriApiClient.labrinth.billing_internal.getSubscriptions()
+					for (const server of response.servers) {
+						if (server.is_medal) {
+							const sub = subscriptions.find((s) => s.metadata?.id === server.server_id)
+							if (sub) {
+								server.medal_expires = new Date(
+									new Date(sub.created).getTime() + 5 * 86400000,
+								).toISOString()
+							}
+						}
+					}
+				}
+				return response
+			},
+			staleTime: 30_000,
+		})
+		queryClient.prefetchQuery({
+			queryKey: ['billing', 'subscriptions'],
+			queryFn: () => tauriApiClient.labrinth.billing_internal.getSubscriptions(),
+			staleTime: 30_000,
+		})
+		queryClient.prefetchQuery({
+			queryKey: ['billing', 'payments'],
+			queryFn: () => tauriApiClient.labrinth.billing_internal.getPayments(),
+			staleTime: 30_000,
+		})
+	}
+})
 
 const error = useError()
 const errorModal = ref()
+const minecraftAuthErrorModal = ref()
 
-const install = useInstall()
+const contentInstall = createContentInstall({ router, handleError })
+provideContentInstall(contentInstall)
+const {
+	instances: contentInstallInstances,
+	compatibleLoaders: contentInstallLoaders,
+	gameVersions: contentInstallGameVersions,
+	loading: contentInstallLoading,
+	defaultTab: contentInstallDefaultTab,
+	preferredLoader: contentInstallPreferredLoader,
+	preferredGameVersion: contentInstallPreferredGameVersion,
+	releaseGameVersions: contentInstallReleaseGameVersions,
+	projectInfo: contentInstallProjectInfo,
+	handleInstallToInstance,
+	handleCreateAndInstall,
+	handleNavigate: handleContentInstallNavigate,
+	handleCancel: handleContentInstallCancel,
+	setContentInstallModal,
+	setModpackAlreadyInstalledModal: setContentInstallModpackAlreadyInstalledModal,
+	handleModpackDuplicateCreateAnyway: handleContentInstallModpackDuplicateCreateAnyway,
+	handleModpackDuplicateGoToInstance: handleContentInstallModpackDuplicateGoToInstance,
+	setIncompatibilityWarningModal: setContentIncompatibilityWarningModal,
+	incompatibilityWarningVersions: contentInstallIncompatibilityWarningVersions,
+	incompatibilityWarningCurrentGameVersion: contentInstallIncompatibilityWarningCurrentGameVersion,
+	incompatibilityWarningCurrentLoader: contentInstallIncompatibilityWarningCurrentLoader,
+	incompatibilityWarningProjectType: contentInstallIncompatibilityWarningProjectType,
+	incompatibilityWarningProjectIconUrl: contentInstallIncompatibilityWarningProjectIconUrl,
+	incompatibilityWarningProjectName: contentInstallIncompatibilityWarningProjectName,
+	incompatibilityWarningMessage: contentInstallIncompatibilityWarningMessage,
+	incompatibilityWarningInstalling: contentInstallIncompatibilityWarningInstalling,
+	handleIncompatibilityWarningInstall: handleContentInstallIncompatibilityWarningInstall,
+	handleIncompatibilityWarningCancel: handleContentInstallIncompatibilityWarningCancel,
+} = contentInstall
+
+const serverInstall = createServerInstall({ router, handleError, popupNotificationManager })
+provideServerInstall(serverInstall)
+const {
+	setInstallToPlayModal: setServerInstallToPlayModal,
+	setUpdateToPlayModal: setServerUpdateToPlayModal,
+	setAddServerToInstanceModal: setServerAddServerToInstanceModal,
+	playServerProject,
+} = serverInstall
+
 const modInstallModal = ref()
-const installConfirmModal = ref()
+const modpackAlreadyInstalledModal = ref()
+const contentInstallModpackAlreadyInstalledModal = ref()
+const addServerToInstanceModal = ref()
 const incompatibilityWarningModal = ref()
-
-const credentials = ref()
+const installToPlayModal = ref()
+const updateToPlayModal = ref()
 
 const modrinthLoginFlowWaitModal = ref()
+
+watch(incompatibilityWarningModal, (modal) => {
+	if (modal) {
+		setContentIncompatibilityWarningModal(modal)
+	}
+})
+
+setupAuthProvider(credentials, async (_redirectPath) => {
+	await signIn()
+})
+
+async function validateSession(sessionToken) {
+	try {
+		const response = await tauriFetch(`${config.labrinthBaseUrl}/v2/user`, {
+			method: 'GET',
+			headers: { Authorization: sessionToken },
+		})
+		if (response.status === 401) return false
+		return true
+	} catch {
+		return true
+	}
+}
 
 async function fetchCredentials() {
 	const creds = await getCreds().catch(handleError)
 	if (creds && creds.user_id) {
-		creds.user = await get_user(creds.user_id).catch(handleError)
+		if (creds.session && !(await validateSession(creds.session))) {
+			await logout().catch(handleError)
+			credentials.value = null
+			return
+		}
+		creds.user = await get_user(creds.user_id, 'bypass').catch(handleError)
 	}
-	credentials.value = creds
+	credentials.value = creds ?? null
 }
 
 async function signIn() {
@@ -368,59 +734,188 @@ async function logOut() {
 	await fetchCredentials()
 }
 
-const MIDAS_BITFLAG = 1 << 0
-const hasPlus = computed(
-	() =>
-		credentials.value &&
-		credentials.value.user &&
-		(credentials.value.user.badges & MIDAS_BITFLAG) === MIDAS_BITFLAG,
-)
+// This code line modified by AstralRinth
+const hasPlus = computed(() => !!credentials.value?.user)
 
-const sidebarToggled = ref(true)
+async function fetchIntercomToken() {
+	const creds = await getCreds()
+	if (!creds?.session) {
+		throw new Error('Not authenticated')
+	}
 
-themeStore.$subscribe(() => {
-	sidebarToggled.value = !themeStore.toggleSidebar
-})
+	const params = new URLSearchParams()
+	const rawServerId = route.params.id
+	const serverId = Array.isArray(rawServerId) ? rawServerId[0] : rawServerId
+	if (route.path.startsWith('/hosting/manage/') && typeof serverId === 'string') {
+		params.set('server_id', serverId)
+	}
+	const query = params.size > 0 ? `?${params.toString()}` : ''
 
-const forceSidebar = computed(
-	() => route.path.startsWith('/browse') || route.path.startsWith('/project'),
-)
-const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
+	const response = await tauriFetch(`${config.siteUrl}/api/intercom/messenger-jwt${query}`, {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${creds.session}`,
+		},
+	})
+	if (!response.ok) {
+		throw new Error(`Failed to fetch Intercom token: ${response.status}`)
+	}
+	return await response.json()
+}
 
 onMounted(() => {
 	invoke('show_window')
 
 	error.setErrorModal(errorModal.value)
+	error.setMinecraftAuthErrorModal(minecraftAuthErrorModal.value)
 
-	install.setIncompatibilityWarningModal(incompatibilityWarningModal)
-	install.setInstallConfirmModal(installConfirmModal)
-	install.setModInstallModal(modInstallModal)
+	setContentIncompatibilityWarningModal(incompatibilityWarningModal.value)
+	setContentInstallModal(modInstallModal.value)
+	setContentInstallModpackAlreadyInstalledModal(contentInstallModpackAlreadyInstalledModal.value)
+	setModpackAlreadyInstalledModal(modpackAlreadyInstalledModal.value)
+	setServerAddServerToInstanceModal(addServerToInstanceModal.value)
+	setServerInstallToPlayModal(installToPlayModal.value)
+	setServerUpdateToPlayModal(updateToPlayModal.value)
 })
 
 const accounts = ref(null)
 provide('accountsCard', accounts)
 
 command_listener(handleCommand)
+notification_listener(handleLiveNotification)
+
+async function markLiveNotificationRead(notification) {
+	try {
+		await tauriApiClient.labrinth.notifications_v2.markAsRead(notification.id)
+	} catch (error) {
+		if (error instanceof ModrinthApiError && error.statusCode === 404) {
+			console.warn(`notification ${notification.id} could not be marked as read`, error)
+			return
+		}
+		throw error
+	}
+}
+
+async function respondToServerInvite(notification, action) {
+	const serverId = notification.body?.server_id
+	if (typeof serverId !== 'string') {
+		throw new Error('Missing server ID for invite notification.')
+	}
+
+	await tauriApiClient.request(`/servers/${serverId}/invites/${action}`, {
+		api: 'archon',
+		version: 1,
+		method: 'POST',
+	})
+	await markLiveNotificationRead(notification)
+
+	return serverId
+}
+
+async function acceptServerInviteNotification(notification) {
+	try {
+		const serverId = await respondToServerInvite(notification, 'accept')
+		await router.push(`/hosting/manage/${encodeURIComponent(serverId)}`)
+		queryClient.invalidateQueries({ queryKey: ['servers'] })
+	} catch (error) {
+		handleError(error)
+	}
+}
+
+async function declineServerInviteNotification(notification) {
+	try {
+		await respondToServerInvite(notification, 'decline')
+	} catch (error) {
+		handleError(error)
+	}
+}
+
+function openServerInviteInviterProfile(inviterName) {
+	if (!inviterName) return
+	openUrl(`${config.siteUrl}/user/${encodeURIComponent(inviterName)}`)
+}
+
+async function handleLiveNotification(notification) {
+	if (notification?.body?.type !== 'server_invite' || notification.read) return
+	if (displayedServerInviteNotifications.has(notification.id)) return
+
+	displayedServerInviteNotifications.add(notification.id)
+
+	const serverName =
+		typeof notification.body.server_name === 'string' ? notification.body.server_name : 'a server'
+	const inviterId = notification.body.invited_by
+	const invitedBy =
+		typeof inviterId === 'string' ? await get_user(inviterId, 'bypass').catch(() => null) : null
+
+	addPopupNotification({
+		title: serverName,
+		autoCloseMs: null,
+		toast: {
+			type: 'server-invite',
+			actorName: invitedBy?.username ?? null,
+			actorAvatarUrl: invitedBy?.avatar_url ?? null,
+			entityName: serverName,
+			onAccept: () => acceptServerInviteNotification(notification),
+			onDecline: () => declineServerInviteNotification(notification),
+			onOpenActor: () => openServerInviteInviterProfile(invitedBy?.username ?? null),
+		},
+	})
+}
+
 async function handleCommand(e) {
 	if (!e) return
 
 	if (e.event === 'RunMRPack') {
 		// RunMRPack should directly install a local mrpack given a path
 		if (e.path.endsWith('.mrpack')) {
-			await create_profile_and_install_from_file(e.path).catch(handleError)
-			trackEvent('InstanceCreate', {
-				source: 'CreationModalFileDrop',
-			})
+			await create_profile_and_install_from_file(e.path, (createProfile, fileName) =>
+				unknownPackWarningModal.value?.show(createProfile, fileName),
+			).catch(handleError)
+		}
+	} else if (e.event === 'InstallServer') {
+		await router.push(`/project/${e.id}`)
+		await playServerProject(e.id).catch(handleError)
+	} else if (e.event === 'InstallVersion') {
+		const version = await get_version(e.id, 'must_revalidate').catch(handleError)
+		if (version) {
+			await contentInstall
+				.install(version.project_id, version.id, null, 'URLConfirmModal', undefined, undefined, {
+					showProjectInfo: true,
+				})
+				.catch(handleError)
 		}
 	} else {
-		// Other commands are URL-based (deep linking)
-		urlModal.value.show(e)
+		await contentInstall
+			.install(e.id, null, null, 'URLConfirmModal', undefined, undefined, { showProjectInfo: true })
+			.catch(handleError)
 	}
 }
 
 const appUpdateDownload = {
 	progress: ref(0),
 	version: ref(),
+}
+
+async function openModrinthProjectLinkInApp(parsed) {
+	const { slug, pathSuffix, url } = parsed
+	const loadToken = loading.begin()
+	try {
+		const { id } = await tauriApiClient.labrinth.projects_v2.check(slug)
+		const query = mergeUrlQuery(route.query, url)
+		await router.push({
+			path: `/project/${id}${pathSuffix}`,
+			query,
+			hash: url.hash || undefined,
+		})
+	} catch (err) {
+		if (err instanceof ModrinthApiError && err.statusCode === 404) {
+			openUrl(url.href)
+		} else {
+			handleError(err)
+		}
+	} finally {
+		loading.end(loadToken)
+	}
 }
 
 function handleClick(e) {
@@ -435,7 +930,12 @@ function handleClick(e) {
 				!target.href.startsWith('https://tauri.localhost') &&
 				!target.href.startsWith('http://tauri.localhost')
 			) {
-				openUrl(target.href)
+				const parsed = parseModrinthLink(target.href)
+				if (target.target !== '_blank' && parsed) {
+					void openModrinthProjectLinkInApp(parsed)
+				} else {
+					openUrl(target.href)
+				}
 			}
 			e.preventDefault()
 			break
@@ -564,22 +1064,36 @@ async function processPendingSurveys() {
 	}
 }
 
+// This code line modified by AstralRinth
 provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this shit line -> SettingsModal will not work.
 </script>
 
 <template>
 	<SplashScreen v-if="!stateFailed" ref="splashScreen" data-tauri-drag-region />
 	<div id="teleports"></div>
-	<div v-if="stateInitialized" class="app-grid-layout experimental-styles-within relative">
+	<div
+		v-if="stateInitialized"
+		class="app-grid-layout relative"
+		:class="{ 'disable-advanced-rendering': !themeStore.advancedRendering }"
+	>
 		<Suspense>
 			<AppSettingsModal ref="settingsModal" />
 		</Suspense>
 		<Suspense>
 			<AuthGrantFlowWaitModal ref="modrinthLoginFlowWaitModal" @flow-cancel="cancelLogin" />
 		</Suspense>
-		<Suspense>
-			<InstanceCreationModal ref="installationModal" />
-		</Suspense>
+		<CreationFlowModal
+			ref="installationModal"
+			type="instance"
+			show-snapshot-toggle
+			:fetch-existing-instance-names="fetchExistingInstanceNames"
+			:search-modpacks="searchModpacks"
+			:get-project-versions="getProjectVersions"
+			:get-loader-manifest="getLoaderManifest"
+			@create="handleCreate"
+			@browse-modpacks="handleBrowseModpacks"
+		/>
+		<UnknownPackWarningModal ref="unknownPackWarningModal" />
 		<div
 			class="app-grid-navbar bg-bg-raised flex flex-col p-[0.5rem] pt-0 gap-[0.5rem] w-[--left-bar-width]"
 		>
@@ -597,12 +1111,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			>
 				<CompassIcon />
 			</NavButton>
-			<NavButton v-tooltip.right="'Skins (Beta)'" to="/skins">
+			<NavButton v-tooltip.right="'Skin selector'" to="/skins">
 				<ChangeSkinIcon />
 			</NavButton>
 			<NavButton
 				v-tooltip.right="'Library'"
 				to="/library"
+				:is-primary="(r) => r.path === '/library' || r.path === '/library'"
 				:is-subpage="
 					() =>
 						route.path.startsWith('/instance') ||
@@ -612,75 +1127,46 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			>
 				<LibraryIcon />
 			</NavButton>
-			<div class="h-px w-6 mx-auto my-2 bg-button-bg"></div>
+			<NavButton
+				v-tooltip.right="'Modrinth Hosting'"
+				to="/hosting/manage"
+				:is-primary="(r) => r.path === '/hosting/manage' || r.path === '/hosting/manage/'"
+				:is-subpage="(r) => r.path.startsWith('/hosting/manage/') && r.path !== '/hosting/manage/'"
+			>
+				<ServerStackIcon />
+			</NavButton>
+			<div class="h-px w-6 mx-auto my-2 bg-surface-5"></div>
 			<suspense>
 				<QuickInstanceSwitcher />
 			</suspense>
 			<NavButton
 				v-tooltip.right="'Create new instance'"
-				:to="() => $refs.installationModal.show()"
+				:to="() => installationModal?.show()"
 				:disabled="offline"
 			>
 				<PlusIcon />
 			</NavButton>
 			<div class="flex flex-grow"></div>
-			<Transition name="nav-button-animated">
-				<div
-					v-if="
-						availableUpdate &&
-						updateToastDismissed &&
-						!restarting &&
-						(finishedDownloading || metered)
-					"
+			<!-- This code line modified by AstralRinth -->
+			<template v-if="isUpdateAvailable">
+				<NavButton
+					class="neon-icon pulse"
+					v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+					:to="() => $refs.settingsModal.show()"
 				>
-					<NavButton
-						v-tooltip.right="
-							formatMessage(
-								finishedDownloading
-									? messages.reloadToUpdate
-									: downloadProgress === 0
-										? messages.downloadUpdate
-										: messages.downloadingUpdate,
-								{
-									percent: downloadPercent,
-								},
-							)
-						"
-						:to="
-							finishedDownloading
-								? installUpdate
-								: downloadProgress > 0 && downloadProgress < 1
-									? showUpdateToast
-									: downloadAvailableUpdate
-						"
-					>
-						<ProgressSpinner
-							v-if="downloadProgress > 0 && downloadProgress < 1"
-							class="text-brand"
-							:progress="downloadProgress"
-						/>
-						<RefreshCwIcon v-else-if="finishedDownloading" class="text-brand" />
-						<DownloadIcon v-else class="text-brand" />
-					</NavButton>
-				</div>
-			</Transition>
-			<template v-if="updateState">
-			  <NavButton
-			    class="neon-icon pulse"
-				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-				:to="() => $refs.settingsModal.show()">
-				<SettingsIcon />
-			    </NavButton>
-      		</template>
-      		<template v-else>
-      		  <NavButton
-				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-				:to="() => $refs.settingsModal.show()">
-				<SettingsIcon />
-			  </NavButton>
-      		</template>
+					<SettingsIcon />
+				</NavButton>
+			</template>
+			<template v-else>
+				<NavButton
+					v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+					:to="() => $refs.settingsModal.show()"
+				>
+					<SettingsIcon />
+				</NavButton>
+			</template>
 			<OverflowMenu
-				v-if="credentials"
+				v-if="credentials?.user"
 				v-tooltip.right="`Modrinth account`"
 				class="w-12 h-12 text-primary rounded-full flex items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast border-0 cursor-pointer"
 				:options="[
@@ -696,14 +1182,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				]"
 				placement="right-end"
 			>
-				<Avatar :src="credentials.user.avatar_url" alt="" size="32px" circle />
+				<Avatar :src="credentials?.user?.avatar_url" alt="" size="32px" circle />
 				<template #view-profile>
 					<UserIcon />
 					<span class="inline-flex items-center gap-1">
 						Signed in as
 						<span class="inline-flex items-center gap-1 text-contrast font-semibold">
-							<Avatar :src="credentials.user.avatar_url" alt="" size="20px" circle />
-							{{ credentials.user.username }}
+							<Avatar :src="credentials?.user?.avatar_url" alt="" size="20px" circle />
+							{{ credentials?.user?.username }}
 						</span>
 					</span>
 					<ExternalIcon />
@@ -715,8 +1201,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			</NavButton>
 		</div>
 		<div data-tauri-drag-region class="app-grid-statusbar bg-bg-raised h-[--top-bar-height] flex">
-			<div data-tauri-drag-region class="flex p-3">
-				<div data-tauri-drag-region class="flex items-center gap-1 ml-3">
+			<div data-tauri-drag-region class="flex min-w-0 flex-1 overflow-hidden p-3">
+				<!-- This code line modified by AstralRinth -->
+				<!-- <ModrinthAppLogo class="h-full w-auto shrink-0 text-contrast pointer-events-none" /> -->
+				<div data-tauri-drag-region class="flex shrink-0 items-center gap-1 ml-3">
 					<button
 						class="cursor-pointer p-0 m-0 text-contrast border-none outline-none bg-button-bg rounded-full flex items-center justify-center w-6 h-6 hover:brightness-75 transition-all"
 						@click="router.back()"
@@ -732,7 +1220,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				</div>
 				<Breadcrumbs class="pt-[2px]" />
 			</div>
-			<section data-tauri-drag-region class="flex ml-auto items-center">
+			<section data-tauri-drag-region class="flex shrink-0 ml-auto items-center">
 				<ButtonStyled
 					v-if="!forceSidebar && themeStore.toggleSidebar"
 					:type="sidebarToggled ? 'standard' : 'transparent'"
@@ -748,38 +1236,26 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				</ButtonStyled>
 				<div class="flex mr-3">
 					<Suspense>
-						<RunningAppBar />
+						<AppActionBar />
 					</Suspense>
 				</div>
-				<section v-if="!nativeDecorations" class="window-controls" data-tauri-drag-region-exclude>
-					<Button class="titlebar-button" icon-only @click="() => getCurrentWindow().minimize()">
-						<MinimizeIcon />
-					</Button>
-					<Button
-						class="titlebar-button"
-						icon-only
-						@click="() => getCurrentWindow().toggleMaximize()"
-					>
-						<RestoreIcon v-if="isMaximized" />
-						<MaximizeIcon v-else />
-					</Button>
-					<Button class="titlebar-button close" icon-only @click="handleClose">
-						<XIcon />
-					</Button>
-				</section>
+				<WindowControls />
 			</section>
 		</div>
 	</div>
 	<div
 		v-if="stateInitialized"
-		class="app-contents experimental-styles-within"
-		:class="{ 'sidebar-enabled': sidebarVisible }"
+		class="app-contents"
+		:class="{
+			'sidebar-enabled': sidebarVisible,
+			'disable-advanced-rendering': !themeStore.advancedRendering,
+		}"
 	>
 		<div class="app-viewport flex-grow router-view">
 			<transition name="popup-survey">
 				<div
 					v-if="availableSurvey"
-					class="w-[400px] z-20 fixed -bottom-12 pb-16 right-[--right-bar-width] mr-4 rounded-t-2xl card-shadow bg-bg-raised border-divider border-[1px] border-solid border-b-0 p-4"
+					class="w-[400px] z-20 fixed -bottom-12 pb-16 right-[--right-bar-width] mr-4 rounded-t-2xl card-shadow bg-bg-raised border-surface-5 border-[1px] border-solid border-b-0 p-4"
 				>
 					<h2 class="text-lg font-extrabold mt-0 mb-2">Hey there Modrinth user!</h2>
 					<p class="m-0 leading-tight">
@@ -799,14 +1275,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				</div>
 			</transition>
 			<div
-				class="loading-indicator-container h-8 fixed z-50"
+				class="loading-indicator-container h-8 fixed z-50 pointer-events-none"
 				:style="{
 					top: 'calc(var(--top-bar-height))',
 					left: 'calc(var(--left-bar-width))',
 					width: 'calc(100% - var(--left-bar-width) - var(--right-bar-width))',
 				}"
 			>
-				<ModrinthLoadingIndicator />
+				<LoadingBar position="absolute" />
 			</div>
 			<div
 				v-if="themeStore.featureFlags.page_path"
@@ -821,52 +1297,57 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 					width: 'calc(100% - var(--right-bar-width))',
 				}"
 			></div>
-			<div
+			<Admonition
 				v-if="criticalErrorMessage"
-				class="m-6 mb-0 flex flex-col border-red bg-bg-red rounded-2xl border-2 border-solid p-4 gap-1 font-semibold text-contrast"
+				type="critical"
+				:header="criticalErrorMessage.header"
+				class="m-6 mb-0"
 			>
-				<h1 class="m-0 text-lg font-extrabold">{{ criticalErrorMessage.header }}</h1>
 				<div
 					class="markdown-body text-primary"
 					v-html="renderString(criticalErrorMessage.body ?? '')"
 				></div>
-			</div>
+			</Admonition>
+			<Admonition
+				v-if="authUnreachable"
+				type="warning"
+				:header="formatMessage(messages.authUnreachableHeader)"
+				class="m-6 mb-0"
+			>
+				{{ formatMessage(messages.authUnreachableBody) }}
+			</Admonition>
 			<RouterView v-slot="{ Component }">
 				<template v-if="Component">
-					<Suspense @pending="loading.startLoading()" @resolve="loading.stopLoading()">
+					<Suspense @pending="onSuspensePending" @resolve="onSuspenseResolve">
 						<component :is="Component"></component>
 					</Suspense>
 				</template>
 			</RouterView>
 		</div>
 		<div
-			class="app-sidebar mt-px shrink-0 flex flex-col border-0 border-l-[1px] border-[--brand-gradient-border] border-solid overflow-auto"
+			class="app-sidebar mt-px shrink-0 flex flex-col border-0 border-l-[1px] border-[--brand-gradient-border] border-solid"
 			:class="{ 'has-plus': hasPlus }"
 		>
 			<div
-				class="app-sidebar-scrollable flex-grow shrink overflow-y-auto relative"
+				v-overlay-scrollbars="sidebarOverlayScrollbarsOptions"
+				class="app-sidebar-scrollable flex-grow shrink relative"
 				:class="{ 'pb-12': !hasPlus }"
+				data-overlayscrollbars-initialize
 			>
 				<div id="sidebar-teleport-target" class="sidebar-teleport-content"></div>
 				<div class="sidebar-default-content" :class="{ 'sidebar-enabled': sidebarVisible }">
-					<div
-						class="p-4 pr-1 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid"
-					>
+					<div class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
 						<h3 class="text-base text-primary font-medium m-0">Playing as</h3>
 						<suspense>
-							<AccountsCard ref="accounts" mode="small" />
+							<AccountsCard ref="accounts" />
 						</suspense>
 					</div>
-					<div class="py-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
+					<div class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid">
 						<suspense>
-							<FriendsList
-								:credentials="credentials"
-								:sign-in="() => signIn()"
-								:refresh-credentials="fetchCredentials"
-							/>
+							<FriendsList :credentials="credentials" :sign-in="() => signIn()" />
 						</suspense>
 					</div>
-					<div v-if="news && news.length > 0" class="p-4 pr-1 flex flex-col items-center">
+					<div v-if="news && news.length > 0" class="p-4 flex flex-col items-center">
 						<h3 class="text-base mb-4 text-primary font-medium m-0 text-left w-full">News</h3>
 						<div class="space-y-4 flex flex-col items-center w-full">
 							<NewsArticleCard
@@ -885,83 +1366,63 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			</div>
 		</div>
 	</div>
-	<URLConfirmModal ref="urlModal" />
-	<NotificationPanel has-sidebar />
+	<I18nDebugPanel />
+	<NotificationPanel :has-sidebar="sidebarVisible" />
+	<PopupNotificationPanel :has-sidebar="sidebarVisible" />
 	<ErrorModal ref="errorModal" />
-	<ModInstallModal ref="modInstallModal" />
-	<IncompatibilityWarningModal ref="incompatibilityWarningModal" />
-	<InstallConfirmModal ref="installConfirmModal" />
+	<MinecraftAuthErrorModal ref="minecraftAuthErrorModal" />
+	<ContentInstallModal
+		ref="modInstallModal"
+		:instances="contentInstallInstances"
+		:compatible-loaders="contentInstallLoaders"
+		:game-versions="contentInstallGameVersions"
+		:loading="contentInstallLoading"
+		:default-tab="contentInstallDefaultTab"
+		:preferred-loader="contentInstallPreferredLoader"
+		:preferred-game-version="contentInstallPreferredGameVersion"
+		:release-game-versions="contentInstallReleaseGameVersions"
+		:project-info="contentInstallProjectInfo"
+		@install="handleInstallToInstance"
+		@create-and-install="handleCreateAndInstall"
+		@navigate="handleContentInstallNavigate"
+		@cancel="handleContentInstallCancel"
+	/>
+	<ModpackAlreadyInstalledModal
+		ref="modpackAlreadyInstalledModal"
+		@create-anyway="handleModpackDuplicateCreateAnyway"
+		@go-to-instance="handleModpackDuplicateGoToInstance"
+	/>
+	<AddServerToInstanceModal ref="addServerToInstanceModal" />
+	<ContentUpdaterModal
+		ref="incompatibilityWarningModal"
+		mode="incompatibility-warning"
+		:versions="contentInstallIncompatibilityWarningVersions"
+		:current-game-version="contentInstallIncompatibilityWarningCurrentGameVersion"
+		:current-loader="contentInstallIncompatibilityWarningCurrentLoader"
+		current-version-id=""
+		:is-app="true"
+		:project-type="contentInstallIncompatibilityWarningProjectType"
+		:project-icon-url="contentInstallIncompatibilityWarningProjectIconUrl"
+		:project-name="contentInstallIncompatibilityWarningProjectName"
+		:warning="contentInstallIncompatibilityWarningMessage"
+		:action-loading="contentInstallIncompatibilityWarningInstalling"
+		@update="handleContentInstallIncompatibilityWarningInstall"
+		@cancel="handleContentInstallIncompatibilityWarningCancel"
+	/>
+	<ModpackAlreadyInstalledModal
+		ref="contentInstallModpackAlreadyInstalledModal"
+		@create-anyway="handleContentInstallModpackDuplicateCreateAnyway"
+		@go-to-instance="handleContentInstallModpackDuplicateGoToInstance"
+	/>
+	<InstallToPlayModal ref="installToPlayModal" />
+	<UpdateToPlayModal ref="updateToPlayModal" />
 </template>
 
 <style lang="scss" scoped>
-@import '../../../packages/assets/styles/neon-icon.scss';
-@import '../../../packages/assets/styles/neon-text.scss';
-.window-controls {
-	z-index: 20;
-	display: none;
-	flex-direction: row;
-	align-items: center;
-
-	.titlebar-button {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all ease-in-out 0.1s;
-		background-color: transparent;
-		color: var(--color-base);
-		height: 100%;
-		width: 3rem;
-		position: relative;
-		box-shadow: none;
-
-		&:last-child {
-			padding-right: 0.75rem;
-			width: 3.75rem;
-		}
-
-		svg {
-			width: 1.25rem;
-			height: 1.25rem;
-		}
-
-		&::before {
-			content: '';
-			border-radius: 999999px;
-			width: 3rem;
-			height: 3rem;
-			aspect-ratio: 1 / 1;
-			margin-block: auto;
-			position: absolute;
-			background-color: transparent;
-			scale: 0.9;
-			transition: all ease-in-out 0.2s;
-			z-index: -1;
-		}
-
-		&.close {
-			&:hover,
-			&:active {
-				color: var(--color-accent-contrast);
-
-				&::before {
-					background-color: var(--color-red);
-				}
-			}
-		}
-
-		&:hover,
-		&:active {
-			color: var(--color-contrast);
-
-			&::before {
-				background-color: var(--color-button-bg);
-				scale: 1;
-			}
-		}
-	}
-}
-
+// This code line modified by AstralRinth
+@import '../../../packages/assets/styles/astralrinth/neon-icon.scss';
+// This code line modified by AstralRinth
+@import '../../../packages/assets/styles/astralrinth/neon-text.scss';
 .app-grid-layout,
 .app-contents {
 	--top-bar-height: 3rem;
@@ -982,10 +1443,15 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 
 .app-grid-navbar {
 	grid-area: nav;
+	position: relative;
+	z-index: 2;
 }
 
 .app-grid-statusbar {
 	grid-area: status;
+	padding-right: var(--window-controls-width, 0px);
+	position: relative;
+	z-index: 2;
 }
 
 [data-tauri-drag-region-exclude] {
@@ -1030,9 +1496,40 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	--color-divider-dark: var(--brand-gradient-border);
 }
 
+.app-sidebar::after {
+	// content: ''; // Fix dirty gray line
+	position: absolute;
+	bottom: 250px;
+	left: 0;
+	right: 0;
+	height: 5rem;
+	background: var(--brand-gradient-fade-out-color);
+	pointer-events: none;
+}
+
+.app-sidebar.has-plus::after {
+	display: none;
+}
+
+.disable-advanced-rendering {
+	.app-sidebar::before {
+		box-shadow: none;
+	}
+
+	&.app-contents::before {
+		box-shadow: none;
+	}
+
+	*,
+	:deep(*) {
+		box-shadow: none !important;
+		--tw-drop-shadow:;
+	}
+}
+
 .app-sidebar::before {
 	content: '';
-	box-shadow: -15px 0 15px -15px rgba(0, 0, 0, 0.2) inset;
+	box-shadow: -15px 0 15px -15px rgba(0, 0, 0, 0.1) inset;
 	top: 0;
 	bottom: 0;
 	left: -2rem;
@@ -1046,10 +1543,11 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	height: 100%;
 	overflow: auto;
 	overflow-x: hidden;
+	scrollbar-gutter: stable;
 }
 
 .app-contents::before {
-	z-index: 1;
+	z-index: 30;
 	content: '';
 	position: fixed;
 	left: var(--left-bar-width);
@@ -1057,9 +1555,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	right: calc(-1 * var(--left-bar-width));
 	bottom: calc(-1 * var(--left-bar-width));
 	border-radius: var(--radius-xl);
-	box-shadow:
-		1px 1px 15px rgba(0, 0, 0, 0.2) inset,
-		inset 1px 1px 1px rgba(255, 255, 255, 0.23);
+	box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.1) inset;
+	border-color: var(--surface-5);
+	border-width: 1px;
+	border-style: solid;
 	pointer-events: none;
 }
 
@@ -1095,36 +1594,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	transform: translateY(10rem) scale(0.8) scaleY(1.6);
 }
 
-.toast-enter-active {
-	transition: opacity 0.25s linear;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-	opacity: 0;
-}
-
 @media (prefers-reduced-motion: no-preference) {
-	.toast-enter-active,
 	.nav-button-animated-enter-active {
 		transition: all 0.5s cubic-bezier(0.15, 1.4, 0.64, 0.96);
 	}
 
-	.toast-leave-active,
 	.nav-button-animated-leave-active {
 		transition: all 0.25s ease;
-	}
-
-	.toast-enter-from {
-		scale: 0.5;
-		translate: 0 -10rem;
-		opacity: 0;
-	}
-
-	.toast-leave-to {
-		scale: 0.96;
-		translate: 20rem 0;
-		opacity: 0;
 	}
 
 	.nav-button-animated-enter-active {
@@ -1174,6 +1650,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 }
 </style>
 <style>
+.os-theme-dark,
+.os-theme-light {
+	--os-handle-bg: var(--color-scrollbar) !important;
+	--os-handle-bg-hover: var(--color-scrollbar) !important;
+	--os-handle-bg-active: var(--color-scrollbar) !important;
+}
+
 .mac {
 	.app-grid-statusbar {
 		padding-left: 5rem;
@@ -1185,12 +1668,8 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 		height: 2.5rem !important;
 	}
 
-	.window-controls {
-		display: flex !important;
-	}
-
 	.info-card {
-		right: 8rem;
+		right: 22rem;
 	}
 
 	.profile-card {
@@ -1198,4 +1677,3 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	}
 }
 </style>
-<style src="vue-multiselect/dist/vue-multiselect.css"></style>

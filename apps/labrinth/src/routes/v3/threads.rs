@@ -2,10 +2,12 @@ use std::sync::Arc;
 
 use crate::auth::get_user_from_headers;
 use crate::database;
+use crate::database::PgPool;
 use crate::database::models::image_item;
 use crate::database::models::notification_item::NotificationBuilder;
 use crate::database::models::thread_item::ThreadMessageBuilder;
 use crate::database::redis::RedisPool;
+use crate::env::ENV;
 use crate::file_hosting::{FileHost, FileHostPublicity};
 use crate::models::ids::{ThreadId, ThreadMessageId};
 use crate::models::images::{Image, ImageContext};
@@ -19,7 +21,6 @@ use crate::routes::ApiError;
 use actix_web::{HttpRequest, HttpResponse, web};
 use futures::TryStreamExt;
 use serde::Deserialize;
-use sqlx::PgPool;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -380,7 +381,25 @@ pub async fn thread_send_message(
     .await?
     .1;
 
-    let string: database::models::DBThreadId = info.into_inner().0.into();
+    thread_send_message_internal(
+        &user,
+        info.into_inner().0,
+        &pool,
+        new_message.into_inner(),
+        &redis,
+    )
+    .await?;
+    Ok(HttpResponse::NoContent().finish())
+}
+
+pub async fn thread_send_message_internal(
+    user: &User,
+    thread_id: ThreadId,
+    pool: &PgPool,
+    new_message: NewThreadMessage,
+    redis: &RedisPool,
+) -> Result<(), ApiError> {
+    let string: database::models::DBThreadId = thread_id.into();
 
     let is_private: bool;
 
@@ -406,7 +425,7 @@ pub async fn thread_send_message(
         if let Some(replying_to) = replying_to {
             let thread_message = database::models::DBThreadMessage::get(
                 (*replying_to).into(),
-                &**pool,
+                pool,
             )
             .await?;
 
@@ -431,10 +450,10 @@ pub async fn thread_send_message(
         ));
     }
 
-    let result = database::models::DBThread::get(string, &**pool).await?;
+    let result = database::models::DBThread::get(string, pool).await?;
 
     if let Some(thread) = result {
-        if !is_authorized_thread(&thread, &user, &pool).await? {
+        if !is_authorized_thread(&thread, user, pool).await? {
             return Err(ApiError::NotFound);
         }
 
@@ -450,10 +469,9 @@ pub async fn thread_send_message(
         .await?;
 
         if let Some(project_id) = thread.project_id {
-            let project = database::models::DBProject::get_id(
-                project_id, &**pool, &redis,
-            )
-            .await?;
+            let project =
+                database::models::DBProject::get_id(project_id, pool, redis)
+                    .await?;
 
             if let Some(project) = project
                 && project.inner.status != ProjectStatus::Processing
@@ -463,8 +481,8 @@ pub async fn thread_send_message(
                 let members =
                     database::models::DBTeamMember::get_from_team_full(
                         project.inner.team_id,
-                        &**pool,
-                        &redis,
+                        pool,
+                        redis,
                     )
                     .await?;
 
@@ -479,7 +497,7 @@ pub async fn thread_send_message(
                 .insert_many(
                     members.iter().map(|x| x.user_id).collect(),
                     &mut transaction,
-                    &redis,
+                    redis,
                 )
                 .await?;
 
@@ -491,15 +509,14 @@ pub async fn thread_send_message(
                 .insert_many(
                     members.iter().map(|x| x.user_id).collect(),
                     &mut transaction,
-                    &redis,
+                    redis,
                 )
                 .await?;
             }
         } else if let Some(report_id) = thread.report_id {
-            let report = database::models::report_item::DBReport::get(
-                report_id, &**pool,
-            )
-            .await?;
+            let report =
+                database::models::report_item::DBReport::get(report_id, pool)
+                    .await?;
 
             if let Some(report) = report {
                 if report.closed && !user.role.is_mod() {
@@ -517,7 +534,7 @@ pub async fn thread_send_message(
                             report_id: Some(report.id.into()),
                         },
                     }
-                    .insert(report.reporter, &mut transaction, &redis)
+                    .insert(report.reporter, &mut transaction, redis)
                     .await?;
                 }
             }
@@ -530,8 +547,8 @@ pub async fn thread_send_message(
             for image_id in associated_images {
                 if let Some(db_image) = image_item::DBImage::get(
                     (*image_id).into(),
-                    &mut *transaction,
-                    &redis,
+                    &mut transaction,
+                    redis,
                 )
                 .await?
                 {
@@ -555,10 +572,10 @@ pub async fn thread_send_message(
                         thread.id.0,
                         image_id.0 as i64
                     )
-                    .execute(&mut *transaction)
+                    .execute(&mut transaction)
                     .await?;
 
-                    image_item::DBImage::clear_cache(image.id.into(), &redis)
+                    image_item::DBImage::clear_cache(image.id.into(), redis)
                         .await?;
                 } else {
                     return Err(ApiError::InvalidInput(format!(
@@ -570,7 +587,7 @@ pub async fn thread_send_message(
 
         transaction.commit().await?;
 
-        Ok(HttpResponse::NoContent().body(""))
+        Ok(())
     } else {
         Err(ApiError::NotFound)
     }
@@ -615,9 +632,8 @@ pub async fn message_delete(
         let images =
             database::DBImage::get_many_contexted(context, &mut transaction)
                 .await?;
-        let cdn_url = dotenvy::var("CDN_URL")?;
         for image in images {
-            let name = image.url.split(&format!("{cdn_url}/")).nth(1);
+            let name = image.url.split(&format!("{}/", ENV.CDN_URL)).nth(1);
             if let Some(icon_path) = name {
                 file_host
                     .delete_file(
@@ -630,14 +646,7 @@ pub async fn message_delete(
                 .await?;
         }
 
-        let private = if let MessageBody::Text { private, .. } = thread.body {
-            private
-        } else if let MessageBody::Deleted { private, .. } = thread.body {
-            private
-        } else {
-            false
-        };
-
+        let private = thread.body.is_private();
         database::models::DBThreadMessage::remove_full(
             thread.id,
             private,

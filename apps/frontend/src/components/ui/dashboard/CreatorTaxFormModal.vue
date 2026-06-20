@@ -37,7 +37,10 @@
 						v-model="isUSCitizen"
 						:items="['yes', 'no']"
 						:format-label="
-							(item) => (item === 'yes' ? formatMessage(messages.yes) : formatMessage(messages.no))
+							(item) =>
+								item === 'yes'
+									? formatMessage(commonMessages.yesLabel)
+									: formatMessage(commonMessages.noLabel)
 						"
 						:never-empty="false"
 						:capitalize="true"
@@ -158,12 +161,20 @@ import {
 	SpinnerIcon,
 	XIcon,
 } from '@modrinth/assets'
-import { Admonition, ButtonStyled, Chips, injectNotificationManager, NewModal } from '@modrinth/ui'
-import { defineMessages, useVIntl } from '@vintl/vintl'
-import { IntlFormatted } from '@vintl/vintl/components'
+import {
+	Admonition,
+	ButtonStyled,
+	Chips,
+	commonMessages,
+	defineMessages,
+	injectNotificationManager,
+	IntlFormatted,
+	NewModal,
+	normalizeChildren,
+	useVIntl,
+} from '@modrinth/ui'
 
 import { type FormRequestResponse, useAvalara1099 } from '@/composables/avalara1099'
-import { normalizeChildren } from '@/utils/vue-children.ts'
 
 const props = withDefaults(
 	defineProps<{
@@ -221,8 +232,6 @@ const messages = defineMessages({
 		id: 'dashboard.creator-tax-form-modal.us-citizen.question',
 		defaultMessage: 'Are you a US citizen?',
 	},
-	yes: { id: 'common.yes', defaultMessage: 'Yes' },
-	no: { id: 'common.no', defaultMessage: 'No' },
 	entityQuestion: {
 		id: 'dashboard.creator-tax-form-modal.entity.question',
 		defaultMessage: 'Are you a private individual or part of a foreign entity?',

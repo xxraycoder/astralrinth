@@ -1,24 +1,19 @@
 <template>
-	<div>
-		<ChartDisplay :projects="projects ?? undefined" :personal="true" />
-	</div>
+	<AnalyticsDashboard />
 </template>
 
 <script setup>
-import ChartDisplay from '~/components/ui/charts/ChartDisplay.vue'
+import { commonProjectSettingsMessages, useVIntl } from '@modrinth/ui'
+
+import AnalyticsDashboard from '~/components/analytics-dashboard/index.vue'
+
+const { formatMessage } = useVIntl()
 
 definePageMeta({
 	middleware: 'auth',
 })
 
 useHead({
-	title: 'Analytics - Modrinth',
+	title: () => `${formatMessage(commonProjectSettingsMessages.analytics)} - Modrinth`,
 })
-
-const auth = await useAuth()
-const id = auth.value?.user?.id
-
-const { data: projects } = await useAsyncData(`user/${id}/projects`, () =>
-	useBaseFetch(`user/${id}/projects`),
-)
 </script>

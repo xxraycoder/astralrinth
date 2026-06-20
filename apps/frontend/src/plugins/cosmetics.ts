@@ -27,10 +27,11 @@ export interface Cosmetics {
 export default defineNuxtPlugin({
 	name: 'cosmetics',
 	setup() {
+		const config = useRuntimeConfig()
 		const cosmetics = useCookie<Cosmetics>('cosmetics', {
 			maxAge: 60 * 60 * 24 * 365 * 10,
 			sameSite: 'lax',
-			secure: true,
+			secure: config.public.cookieSecure,
 			httpOnly: false,
 			path: '/',
 			default: () => ({
@@ -48,6 +49,7 @@ export default defineNuxtPlugin({
 					modpack: 'list',
 					shader: 'gallery',
 					datapack: 'list',
+					server: 'list',
 					user: 'list',
 					collection: 'list',
 				},

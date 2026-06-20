@@ -11,6 +11,18 @@
   "nags.add-icon.title": {
     "defaultMessage": "Voeg een icoon toe"
   },
+  "nags.add-java-address.description": {
+    "defaultMessage": "Voeg het IP adres en poort toe die Java Editie spelers kunnen gebruiken om je server te joinen."
+  },
+  "nags.add-java-address.title": {
+    "defaultMessage": "Voeg een Java adres toe"
+  },
+  "nags.add-links-server.description": {
+    "defaultMessage": "Voeg relevante links buiten Modrinth toe, zoals een website, winkel of Discord invite."
+  },
+  "nags.add-links-server.title": {
+    "defaultMessage": "Voeg externe links toe"
+  },
   "nags.add-links.description": {
     "defaultMessage": "Voeg relevante links buiten Modrinth toe, zoals code, een probleemtracker of een Discord uitnodiging."
   },
@@ -18,31 +30,31 @@
     "defaultMessage": "Voeg externe links toe"
   },
   "nags.all-tags-selected.description": {
-    "defaultMessage": "Je hebt alle {totalAvailableTags} beschikbare tags geselecteerd. Dit gaat in tegen het doel van tags, die bedoeld zijn om gebruikers te helpen relevante projecten te vinden. Selecteer alleen de tags die relevant zijn voor je project."
+    "defaultMessage": " Je hebt alle {totalAvailableTags, plural,one { # beschikbare tag} other {# beschikbare tags}}. Tags zijn bedoelt om gebruikers relevante projecten te helpen vinden. Selecteer graag alleen tags die relevant zijn aan jouw project."
   },
   "nags.all-tags-selected.title": {
     "defaultMessage": "Selecteer relevante tags"
   },
   "nags.description-too-short.description": {
-    "defaultMessage": "Jouw beschrijving is {length} leesbare karakters. Minstens {minChars} karakters zijn aanbevolen om een duidelijke en informatieve beschrijving te maken."
+    "defaultMessage": "Je beschrijving is {length, plural, one{# leesbare tekens}other {# leesbare tekens}}. Ten minste {minChars, plural, one {# teken}other {# tekens}} is aangeraden om een duidelijke en informatieve beschrijving te maken."
   },
   "nags.description-too-short.title": {
     "defaultMessage": "Verleng de beschrijving"
   },
   "nags.edit-description.title": {
-    "defaultMessage": "Pas beschrijving aan"
+    "defaultMessage": "Pas de beschrijving aan"
   },
   "nags.edit-license.title": {
-    "defaultMessage": "Pas licentie aan"
+    "defaultMessage": "Pas de licentie aan"
   },
   "nags.edit-summary.title": {
-    "defaultMessage": "Pas samenvatting aan"
+    "defaultMessage": "Pas de samenvatting aan"
   },
   "nags.edit-tags.title": {
-    "defaultMessage": "Pas tags aan"
+    "defaultMessage": "Pas de tags aan"
   },
   "nags.edit-title.title": {
-    "defaultMessage": "Pas titel aan"
+    "defaultMessage": "Pas de titel aan"
   },
   "nags.feature-gallery-image.description": {
     "defaultMessage": "De uitgelichte galerij foto is hoe vaak je project zijn eerste indruk maakt."
@@ -51,13 +63,13 @@
     "defaultMessage": "Licht een foto uit"
   },
   "nags.gallery.title": {
-    "defaultMessage": "Bezoek galerij pagina"
-  },
-  "nags.gpl-license-source-required.description": {
-    "defaultMessage": "Uw {projectType} gebruikt een licentie die vereist dat de bron code beschikbaar is. Voeg alstublieft een link naar de bron code of bron bestand of overweeg een andere licentie te gebruiken."
+    "defaultMessage": "Bezoek de galerij pagina"
   },
   "nags.gpl-license-source-required.title": {
     "defaultMessage": "Bied bron code aan"
+  },
+  "nags.identical-links.description": {
+    "defaultMessage": "Sommige van je externe links lijken identiek te zijn, elke link moet maar een keer worden ingevuld met de juiste link type."
   },
   "nags.image-heavy-description.description": {
     "defaultMessage": "Uw beschrijving moet voldoende platte tekst of alternatieve afbeeldingstekst bevatten, zodat deze ook toegankelijk is voor mensen die een schermlezer gebruiken of een trage internetverbinding hebben."
@@ -77,6 +89,9 @@
   "nags.invalid-license-url.title": {
     "defaultMessage": "Voeg een geldige licentie link toe"
   },
+  "nags.link-shortener-usage.description": {
+    "defaultMessage": "Gebruik van linkverkorters of andere methodes om te verbergen waar een link naar toe gaat in je externe links of licentie link is niet toegestaan, gelieve alleen volledige lengte links te gebruiken."
+  },
   "nags.link-shortener-usage.title": {
     "defaultMessage": "Gebruik geen link verkorters"
   },
@@ -91,6 +106,9 @@
   },
   "nags.minecraft-title-clause.title": {
     "defaultMessage": "Voorkom merkinbreuk"
+  },
+  "nags.missing-alt-text.description": {
+    "defaultMessage": "Sommige van je foto's missen een alt tekst, wat belangrijk is voor toegankelijkheid, vooral voor visueel gehandicapte gebruikers."
   },
   "nags.missing-alt-text.title": {
     "defaultMessage": "Alt-tekst voor afbeelding toevoegen"
@@ -108,13 +126,31 @@
     "defaultMessage": "Bekijk en verhelp alle bezwaren van het moderatieteam voordat je het opnieuw indient."
   },
   "nags.moderator-feedback.title": {
-    "defaultMessage": "Bekijk moderatie feedback"
+    "defaultMessage": "Feedback beoordelen"
+  },
+  "nags.multiple-resolution-tags.description": {
+    "defaultMessage": "Je hebt {count, plural, one {# resolution tag} other {# resolution tags}} ({tags}) geselecteerd. Resource packs moeten typisch maar een resolutietag hebben dat hun primaire resolutie matcht."
   },
   "nags.multiple-resolution-tags.title": {
     "defaultMessage": "Selecteer juiste resolutie"
   },
-  "nags.select-license.description": {
-    "defaultMessage": "Selecteer de licentie waaronder jouw {projectType} is uitgebracht."
+  "nags.select-compatibility.description": {
+    "defaultMessage": "Selecteer welke versies je server ondersteunt, kies een Modpack, of upload je eigen."
+  },
+  "nags.select-compatibility.title": {
+    "defaultMessage": "Select compatibiliteit"
+  },
+  "nags.select-country.description": {
+    "defaultMessage": "Laat de players weten welke regio de server in is."
+  },
+  "nags.select-country.title": {
+    "defaultMessage": "Selecteer een regio"
+  },
+  "nags.select-language.description": {
+    "defaultMessage": "Geef een lijst van de taal of talen die je server ondersteunt."
+  },
+  "nags.select-language.title": {
+    "defaultMessage": "Selecteer een taal"
   },
   "nags.select-license.title": {
     "defaultMessage": "Selecteer een licentie"
@@ -124,6 +160,9 @@
   },
   "nags.select-tags.title": {
     "defaultMessage": "Selecteer tags"
+  },
+  "nags.server.title": {
+    "defaultMessage": "Toon server instellingen"
   },
   "nags.settings.description.title": {
     "defaultMessage": "Bekijk beschrijving instellingen"
@@ -153,7 +192,7 @@
     "defaultMessage": "Verhelder de samenvatting"
   },
   "nags.summary-too-short.description": {
-    "defaultMessage": "Jouw samenvatting is {length} karakters langs. Tenminste {minChars} karakters zijn aanbevolen om een informatieve en aantrekkelijke samenvatting te maken."
+    "defaultMessage": "Je samenvatting is {length, plural, one {# character} other {# characters}}. Minimaal {minChars, plural, one {# character} other {# characters}} is aanbevolen om een informatieve en interessante samevatting te maken."
   },
   "nags.summary-too-short.title": {
     "defaultMessage": "Breidt de samenvatting uit"
@@ -164,14 +203,14 @@
   "nags.title-contains-technical-info.title": {
     "defaultMessage": "Maak de naam duidelijk"
   },
-  "nags.too-many-tags.description": {
-    "defaultMessage": "Je hebt {tagCount} tags geselecteerd. Overweeg om het aantal te verlagen naar {maxTagCount} of minder om ervoor te zorgen dat je project in relevante zoekresultaten verschijnt."
+  "nags.too-many-tags-server.description": {
+    "defaultMessage": "Je hebt {tagCount, plural, one {# tag} other {# tags}} geselecteerd. Verminder het naar {maxTagCount} of minder om zeker te weten dat je server verschijnt in relevante zoekresultaten."
+  },
+  "nags.too-many-tags-server.title": {
+    "defaultMessage": "Selecteer relevante tags"
   },
   "nags.too-many-tags.title": {
     "defaultMessage": "Selecteer relevante tags"
-  },
-  "nags.upload-gallery-image.description": {
-    "defaultMessage": "Minimaal één galerijafbeelding is nodig om de inhoud van uw {type}{resourcepackMessage} te tonen."
   },
   "nags.upload-gallery-image.title": {
     "defaultMessage": "Upload een galerijafbeelding"
@@ -195,4 +234,3 @@
     "defaultMessage": "Bezoek linkjes instellingen"
   }
 }
-

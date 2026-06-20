@@ -1,46 +1,260 @@
 //! Functions for fetching information from the Internet
 use super::io::{self, IOError};
 use crate::ErrorKind;
-use crate::LAUNCHER_USER_AGENT;
 use crate::event::LoadingBarId;
 use crate::event::emit::emit_loading;
 use bytes::Bytes;
+use chrono::{DateTime, TimeDelta, Utc};
+use parking_lot::Mutex;
+use rand::Rng;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::{self};
 use tokio::sync::Semaphore;
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{fs::File, io::AsyncReadExt, io::AsyncWriteExt};
+
+pub const DOWNLOAD_META_HEADER: &str = "modrinth-download-meta";
+
+#[derive(Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[display(rename_all = "snake_case")]
+pub enum DownloadReason {
+    Standalone,
+    Dependency,
+    Modpack,
+    Update,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DownloadMeta {
+    pub reason: DownloadReason,
+    pub game_version: String,
+    pub loader: String,
+    pub dependent_on: Option<String>,
+}
+
+impl DownloadMeta {
+    pub fn to_header_value(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+}
 
 #[derive(Debug)]
 pub struct IoSemaphore(pub Semaphore);
 #[derive(Debug)]
 pub struct FetchSemaphore(pub Semaphore);
 
-pub static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    let mut headers = reqwest::header::HeaderMap::new();
-    let header =
-        reqwest::header::HeaderValue::from_str(LAUNCHER_USER_AGENT).unwrap();
-    headers.insert(reqwest::header::USER_AGENT, header);
+struct FetchFence {
+    inner: Mutex<HashMap<&'static str, FenceInner>>,
+}
+
+impl FetchFence {
+    pub fn is_blocked(&self, key: &'static str) -> bool {
+        self.inner
+            .lock()
+            .entry(key)
+            .or_insert_with(FenceInner::new)
+            .is_blocked()
+    }
+
+    pub fn record_ok(&self, key: &'static str) {
+        self.inner
+            .lock()
+            .entry(key)
+            .or_insert_with(FenceInner::new)
+            .record_ok()
+    }
+
+    pub fn record_fail(&self, key: &'static str) {
+        self.inner
+            .lock()
+            .entry(key)
+            .or_insert_with(FenceInner::new)
+            .record_fail()
+    }
+
+    pub fn latest_block_minutes(&self) -> u32 {
+        let now = Utc::now();
+
+        self.inner
+            .lock()
+            .values()
+            .filter_map(|fence| fence.block_until)
+            .filter(|until| *until > now)
+            .max()
+            .map(|until| {
+                let seconds = until.signed_duration_since(now).num_seconds();
+                (seconds.max(0) as u32).div_ceil(60).max(1)
+            })
+            .unwrap_or(1)
+    }
+}
+
+struct FenceInner {
+    failures: VecDeque<DateTime<Utc>>,
+    block_until: Option<DateTime<Utc>>,
+    block_factor: i32,
+}
+
+impl FenceInner {
+    const FAILURE_WINDOW: TimeDelta = TimeDelta::minutes(3);
+    const FAILURE_THRESHOLD: usize = 4;
+    const BLOCK_DURATION_MIN_BASE: TimeDelta = TimeDelta::minutes(2);
+    const BLOCK_DURATION_MAX_BASE: TimeDelta = TimeDelta::minutes(5);
+    const BLOCK_DURATION_MAX_FACTOR: i32 = 3;
+
+    pub fn new() -> Self {
+        Self {
+            failures: VecDeque::new(),
+            block_until: None,
+            block_factor: 0,
+        }
+    }
+
+    pub fn is_blocked(&mut self) -> bool {
+        if let Some(until) = self.block_until {
+            if until > Utc::now() {
+                return true;
+            } else {
+                self.block_until = None;
+            }
+        }
+
+        false
+    }
+
+    pub fn record_ok(&mut self) {
+        self.prune(Utc::now());
+    }
+
+    pub fn record_fail(&mut self) {
+        self.prune(Utc::now());
+        self.failures.push_back(Utc::now());
+
+        if self.failures.len() >= Self::FAILURE_THRESHOLD {
+            self.trigger_block();
+        }
+    }
+
+    /// Blocks further requests for a random duration between the min and max base durations, scaled by a factor
+    /// of how many blocks have been triggered in this session.
+    ///
+    /// As such, for the first block, the duration will be between 2 and 5 minutes.
+    /// - For the second block, between 4 and 10 minutes.
+    /// - For the third block and any further blocks, between 6 and 15 minutes.
+    fn trigger_block(&mut self) {
+        self.block_factor =
+            i32::min(self.block_factor + 1, Self::BLOCK_DURATION_MAX_FACTOR);
+
+        let min = Self::BLOCK_DURATION_MIN_BASE
+            .checked_mul(self.block_factor)
+            .unwrap_or(Self::BLOCK_DURATION_MIN_BASE);
+        let max = Self::BLOCK_DURATION_MAX_BASE
+            .checked_mul(self.block_factor)
+            .unwrap_or(Self::BLOCK_DURATION_MAX_BASE);
+
+        let delta_seconds = (max - min).as_seconds_f64()
+            * rand::thread_rng().gen_range(0.0..=1.0);
+        let duration =
+            min + TimeDelta::milliseconds((delta_seconds * 1000.0) as i64);
+
+        self.block_until = Some(Utc::now() + duration);
+    }
+
+    /// Removes all failure points older than the failure window
+    fn prune(&mut self, now: DateTime<Utc>) {
+        let cutoff = now - Self::FAILURE_WINDOW;
+
+        while let Some(&front) = self.failures.front() {
+            if front < cutoff {
+                self.failures.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+static GLOBAL_FETCH_FENCE: LazyLock<FetchFence> =
+    LazyLock::new(|| FetchFence {
+        inner: Mutex::new(HashMap::new()),
+    });
+
+fn reqwest_client_builder() -> reqwest::ClientBuilder {
     reqwest::Client::builder()
         .tcp_keepalive(Some(time::Duration::from_secs(10)))
-        .default_headers(headers)
+        .user_agent(crate::launcher_user_agent())
+}
+
+pub static INSECURE_REQWEST_CLIENT: LazyLock<reqwest::Client> =
+    LazyLock::new(|| {
+        reqwest_client_builder()
+            .build()
+            .expect("client configuration should be valid")
+    });
+
+pub static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest_client_builder()
+        .https_only(true)
         .build()
-        .expect("Reqwest Client Building Failed")
+        .expect("client configuration should be valid")
 });
-const FETCH_ATTEMPTS: usize = 3;
+
+const FETCH_ATTEMPTS: usize = 2;
 
 #[tracing::instrument(skip(semaphore))]
 pub async fn fetch(
     url: &str,
     sha1: Option<&str>,
+    download_meta: Option<&DownloadMeta>,
+    uri_path: Option<&'static str>,
     semaphore: &FetchSemaphore,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
 ) -> crate::Result<Bytes> {
-    fetch_advanced(Method::GET, url, sha1, None, None, None, semaphore, exec)
-        .await
+    fetch_advanced(
+        Method::GET,
+        url,
+        sha1,
+        None,
+        None,
+        download_meta,
+        None,
+        uri_path,
+        semaphore,
+        exec,
+    )
+    .await
+}
+
+#[tracing::instrument(skip(semaphore))]
+pub async fn fetch_with_client(
+    url: &str,
+    sha1: Option<&str>,
+    download_meta: Option<&DownloadMeta>,
+    uri_path: Option<&'static str>,
+    semaphore: &FetchSemaphore,
+    exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
+    client: &reqwest::Client,
+) -> crate::Result<Bytes> {
+    fetch_advanced_with_client(
+        Method::GET,
+        url,
+        sha1,
+        None,
+        None,
+        download_meta,
+        None,
+        uri_path,
+        semaphore,
+        exec,
+        client,
+    )
+    .await
 }
 
 #[tracing::instrument(skip(json_body, semaphore))]
@@ -49,6 +263,7 @@ pub async fn fetch_json<T>(
     url: &str,
     sha1: Option<&str>,
     json_body: Option<serde_json::Value>,
+    uri_path: Option<&'static str>,
     semaphore: &FetchSemaphore,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
 ) -> crate::Result<T>
@@ -56,14 +271,16 @@ where
     T: DeserializeOwned,
 {
     let result = fetch_advanced(
-        method, url, sha1, json_body, None, None, semaphore, exec,
+        method, url, sha1, json_body, None, None, None, uri_path, semaphore,
+        exec,
     )
     .await?;
     let value = serde_json::from_slice(&result)?;
     Ok(value)
 }
 
-/// Downloads a file with retry and checksum functionality
+/// Downloads a file with retry and checksum functionality, and a specific
+/// [`reqwest::Client`].
 #[tracing::instrument(skip(json_body, semaphore))]
 #[allow(clippy::too_many_arguments)]
 pub async fn fetch_advanced(
@@ -72,26 +289,74 @@ pub async fn fetch_advanced(
     sha1: Option<&str>,
     json_body: Option<serde_json::Value>,
     header: Option<(&str, &str)>,
+    download_meta: Option<&DownloadMeta>,
     loading_bar: Option<(&LoadingBarId, f64)>,
+    uri_path: Option<&'static str>,
     semaphore: &FetchSemaphore,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
 ) -> crate::Result<Bytes> {
+    fetch_advanced_with_client(
+        method,
+        url,
+        sha1,
+        json_body,
+        header,
+        download_meta,
+        loading_bar,
+        uri_path,
+        semaphore,
+        exec,
+        &INSECURE_REQWEST_CLIENT,
+    )
+    .await
+}
+
+/// Downloads a file with retry and checksum functionality
+#[tracing::instrument(skip(json_body, semaphore))]
+#[allow(clippy::too_many_arguments)]
+pub async fn fetch_advanced_with_client(
+    method: Method,
+    url: &str,
+    sha1: Option<&str>,
+    json_body: Option<serde_json::Value>,
+    header: Option<(&str, &str)>,
+    download_meta: Option<&DownloadMeta>,
+    loading_bar: Option<(&LoadingBarId, f64)>,
+    uri_path: Option<&'static str>,
+    semaphore: &FetchSemaphore,
+    exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
+    client: &reqwest::Client,
+) -> crate::Result<Bytes> {
     let _permit = semaphore.0.acquire().await?;
+
+    let is_api_url = url.starts_with(env!("MODRINTH_API_URL"))
+        || url.starts_with(env!("MODRINTH_API_URL_V3"));
+    let fence_key = if is_api_url { uri_path } else { None };
 
     let creds = if header
         .as_ref()
         .is_none_or(|x| &*x.0.to_lowercase() != "authorization")
-        && (url.starts_with("https://cdn.modrinth.com")
-            || url.starts_with(env!("MODRINTH_API_URL"))
-            || url.starts_with(env!("MODRINTH_API_URL_V3")))
+        && (url.starts_with("https://cdn.modrinth.com") || is_api_url)
     {
         crate::state::ModrinthCredentials::get_active(exec).await?
     } else {
         None
     };
 
+    let download_meta_header = download_meta
+        .map(|m| (DOWNLOAD_META_HEADER.to_string(), m.to_header_value()));
+
     for attempt in 1..=(FETCH_ATTEMPTS + 1) {
-        let mut req = REQWEST_CLIENT.request(method.clone(), url);
+        if let Some(fence_key) = fence_key
+            && GLOBAL_FETCH_FENCE.is_blocked(fence_key)
+        {
+            return Err(ErrorKind::ApiIsDownError(
+                GLOBAL_FETCH_FENCE.latest_block_minutes(),
+            )
+            .into());
+        }
+
+        let mut req = client.request(method.clone(), url);
 
         if let Some(body) = json_body.clone() {
             req = req.json(&body);
@@ -105,13 +370,24 @@ pub async fn fetch_advanced(
             req = req.header("Authorization", &creds.session);
         }
 
+        if let Some((name, value)) = &download_meta_header {
+            tracing::info!("Sending download analytics: {value}");
+            req = req.header(name.as_str(), value.as_str());
+        }
+
         let result = req.send().await;
         match result {
             Ok(resp) => {
-                if resp.status().is_server_error() && attempt <= FETCH_ATTEMPTS
-                {
-                    continue;
+                if resp.status().is_server_error() {
+                    if let Some(fence_key) = fence_key {
+                        GLOBAL_FETCH_FENCE.record_fail(fence_key);
+                    }
+
+                    if attempt <= FETCH_ATTEMPTS {
+                        continue;
+                    }
                 }
+
                 if resp.status().is_client_error()
                     || resp.status().is_server_error()
                 {
@@ -166,6 +442,11 @@ pub async fn fetch_advanced(
                     }
 
                     tracing::trace!("Done downloading URL {url}");
+
+                    if let Some(fence_key) = fence_key {
+                        GLOBAL_FETCH_FENCE.record_ok(fence_key);
+                    }
+
                     return Ok(bytes);
                 } else if attempt <= FETCH_ATTEMPTS {
                     continue;
@@ -188,6 +469,8 @@ pub async fn fetch_advanced(
 pub async fn fetch_mirrors(
     mirrors: &[&str],
     sha1: Option<&str>,
+    download_meta: Option<&DownloadMeta>,
+    uri_path: Option<&'static str>,
     semaphore: &FetchSemaphore,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
 ) -> crate::Result<Bytes> {
@@ -198,7 +481,16 @@ pub async fn fetch_mirrors(
     }
 
     for (index, mirror) in mirrors.iter().enumerate() {
-        let result = fetch(mirror, sha1, semaphore, exec).await;
+        let result = fetch_with_client(
+            mirror,
+            sha1,
+            download_meta,
+            uri_path,
+            semaphore,
+            exec,
+            &REQWEST_CLIENT,
+        )
+        .await;
 
         if result.is_ok() || (result.is_err() && index == (mirrors.len() - 1)) {
             return result;
@@ -210,18 +502,15 @@ pub async fn fetch_mirrors(
 
 /// Posts a JSON to a URL
 #[tracing::instrument(skip(json_body, semaphore))]
-pub async fn post_json<T>(
+pub async fn post_json(
     url: &str,
     json_body: serde_json::Value,
     semaphore: &FetchSemaphore,
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
-) -> crate::Result<T>
-where
-    T: DeserializeOwned,
-{
+) -> crate::Result<()> {
     let _permit = semaphore.0.acquire().await?;
 
-    let mut req = REQWEST_CLIENT.post(url).json(&json_body);
+    let mut req = INSECURE_REQWEST_CLIENT.post(url).json(&json_body);
 
     if let Some(creds) =
         crate::state::ModrinthCredentials::get_active(exec).await?
@@ -229,10 +518,8 @@ where
         req = req.header("Authorization", &creds.session);
     }
 
-    let result = req.send().await?.error_for_status()?;
-
-    let value = result.json().await?;
-    Ok(value)
+    req.send().await?.error_for_status()?;
+    Ok(())
 }
 
 pub async fn read_json<T>(
@@ -324,4 +611,189 @@ pub async fn sha1_async(bytes: Bytes) -> crate::Result<String> {
     .await?;
 
     Ok(hash)
+}
+
+pub async fn sha1_file_async(
+    path: impl AsRef<Path>,
+) -> crate::Result<(u64, String)> {
+    let path = path.as_ref();
+    // Local files can be multi-gigabyte .mrpacks, so hash them without materializing bytes.
+    let mut file = File::open(path)
+        .await
+        .map_err(|e| IOError::with_path(e, path))?;
+    let mut hasher = sha1_smol::Sha1::new();
+    let mut size = 0;
+    let mut buffer = vec![0; 262144];
+
+    loop {
+        let bytes_read = file
+            .read(&mut buffer)
+            .await
+            .map_err(|e| IOError::with_path(e, path))?;
+        if bytes_read == 0 {
+            break;
+        }
+
+        hasher.update(&buffer[..bytes_read]);
+        size += bytes_read as u64;
+    }
+
+    Ok((size, hasher.digest().to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{TimeDelta, Utc};
+
+    #[test]
+    fn test_fence_block_after_4_fails() {
+        // Update tests if the FenceInner constants change
+
+        let mut fence = FenceInner::new();
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(fence.is_blocked());
+    }
+
+    #[test]
+    fn test_fetch_fence_keys_are_independent() {
+        let fence = FetchFence {
+            inner: Mutex::new(HashMap::new()),
+        };
+
+        for _ in 0..FenceInner::FAILURE_THRESHOLD {
+            fence.record_fail("/v3/version_file/:sha1/update");
+        }
+
+        assert!(fence.is_blocked("/v3/version_file/:sha1/update"));
+        assert!(!fence.is_blocked("/v3/project/:id"));
+    }
+
+    #[test]
+    fn test_fetch_fence_latest_block_minutes() {
+        let fence = FetchFence {
+            inner: Mutex::new(HashMap::new()),
+        };
+
+        {
+            let mut inner = fence.inner.lock();
+            inner.insert("/expired", FenceInner::new());
+            inner.get_mut("/expired").unwrap().block_until =
+                Some(Utc::now() - TimeDelta::minutes(1));
+            inner.insert("/short", FenceInner::new());
+            inner.get_mut("/short").unwrap().block_until =
+                Some(Utc::now() + TimeDelta::seconds(61));
+            inner.insert("/long", FenceInner::new());
+            inner.get_mut("/long").unwrap().block_until =
+                Some(Utc::now() + TimeDelta::seconds(140));
+        }
+
+        assert_eq!(fence.latest_block_minutes(), 3);
+    }
+
+    #[test]
+    fn test_fence_block_after_4_fails_with_oks() {
+        // Update tests if the FenceInner constants change
+
+        let mut fence = FenceInner::new();
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_ok();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(fence.is_blocked());
+    }
+
+    #[test]
+    fn test_fence_not_blocked_after_fails_expire() {
+        // Update tests if the FenceInner constants change
+
+        let mut fence = FenceInner::new();
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.prune(Utc::now() + TimeDelta::seconds(60 * 3 + 55)); // Should prune all failures
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(!fence.is_blocked());
+
+        fence.record_fail();
+        assert!(fence.is_blocked());
+    }
+
+    #[test]
+    fn test_fence_trigger_block_windows() {
+        // brute force flukes
+        for i in 0..128 {
+            let mut fence = FenceInner::new();
+
+            fence.trigger_block();
+            assert!(fence.is_blocked(), "Should be blocked (attempt {i})");
+
+            let block_until = fence.block_until.unwrap();
+            assert!(
+                block_until > Utc::now() + TimeDelta::seconds(60 + 55),
+                "Should be more than 2 minutes (with some leeway) (attempt {i})"
+            ); // more than 2 minutes (with some leeway)
+            assert!(
+                block_until < Utc::now() + TimeDelta::seconds(60 * 5),
+                "Should be less than 5 minutes (attempt {i})"
+            ); // less than 5 minutes
+
+            fence.block_until = None;
+
+            fence.trigger_block();
+            let block_until = fence.block_until.unwrap();
+            assert!(
+                block_until > Utc::now() + TimeDelta::seconds(60 * 3 + 55),
+                "Should be more than 4 minutes (with some leeway) (attempt {i})"
+            ); // more than 4 minutes (with some leeway)
+            assert!(
+                block_until < Utc::now() + TimeDelta::seconds(60 * 10),
+                "Should be less than 10 minutes (attempt {i})"
+            ); // less than 10 minutes
+
+            fence.block_until = None;
+
+            fence.trigger_block();
+            let block_until = fence.block_until.unwrap();
+            assert!(
+                block_until > Utc::now() + TimeDelta::seconds(60 * 5 + 55),
+                "Should be more than 6 minutes (with some leeway) (attempt {i})"
+            ); // more than 6 minutes (with some leeway)
+            assert!(
+                block_until < Utc::now() + TimeDelta::seconds(60 * 15),
+                "Should be less than 15 minutes (attempt {i})"
+            ); // less than 15 minutes
+        }
+    }
 }

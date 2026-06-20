@@ -1,7 +1,5 @@
 <template>
-	<div
-		class="experimental-styles-within relative mx-auto mb-6 flex min-h-screen w-full max-w-[1280px] flex-col px-6"
-	>
+	<div class="relative mx-auto mb-6 flex min-h-screen w-full max-w-[1280px] flex-col px-6">
 		<h1>Moderation</h1>
 		<NavTabs :links="moderationLinks" class="mb-4 hidden sm:flex" />
 		<div class="mb-4 sm:hidden">
@@ -17,13 +15,15 @@
 </template>
 
 <script setup lang="ts">
-import { Chips } from '@modrinth/ui'
-import { defineMessages, useVIntl } from '@vintl/vintl'
-
-import NavTabs from '@/components/ui/NavTabs.vue'
+import { FolderIcon, GlobeIcon, ReportIcon, ShieldCheckIcon } from '@modrinth/assets'
+import { Chips, defineMessages, NavTabs, useVIntl } from '@modrinth/ui'
 
 definePageMeta({
-	middleware: 'auth',
+	middleware: ['auth', 'staff'],
+})
+
+useSeoMeta({
+	robots: 'noindex',
 })
 
 const { formatMessage } = useVIntl()
@@ -37,24 +37,38 @@ const messages = defineMessages({
 	},
 	technicalReviewTitle: {
 		id: 'moderation.page.technicalReview',
-		defaultMessage: 'Technical Review',
+		defaultMessage: 'Tech review',
 	},
 	reportsTitle: {
 		id: 'moderation.page.reports',
 		defaultMessage: 'Reports',
 	},
+	externalFilesTitle: {
+		id: 'moderation.page.external-projects',
+		defaultMessage: 'External projects',
+	},
 })
 
 const moderationLinks = [
-	{ label: formatMessage(messages.projectsTitle), href: '/moderation' },
-	{ label: formatMessage(messages.technicalReviewTitle), href: '/moderation/technical-review' },
-	{ label: formatMessage(messages.reportsTitle), href: '/moderation/reports' },
+	{ label: formatMessage(messages.projectsTitle), href: '/moderation', icon: FolderIcon },
+	{
+		label: formatMessage(messages.technicalReviewTitle),
+		href: '/moderation/technical-review',
+		icon: ShieldCheckIcon,
+	},
+	{ label: formatMessage(messages.reportsTitle), href: '/moderation/reports', icon: ReportIcon },
+	{
+		label: formatMessage(messages.externalFilesTitle),
+		href: '/moderation/external-projects',
+		icon: GlobeIcon,
+	},
 ]
 
 const mobileNavOptions = [
 	formatMessage(messages.projectsTitle),
 	formatMessage(messages.technicalReviewTitle),
 	formatMessage(messages.reportsTitle),
+	formatMessage(messages.externalFilesTitle),
 ]
 
 const selectedChip = computed({

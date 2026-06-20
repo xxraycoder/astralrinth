@@ -15,6 +15,7 @@ fn main() {
                         "offline_login",
                         "elyby_login",
                         "elyby_auth_authenticate",
+                        "check_reachable",
                         "login",
                         "remove_user",
                         "get_default_user",
@@ -31,6 +32,8 @@ fn main() {
                     .commands(&[
                         "get_project",
                         "get_project_many",
+                        "get_project_v3",
+                        "get_project_v3_many",
                         "get_version",
                         "get_version_many",
                         "get_user",
@@ -41,7 +44,10 @@ fn main() {
                         "get_organization_many",
                         "get_search_results",
                         "get_search_results_many",
+                        "get_search_results_v3",
+                        "get_search_results_v3_many",
                         "purge_cache_types",
+                        "get_project_versions",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,
@@ -51,8 +57,6 @@ fn main() {
                 "import",
                 InlinedPlugin::new()
                     .commands(&[
-                        "fetch_curseforge_profile_metadata",
-                        "import_curseforge_profile",
                         "get_importable_instances",
                         "import_instance",
                         "is_valid_importable_instance",
@@ -88,6 +92,8 @@ fn main() {
                         "logs_delete_logs",
                         "logs_delete_logs_by_filename",
                         "logs_get_latest_log_cursor",
+                        "logs_get_live_log_buffer",
+                        "logs_clear_live_log_buffer",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,
@@ -111,10 +117,13 @@ fn main() {
                         "get_available_capes",
                         "get_available_skins",
                         "add_and_equip_custom_skin",
-                        "set_default_cape",
                         "equip_skin",
                         "remove_custom_skin",
+                        "save_custom_skin",
+                        "set_custom_skin_order",
                         "unequip_skin",
+                        "flush_pending_skin_change",
+                        "flush_pending_skin_change_for_profile",
                         "normalize_skin_texture",
                         "get_dragged_skin_data",
                     ])
@@ -164,11 +173,17 @@ fn main() {
                         "profile_get",
                         "profile_get_many",
                         "profile_get_projects",
+                        "profile_get_installed_project_ids",
+                        "profile_get_content_items",
+                        "profile_get_dependencies_as_content_items",
+                        "profile_get_linked_modpack_info",
+                        "profile_get_linked_modpack_content",
                         "profile_get_optimal_jre_key",
                         "profile_get_full_path",
                         "profile_get_mod_full_path",
                         "profile_list",
                         "profile_check_installed",
+                        "profile_check_installed_batch",
                         "profile_install",
                         "profile_update_all",
                         "profile_update_project",
@@ -227,8 +242,6 @@ fn main() {
                 "utils",
                 InlinedPlugin::new()
                     .commands(&[
-                        "init_authlib_patching",
-                        "apply_migration_fix",
                         "init_update_launcher",
                         "get_os",
                         "is_network_metered",
@@ -238,6 +251,18 @@ fn main() {
                         "show_launcher_logs_folder",
                         "progress_bars_list",
                         "get_opening_command",
+                    ])
+                    .default_permission(
+                        DefaultPermissionRule::AllowAllCommands,
+                    ),
+            )
+            .plugin(
+                "files",
+                InlinedPlugin::new()
+                    .commands(&[
+                        "file_extract_zip",
+                        "file_save_as",
+                        "file_read_dragged_file",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,

@@ -1,8 +1,8 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
 	"build": {
-		"beforeDevCommand": "pnpm turbo run dev --filter=@modrinth/app-frontend",
-		"beforeBuildCommand": "pnpm turbo run build --filter=@modrinth/app-frontend",
+		"beforeDevCommand": "mise exec -- pnpm turbo run dev --filter=@modrinth/app-frontend",
+		"beforeBuildCommand": "mise exec -- pnpm turbo run build --filter=@modrinth/app-frontend",
 		"frontendDist": "../app-frontend/dist",
 		"devUrl": "http://localhost:1420"
 	},
@@ -30,7 +30,22 @@
 			"exceptionDomain": "",
 			"frameworks": [],
 			"providerShortName": null,
-			"signingIdentity": null
+			"signingIdentity": null,
+			"dmg": {
+				"background": "./dmg/dmg-background.png",
+				"windowSize": {
+					"width": 661,
+					"height": 432
+				},
+				"appPosition": {
+					"x": 188,
+					"y": 212
+				},
+				"applicationFolderPosition": {
+					"x": 475,
+					"y": 212
+				}
+			}
 		},
 		"shortDescription": "",
 		"linux": {
@@ -48,7 +63,7 @@
 		]
 	},
 	"productName": "AstralRinth App",
-	"version": "0.10.1601",
+	"version": "0.14.702",
 	"mainBinaryName": "AstralRinth App",
 	"identifier": "AstralRinthApp",
 	"plugins": {
@@ -99,14 +114,15 @@
 			],
 			"csp": {
 				"default-src": "'self' customprotocol: asset:",
-				"connect-src": "ipc: https://git.astralium.su https://authserver.ely.by http://ipc.localhost https://modrinth.com https://*.modrinth.com https://*.sentry.io https://api.mclo.gs 'self' data: blob:",
+				"connect-src": "ipc: https://astralium.su https://*.astralium.su https://authserver.ely.by http://ipc.localhost https://modrinth.com https://*.modrinth.com https://*.nodes.modrinth.com https://*.posthog.com https://posthog.modrinth.com https://*.sentry.io https://api.mclo.gs http://textures.minecraft.net https://textures.minecraft.net https://js.stripe.com https://*.stripe.com wss://*.stripe.com https://*.intercom.io wss://*.intercom.io https://*.intercomcdn.com https://www.intercom-reporting.com https://app.getsentry.com wss://*.nodes.modrinth.com https://*.taila228c5.ts.net https://*.taila228c5.ts.net wss://*.taila228c5.ts.net https://fill.papermc.io https://api.purpurmc.org 'self' data: blob:",
 				"font-src": [
-					"https://cdn-raw.modrinth.com/fonts/"
+					"https://cdn-raw.modrinth.com/fonts/",
+					"https://js.intercomcdn.com"
 				],
 				"img-src": "https: 'unsafe-inline' 'self' asset: http://asset.localhost http://textures.minecraft.net blob: data:",
 				"style-src": "'unsafe-inline' 'self'",
-				"script-src": "https://*.posthog.com https://tally.so/widgets/embed.js 'self'",
-				"frame-src": "https://www.youtube.com https://www.youtube-nocookie.com https://discord.com https://tally.so/popup/ 'self'",
+				"script-src": "https://*.posthog.com https://posthog.modrinth.com https://js.stripe.com https://widget.intercom.io https://js.intercomcdn.com https://tally.so/widgets/embed.js 'self'",
+				"frame-src": "https://www.youtube.com https://www.youtube-nocookie.com https://discord.com https://tally.so/popup/ https://js.stripe.com https://hooks.stripe.com https://*.intercom.io https://intercom-sheets.com https://www.intercom-reporting.com https://app.intercom.com 'self'",
 				"media-src": "https://*.githubusercontent.com"
 			}
 		}

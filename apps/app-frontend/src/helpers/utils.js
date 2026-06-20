@@ -22,25 +22,19 @@ export async function removeEnqueuedUpdate() {
 	return await invoke('remove_enqueued_update')
 }
 
+export async function setRestartAfterPendingUpdate(should_restart) {
+	return await invoke('set_restart_after_pending_update', { shouldRestart: should_restart })
+}
+
 // One of 'Windows', 'Linux', 'MacOS'
 export async function getOS() {
 	return await invoke('plugin:utils|get_os')
 }
 
-// [AR] Feature. Updater
+// This code is modified by AstralRinth
 export async function initUpdateLauncher(downloadUrl, filename, osType, autoUpdateSupported) {
   console.log('Downloading build', downloadUrl, filename, osType, autoUpdateSupported)
   return await invoke('plugin:utils|init_update_launcher', { downloadUrl, filename, osType, autoUpdateSupported })
-}
-
-// [AR] Migration. Patch
-export async function applyMigrationFix(eol) {
-  return await invoke('plugin:utils|apply_migration_fix', { eol })
-}
-
-// [AR] Feature. Ely.by
-export async function initAuthlibPatching(minecraftVersion, isMojang) {
-  return await invoke('plugin:utils|init_authlib_patching', { minecraftVersion, isMojang })
 }
 
 export async function isNetworkMetered() {

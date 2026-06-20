@@ -8,6 +8,489 @@
   "admin.billing.error.not-found": {
     "message": "User not found"
   },
+  "analytics.action.add": {
+    "message": "Add"
+  },
+  "analytics.action.cancel": {
+    "message": "Cancel"
+  },
+  "analytics.action.refresh": {
+    "message": "Refresh"
+  },
+  "analytics.action.reset": {
+    "message": "Reset"
+  },
+  "analytics.breakdown.country": {
+    "message": "Country"
+  },
+  "analytics.breakdown.download-reason": {
+    "message": "Download reason"
+  },
+  "analytics.breakdown.download-source": {
+    "message": "Download source"
+  },
+  "analytics.breakdown.game-version": {
+    "message": "Game version"
+  },
+  "analytics.breakdown.generic": {
+    "message": "Breakdown"
+  },
+  "analytics.breakdown.loader": {
+    "message": "Loader"
+  },
+  "analytics.breakdown.monetization": {
+    "message": "Monetization"
+  },
+  "analytics.breakdown.none.selected": {
+    "message": "No breakdown"
+  },
+  "analytics.breakdown.project": {
+    "message": "Project"
+  },
+  "analytics.breakdown.project-status": {
+    "message": "Project status"
+  },
+  "analytics.breakdown.project-version": {
+    "message": "Project version"
+  },
+  "analytics.breakdown.selected": {
+    "message": "Breakdown by {breakdown}"
+  },
+  "analytics.chart.action.show-all": {
+    "message": "Show all"
+  },
+  "analytics.chart.action.show-limited": {
+    "message": "Show limited"
+  },
+  "analytics.chart.action.show-top-eight": {
+    "message": "Show top 8"
+  },
+  "analytics.chart.axis.playtime-hours": {
+    "message": "{hours} h"
+  },
+  "analytics.chart.controls.active-count": {
+    "message": "{count} active"
+  },
+  "analytics.chart.controls.annotations": {
+    "message": "Annotations"
+  },
+  "analytics.chart.controls.aria": {
+    "message": "Analytics graph controls, {activeCount}"
+  },
+  "analytics.chart.controls.button": {
+    "message": "Controls"
+  },
+  "analytics.chart.controls.dialog-aria": {
+    "message": "Analytics graph controls"
+  },
+  "analytics.chart.controls.display": {
+    "message": "Display"
+  },
+  "analytics.chart.controls.modrinth-events": {
+    "message": "Modrinth events"
+  },
+  "analytics.chart.controls.no-modrinth-events": {
+    "message": "No Modrinth events in graph."
+  },
+  "analytics.chart.controls.no-project-events": {
+    "message": "No project events in graph."
+  },
+  "analytics.chart.controls.previous-period": {
+    "message": "Previous period"
+  },
+  "analytics.chart.controls.project-events": {
+    "message": "Project events"
+  },
+  "analytics.chart.controls.ratio": {
+    "message": "Ratio"
+  },
+  "analytics.chart.empty.select-table-items": {
+    "message": "Select items from table below to visualize your data."
+  },
+  "analytics.chart.events.count-aria": {
+    "message": "{count, plural, one {# analytics event} other {# analytics events}}"
+  },
+  "analytics.chart.events.project-title": {
+    "message": "<project>{projectName}</project>: {title}"
+  },
+  "analytics.chart.events.see-announcement": {
+    "message": "See announcement"
+  },
+  "analytics.chart.legend.monetization-details.aria": {
+    "message": "View monetized analytics details"
+  },
+  "analytics.chart.legend.monetization-details.description": {
+    "message": "Only views and downloads made through Modrinth count toward monetization, and downloads require users to be logged in."
+  },
+  "analytics.chart.legend.monetization-details.title": {
+    "message": "Monetized analytics details"
+  },
+  "analytics.chart.legend.previous-period-suffix": {
+    "message": "{name} (Prev.)"
+  },
+  "analytics.chart.render-limit.description": {
+    "message": "Showing all selected lines from table may degrade page performance."
+  },
+  "analytics.chart.render-limit.header": {
+    "message": "Show all {count} lines in graph?"
+  },
+  "analytics.chart.table-selection.all": {
+    "message": "Showing all {itemType, select, project {{count, plural, one {project} other {projects}}} country {{count, plural, one {country} other {countries}}} monetization {{count, plural, one {monetization value} other {monetization values}}} downloadSource {{count, plural, one {download source} other {download sources}}} downloadReason {{count, plural, one {download reason} other {download reasons}}} projectVersion {{count, plural, one {project version} other {project versions}}} loader {{count, plural, one {loader} other {loaders}}} gameVersion {{count, plural, one {game version} other {game versions}}} other {{count, plural, one {item} other {items}}}} from table"
+  },
+  "analytics.chart.table-selection.count": {
+    "message": "Showing {count} {itemType, select, project {{count, plural, one {project} other {projects}}} country {{count, plural, one {country} other {countries}}} monetization {{count, plural, one {monetization value} other {monetization values}}} downloadSource {{count, plural, one {download source} other {download sources}}} downloadReason {{count, plural, one {download reason} other {download reasons}}} projectVersion {{count, plural, one {project version} other {project versions}}} loader {{count, plural, one {loader} other {loaders}}} gameVersion {{count, plural, one {game version} other {game versions}}} other {{count, plural, one {item} other {items}}}} from table"
+  },
+  "analytics.chart.table-selection.limited": {
+    "message": "Showing {limit} {itemType, select, project {{limit, plural, one {project} other {projects}}} country {{limit, plural, one {country} other {countries}}} monetization {{limit, plural, one {monetization value} other {monetization values}}} downloadSource {{limit, plural, one {download source} other {download sources}}} downloadReason {{limit, plural, one {download reason} other {download reasons}}} projectVersion {{limit, plural, one {project version} other {project versions}}} loader {{limit, plural, one {loader} other {loaders}}} gameVersion {{limit, plural, one {game version} other {game versions}}} other {{limit, plural, one {item} other {items}}}} from table"
+  },
+  "analytics.chart.table-selection.top": {
+    "message": "Showing top {count} {itemType, select, project {{count, plural, one {project} other {projects}}} country {{count, plural, one {country} other {countries}}} monetization {{count, plural, one {monetization value} other {monetization values}}} downloadSource {{count, plural, one {download source} other {download sources}}} downloadReason {{count, plural, one {download reason} other {download reasons}}} projectVersion {{count, plural, one {project version} other {project versions}}} loader {{count, plural, one {loader} other {loaders}}} gameVersion {{count, plural, one {game version} other {game versions}}} other {{count, plural, one {item} other {items}}}} from table"
+  },
+  "analytics.chart.tooltip.duration.days": {
+    "message": "{count, plural, one {# day} other {# days}}"
+  },
+  "analytics.chart.tooltip.duration.hours": {
+    "message": "{count, plural, one {# hour} other {# hours}}"
+  },
+  "analytics.chart.tooltip.duration.minutes": {
+    "message": "{count, plural, one {# minute} other {# minutes}}"
+  },
+  "analytics.chart.tooltip.hide-entry": {
+    "message": "Hide {name} in graph"
+  },
+  "analytics.chart.tooltip.pinned": {
+    "message": "Chart tooltip pinned"
+  },
+  "analytics.chart.tooltip.pinned-aria": {
+    "message": "Pinned"
+  },
+  "analytics.chart.tooltip.previous-period-short": {
+    "message": "(prev.)"
+  },
+  "analytics.chart.tooltip.show-entry": {
+    "message": "Show {name} in graph"
+  },
+  "analytics.chart.tooltip.total": {
+    "message": "Total"
+  },
+  "analytics.chart.view.area": {
+    "message": "Area"
+  },
+  "analytics.chart.view.bar": {
+    "message": "Bar"
+  },
+  "analytics.chart.view.line": {
+    "message": "Line"
+  },
+  "analytics.download-reason.dependency": {
+    "message": "Dependency"
+  },
+  "analytics.download-reason.modpack": {
+    "message": "Modpack"
+  },
+  "analytics.download-reason.standalone": {
+    "message": "Standalone"
+  },
+  "analytics.download-reason.update": {
+    "message": "Update"
+  },
+  "analytics.download-source.app": {
+    "message": "Modrinth App"
+  },
+  "analytics.download-source.website": {
+    "message": "Modrinth Website"
+  },
+  "analytics.downloads.suffix": {
+    "message": "downloads"
+  },
+  "analytics.empty.no-data": {
+    "message": "No data available"
+  },
+  "analytics.empty.no-data-for-analytics": {
+    "message": "No data available for analytics"
+  },
+  "analytics.empty.no-projects": {
+    "message": "No projects available"
+  },
+  "analytics.empty.no-projects-for-analytics": {
+    "message": "No projects available for analytics"
+  },
+  "analytics.empty.select-project": {
+    "message": "Select at least one project to view data"
+  },
+  "analytics.filter.game-version-type": {
+    "message": "Game version type"
+  },
+  "analytics.filter.game-version-type.all": {
+    "message": "All"
+  },
+  "analytics.filter.game-version-type.release": {
+    "message": "Release"
+  },
+  "analytics.filter.search.countries": {
+    "message": "Search countries..."
+  },
+  "analytics.filter.search.download-sources": {
+    "message": "Search download sources..."
+  },
+  "analytics.filter.search.project-versions": {
+    "message": "Search project versions..."
+  },
+  "analytics.filter.search.versions": {
+    "message": "Search versions..."
+  },
+  "analytics.graph.title.downloads": {
+    "message": "Downloads Over Time"
+  },
+  "analytics.graph.title.playtime": {
+    "message": "Playtime Over Time"
+  },
+  "analytics.graph.title.revenue": {
+    "message": "Revenue Over Time"
+  },
+  "analytics.graph.title.views": {
+    "message": "Views Over Time"
+  },
+  "analytics.group-by.1h": {
+    "message": "1h"
+  },
+  "analytics.group-by.6h": {
+    "message": "6h"
+  },
+  "analytics.group-by.date": {
+    "message": "Date"
+  },
+  "analytics.group-by.day": {
+    "message": "Day"
+  },
+  "analytics.group-by.month": {
+    "message": "Month"
+  },
+  "analytics.group-by.selected.day": {
+    "message": "Group by day"
+  },
+  "analytics.group-by.selected.hour": {
+    "message": "Group by hour"
+  },
+  "analytics.group-by.selected.month": {
+    "message": "Group by month"
+  },
+  "analytics.group-by.selected.six-hours": {
+    "message": "Group by 6 hours"
+  },
+  "analytics.group-by.selected.week": {
+    "message": "Group by week"
+  },
+  "analytics.group-by.selected.year": {
+    "message": "Group by year"
+  },
+  "analytics.group-by.week": {
+    "message": "Week"
+  },
+  "analytics.group-by.year": {
+    "message": "Year"
+  },
+  "analytics.loading.fetching-results": {
+    "message": "Fetching results..."
+  },
+  "analytics.options.loading": {
+    "message": "Loading..."
+  },
+  "analytics.project-event.project-approved": {
+    "message": "Project approved"
+  },
+  "analytics.project-event.project-private": {
+    "message": "Project set to private"
+  },
+  "analytics.project-event.project-status-changed": {
+    "message": "Project status changed"
+  },
+  "analytics.project-event.project-unlisted": {
+    "message": "Project unlisted"
+  },
+  "analytics.project-event.version-released": {
+    "message": "{version} released"
+  },
+  "analytics.project-event.version-uploaded": {
+    "message": "Version uploaded"
+  },
+  "analytics.project-status.approved": {
+    "message": "Approved"
+  },
+  "analytics.project-status.archived": {
+    "message": "Archived"
+  },
+  "analytics.project-status.draft": {
+    "message": "Draft"
+  },
+  "analytics.project-status.other": {
+    "message": "Other"
+  },
+  "analytics.project-status.private": {
+    "message": "Private"
+  },
+  "analytics.project-status.rejected": {
+    "message": "Rejected"
+  },
+  "analytics.project-status.unlisted": {
+    "message": "Unlisted"
+  },
+  "analytics.project-status.withheld": {
+    "message": "Withheld"
+  },
+  "analytics.project.all": {
+    "message": "All projects"
+  },
+  "analytics.project.count": {
+    "message": "{count, plural, one {# project} other {# projects}}"
+  },
+  "analytics.project.icon-alt": {
+    "message": "{name} Icon"
+  },
+  "analytics.project.select": {
+    "message": "Select projects"
+  },
+  "analytics.project.user": {
+    "message": "{username}'s projects"
+  },
+  "analytics.project.your": {
+    "message": "Your projects"
+  },
+  "analytics.query.filter.add": {
+    "message": "Add filter"
+  },
+  "analytics.query.label.breakdown": {
+    "message": "Breakdown:"
+  },
+  "analytics.query.label.grouped-by": {
+    "message": "Grouped by"
+  },
+  "analytics.query.label.project": {
+    "message": "Project:"
+  },
+  "analytics.query.label.timeframe": {
+    "message": "Timeframe:"
+  },
+  "analytics.stat.downloads": {
+    "message": "Downloads"
+  },
+  "analytics.stat.monetization-banner.body": {
+    "message": "Only views and downloads made through Modrinth are eligible for monetization and must pass fraud-prevention filtering. Modrinth App downloads also require the user to be logged in. Because all projects have a similar ratio of monetized downloads, your revenue would not meaningfully change if all downloads were counted."
+  },
+  "analytics.stat.monetization-banner.learn-more": {
+    "message": "Learn more"
+  },
+  "analytics.stat.monetization-banner.title": {
+    "message": "How does monetization work?"
+  },
+  "analytics.stat.playtime": {
+    "message": "Playtime"
+  },
+  "analytics.stat.playtime-hours": {
+    "message": "{hours} hrs"
+  },
+  "analytics.stat.previous-period-comparison": {
+    "message": "vs prev. period"
+  },
+  "analytics.stat.previous-period-comparison-short": {
+    "message": "vs prev."
+  },
+  "analytics.stat.revenue": {
+    "message": "Revenue"
+  },
+  "analytics.stat.revenue-value": {
+    "message": "${value}"
+  },
+  "analytics.stat.unavailable": {
+    "message": "N/A"
+  },
+  "analytics.stat.unavailable-tooltip": {
+    "message": "Stat unavailable for current query"
+  },
+  "analytics.stat.views": {
+    "message": "Views"
+  },
+  "analytics.table.csv.date-range": {
+    "message": "{start} to {end}"
+  },
+  "analytics.table.csv.filename": {
+    "message": "Modrinth Analytics {breakdown} Breakdown - {dateRange}"
+  },
+  "analytics.table.csv.header.playtime-seconds": {
+    "message": "Playtime (seconds)"
+  },
+  "analytics.table.csv.selected-range": {
+    "message": "Selected Range"
+  },
+  "analytics.table.duration.days": {
+    "message": "{count, plural, one {# day} other {# days}}"
+  },
+  "analytics.table.duration.hours": {
+    "message": "{count, plural, one {# hour} other {# hours}}"
+  },
+  "analytics.table.duration.minutes": {
+    "message": "{count, plural, one {# minute} other {# minutes}}"
+  },
+  "analytics.table.empty.no-matching-rows": {
+    "message": "No matching analytics rows"
+  },
+  "analytics.table.export-csv": {
+    "message": "Export CSV"
+  },
+  "analytics.table.export.cumulative": {
+    "message": "Cumulative"
+  },
+  "analytics.table.export.grouped": {
+    "message": "Grouped by {groupBy}"
+  },
+  "analytics.table.pagination.summary": {
+    "message": "Showing {start} to {end} of {total}"
+  },
+  "analytics.table.search.placeholder": {
+    "message": "Search..."
+  },
+  "analytics.threshold.countries-above": {
+    "message": "Countries above"
+  },
+  "analytics.threshold.country-downloads-aria": {
+    "message": "Country downloads threshold"
+  },
+  "analytics.threshold.game-version-downloads-aria": {
+    "message": "Game version downloads threshold"
+  },
+  "analytics.threshold.game-versions-above": {
+    "message": "Game versions above"
+  },
+  "analytics.threshold.project-downloads-aria": {
+    "message": "Project downloads threshold"
+  },
+  "analytics.threshold.project-version-downloads-aria": {
+    "message": "Project version downloads threshold"
+  },
+  "analytics.threshold.project-versions-above": {
+    "message": "Project versions above"
+  },
+  "analytics.threshold.projects-above": {
+    "message": "Projects above"
+  },
+  "analytics.title": {
+    "message": "Analytics"
+  },
+  "analytics.value.monetized": {
+    "message": "Monetized"
+  },
+  "analytics.value.none": {
+    "message": "None"
+  },
+  "analytics.value.other": {
+    "message": "Other"
+  },
+  "analytics.value.unknown": {
+    "message": "Unknown"
+  },
+  "analytics.value.unmonetized": {
+    "message": "Unmonetized"
+  },
   "app-marketing.download.description": {
     "message": "Our desktop app is available across all platforms, choose your desired version."
   },
@@ -23,6 +506,9 @@
   "app-marketing.download.download-rpm": {
     "message": "Download the RPM"
   },
+  "app-marketing.download.flathub": {
+    "message": "Get it on Flathub"
+  },
   "app-marketing.download.linux": {
     "message": "Linux"
   },
@@ -36,10 +522,7 @@
     "message": "Download options"
   },
   "app-marketing.download.terms": {
-    "message": "By downloading Modrinth App you agree to our <terms-link>Terms</terms-link> and <privacy-link>Privacy Policy</privacy-link>."
-  },
-  "app-marketing.download.third-party-packages": {
-    "message": "Third-party packages"
+    "message": "By downloading Modrinth App, you agree to our <terms-link>Terms</terms-link> and <privacy-link>Privacy Policy</privacy-link>."
   },
   "app-marketing.download.title": {
     "message": "Download Modrinth App (Beta)"
@@ -108,7 +591,7 @@
     "message": "% CPU"
   },
   "app-marketing.features.performance.description": {
-    "message": "Modrinth App performs better than many of the leading mod managers, using just 150mb of RAM!"
+    "message": "Modrinth App performs better than many of the leading mod managers, using just 150 MB of RAM!"
   },
   "app-marketing.features.performance.discord": {
     "message": "Discord"
@@ -123,7 +606,7 @@
     "message": "∞ MB"
   },
   "app-marketing.features.performance.infinite-times-infinite-mb": {
-    "message": "∞ * ∞ MB"
+    "message": "∞ × ∞ MB"
   },
   "app-marketing.features.performance.less-than-150mb": {
     "message": "< 150 MB"
@@ -197,6 +680,15 @@
   "app-marketing.hero.more-download-options": {
     "message": "More Download Options"
   },
+  "app-marketing.hide-other-packages": {
+    "message": "Hide other packages"
+  },
+  "app-marketing.not-recommended": {
+    "message": "We don't recommend you use these unless you know what you're doing."
+  },
+  "app-marketing.show-other-packages": {
+    "message": "Show other packages"
+  },
   "auth.authorize.action.authorize": {
     "message": "Authorize"
   },
@@ -220,12 +712,6 @@
   },
   "auth.reset-password.method-choice.description": {
     "message": "Enter your email below and we'll send a recovery link to allow you to recover your account."
-  },
-  "auth.reset-password.method-choice.email-username.label": {
-    "message": "Email or username"
-  },
-  "auth.reset-password.method-choice.email-username.placeholder": {
-    "message": "Email"
   },
   "auth.reset-password.notification.email-sent.text": {
     "message": "An email with instructions has been sent to you if the email was previously saved on your account."
@@ -266,12 +752,6 @@
   "auth.sign-in.additional-options": {
     "message": "<forgot-password-link>Forgot password?</forgot-password-link> • <create-account-link>Create an account</create-account-link>"
   },
-  "auth.sign-in.email-username.label": {
-    "message": "Email or username"
-  },
-  "auth.sign-in.password.label": {
-    "message": "Password"
-  },
   "auth.sign-in.sign-in-with": {
     "message": "Sign in with"
   },
@@ -284,23 +764,11 @@
   "auth.sign-up.action.create-account": {
     "message": "Create account"
   },
-  "auth.sign-up.confirm-password.label": {
-    "message": "Confirm password"
-  },
-  "auth.sign-up.email.label": {
-    "message": "Email"
-  },
-  "auth.sign-up.label.username": {
-    "message": "Username"
-  },
   "auth.sign-up.legal-dislaimer": {
     "message": "By creating an account, you agree to Modrinth's <terms-link>Terms</terms-link> and <privacy-policy-link>Privacy Policy</privacy-policy-link>."
   },
   "auth.sign-up.notification.password-mismatch.text": {
     "message": "Passwords do not match!"
-  },
-  "auth.sign-up.password.label": {
-    "message": "Password"
   },
   "auth.sign-up.sign-in-option.title": {
     "message": "Already have an account?"
@@ -319,9 +787,6 @@
   },
   "auth.verify-email.action.account-settings": {
     "message": "Account settings"
-  },
-  "auth.verify-email.action.sign-in": {
-    "message": "Sign in"
   },
   "auth.verify-email.already-verified.description": {
     "message": "Your email is already verified!"
@@ -365,20 +830,26 @@
   "auth.welcome.title": {
     "message": "Welcome"
   },
-  "collection.button.delete-icon": {
-    "message": "Delete icon"
-  },
   "collection.button.edit-icon": {
     "message": "Edit icon"
   },
+  "collection.button.remove-icon": {
+    "message": "Remove icon"
+  },
   "collection.button.remove-project": {
     "message": "Remove project"
+  },
+  "collection.button.replace-icon": {
+    "message": "Replace icon"
+  },
+  "collection.button.select-icon": {
+    "message": "Select icon"
   },
   "collection.button.unfollow-project": {
     "message": "Unfollow project"
   },
   "collection.delete-modal.description": {
-    "message": "This will remove this collection forever. This action cannot be undone."
+    "message": "This will permanently delete this collection. This action cannot be undone."
   },
   "collection.delete-modal.title": {
     "message": "Are you sure you want to delete this collection?"
@@ -389,11 +860,11 @@
   "collection.description.following": {
     "message": "Auto-generated collection of all the projects you're following."
   },
+  "collection.editing": {
+    "message": "Editing collection"
+  },
   "collection.error.not-found": {
     "message": "Collection not found"
-  },
-  "collection.label.collection": {
-    "message": "Collection"
   },
   "collection.label.created-at": {
     "message": "Created {ago}"
@@ -402,40 +873,142 @@
     "message": "Curated by"
   },
   "collection.label.no-projects": {
-    "message": "This collection has no projects!"
-  },
-  "collection.label.no-projects-auth": {
-    "message": "You don't have any projects.\nWould you like to <create-link>add one</create-link>?"
-  },
-  "collection.label.owner": {
-    "message": "Owner"
+    "message": "No projects in collection yet"
   },
   "collection.label.projects-count": {
-    "message": "{count, plural, one {<stat>{count}</stat> project} other {<stat>{count}</stat> projects}}"
+    "message": "{count, plural, =0 {No projects yet} other {<stat>{count}</stat> {type}}}"
   },
   "collection.label.updated-at": {
     "message": "Updated {ago}"
   },
+  "collection.return-link.dashboard-collections": {
+    "message": "Your collections"
+  },
+  "collection.return-link.user": {
+    "message": "{user}'s profile"
+  },
   "collection.title": {
     "message": "{name} - Collection"
   },
-  "common.no": {
-    "message": "No"
+  "conversation-thread.action.add-private-note": {
+    "message": "Add private note"
   },
-  "common.yes": {
-    "message": "Yes"
+  "conversation-thread.action.approve": {
+    "message": "Approve"
   },
-  "create.collection.cancel": {
-    "message": "Cancel"
+  "conversation-thread.action.approve-with-reply": {
+    "message": "Approve with reply"
+  },
+  "conversation-thread.action.close-thread": {
+    "message": "Close thread"
+  },
+  "conversation-thread.action.close-with-reply": {
+    "message": "Close with reply"
+  },
+  "conversation-thread.action.reject": {
+    "message": "Reject"
+  },
+  "conversation-thread.action.reject-with-reply": {
+    "message": "Reject with reply"
+  },
+  "conversation-thread.action.reopen-thread": {
+    "message": "Reopen thread"
+  },
+  "conversation-thread.action.reply": {
+    "message": "Reply"
+  },
+  "conversation-thread.action.reply-to-thread": {
+    "message": "Reply to thread"
+  },
+  "conversation-thread.action.resubmit-for-review": {
+    "message": "Resubmit for review"
+  },
+  "conversation-thread.action.resubmit-for-review-with-reply": {
+    "message": "Resubmit for review with reply"
+  },
+  "conversation-thread.action.send": {
+    "message": "Send"
+  },
+  "conversation-thread.action.send-to-review": {
+    "message": "Send to review"
+  },
+  "conversation-thread.action.send-to-review-with-reply": {
+    "message": "Send to review with reply"
+  },
+  "conversation-thread.action.set-to-draft": {
+    "message": "Set to draft"
+  },
+  "conversation-thread.action.set-to-draft-with-reply": {
+    "message": "Set to draft with reply"
+  },
+  "conversation-thread.action.withhold": {
+    "message": "Withhold"
+  },
+  "conversation-thread.action.withhold-with-reply": {
+    "message": "Withhold with reply"
+  },
+  "conversation-thread.closed-thread.description": {
+    "message": "This thread is closed and new messages cannot be sent to it."
+  },
+  "conversation-thread.error.closing-report": {
+    "message": "Error closing report"
+  },
+  "conversation-thread.error.reopening-report": {
+    "message": "Error reopening report"
+  },
+  "conversation-thread.error.sending-message": {
+    "message": "Error sending message"
+  },
+  "conversation-thread.reply-editor.placeholder.reply": {
+    "message": "Reply to thread..."
+  },
+  "conversation-thread.reply-editor.placeholder.send": {
+    "message": "Send a message..."
+  },
+  "conversation-thread.reply-modal.confirmation.description": {
+    "message": "Confirm moderators do not actively monitor this"
+  },
+  "conversation-thread.reply-modal.confirmation.label": {
+    "message": "I acknowledge that the moderators do not actively monitor the thread."
+  },
+  "conversation-thread.reply-modal.description": {
+    "message": "Your project is already approved. As such, the moderation team does not actively monitor this thread. However, they may still see your message if there is a problem with your project."
+  },
+  "conversation-thread.reply-modal.header": {
+    "message": "Reply to thread"
+  },
+  "conversation-thread.reply-modal.help-center-note": {
+    "message": "If you need to get in contact with the moderation team, please use the <help-center-link>Modrinth Help Center</help-center-link> and click the blue bubble in the bottom right corner to contact support."
+  },
+  "conversation-thread.resubmit-modal.confirmation.description": {
+    "message": "Confirm I have addressed the messages from the moderators"
+  },
+  "conversation-thread.resubmit-modal.confirmation.label": {
+    "message": "I confirm that I have properly addressed the moderators' comments."
+  },
+  "conversation-thread.resubmit-modal.description": {
+    "message": "You're submitting <project-title>{projectTitle}</project-title> to be reviewed again by the moderators."
+  },
+  "conversation-thread.resubmit-modal.header.resubmitting": {
+    "message": "Resubmitting for review"
+  },
+  "conversation-thread.resubmit-modal.header.submitting": {
+    "message": "Submitting for review"
+  },
+  "conversation-thread.resubmit-modal.reminder": {
+    "message": "Make sure you have addressed all the comments from the moderation team."
+  },
+  "conversation-thread.resubmit-modal.warning": {
+    "message": "Repeated submissions without addressing the moderators' comments may result in an account suspension."
+  },
+  "create-project-version.create-modal.stage.add-files.admonition": {
+    "message": "Supplementary files are for supporting resources like source code, not for alternative versions or variants."
   },
   "create.collection.collection-info": {
     "message": "Your new collection will be created as a public collection with {count, plural, =0 {no projects} one {# project} other {# projects}}."
   },
   "create.collection.create-collection": {
     "message": "Create collection"
-  },
-  "create.collection.error-title": {
-    "message": "An error occurred"
   },
   "create.collection.name-label": {
     "message": "Name"
@@ -488,14 +1061,8 @@
   "create.limit-alert.type-project": {
     "message": "project"
   },
-  "create.organization.cancel": {
-    "message": "Cancel"
-  },
   "create.organization.create-organization": {
     "message": "Create organization"
-  },
-  "create.organization.error-title": {
-    "message": "An error occurred"
   },
   "create.organization.name-label": {
     "message": "Name"
@@ -521,20 +1088,26 @@
   "create.organization.url-label": {
     "message": "URL"
   },
-  "create.project.cancel": {
-    "message": "Cancel"
-  },
   "create.project.create-project": {
     "message": "Create project"
   },
-  "create.project.error-title": {
-    "message": "An error occurred"
+  "create.project.missing-fields-tooltip": {
+    "message": "Missing fields: {fields}"
   },
   "create.project.name-label": {
     "message": "Name"
   },
   "create.project.name-placeholder": {
     "message": "Enter project name..."
+  },
+  "create.project.owner-description": {
+    "message": "Set the project owner as yourself or an organization you're a member of."
+  },
+  "create.project.owner-label": {
+    "message": "Owner"
+  },
+  "create.project.server-project-title": {
+    "message": "Creating a server project"
   },
   "create.project.summary-description": {
     "message": "A sentence or two that describes your project."
@@ -548,14 +1121,20 @@
   "create.project.title": {
     "message": "Creating a project"
   },
+  "create.project.type-label": {
+    "message": "Type"
+  },
+  "create.project.type-project": {
+    "message": "Project"
+  },
+  "create.project.type-server": {
+    "message": "Server"
+  },
   "create.project.url-label": {
     "message": "URL"
   },
   "create.project.visibility-description": {
     "message": "The visibility of your project after it has been approved."
-  },
-  "create.project.visibility-label": {
-    "message": "Visibility"
   },
   "create.project.visibility-private": {
     "message": "Private"
@@ -566,17 +1145,74 @@
   "create.project.visibility-unlisted": {
     "message": "Unlisted"
   },
+  "dashboard.affiliate-links.create.button": {
+    "message": "Create affiliate link"
+  },
+  "dashboard.affiliate-links.empty.no-codes": {
+    "message": "No affiliate codes found."
+  },
+  "dashboard.affiliate-links.error.title": {
+    "message": "Error loading affiliate links"
+  },
+  "dashboard.affiliate-links.header": {
+    "message": "Your affiliate links"
+  },
+  "dashboard.affiliate-links.revoke-confirm.body": {
+    "message": "This will permanently revoke the affiliate code `{id}` and any existing links with this code that have been shared will no longer be valid."
+  },
+  "dashboard.affiliate-links.revoke-confirm.button": {
+    "message": "Revoke"
+  },
+  "dashboard.affiliate-links.revoke-confirm.title": {
+    "message": "Are you sure you want to revoke your ''{title}'' affiliate link?"
+  },
+  "dashboard.affiliate-links.search": {
+    "message": "Search affiliate links..."
+  },
+  "dashboard.analytics.from-projects": {
+    "message": "from {count} {count, plural, one {project} other {projects}}"
+  },
+  "dashboard.analytics.total-downloads": {
+    "message": "Total downloads"
+  },
+  "dashboard.analytics.total-followers": {
+    "message": "Total followers"
+  },
   "dashboard.collections.button.create-new": {
     "message": "Create new"
   },
+  "dashboard.collections.empty.get-started-hint": {
+    "message": "Create your first collection to get started!"
+  },
+  "dashboard.collections.empty.no-collections": {
+    "message": "You don't have any collections yet"
+  },
+  "dashboard.collections.empty.no-match": {
+    "message": "No collections match your search"
+  },
+  "dashboard.collections.empty.no-match-hint": {
+    "message": "Try adjusting your filters or search terms."
+  },
   "dashboard.collections.label.projects-count": {
-    "message": "{count, plural, one {{count} project} other {{count} projects}}"
+    "message": "{count} {countPlural, plural, one {project} other {projects}}"
   },
   "dashboard.collections.label.search-input": {
     "message": "Search your collections"
   },
   "dashboard.collections.long-title": {
     "message": "Your collections"
+  },
+  "dashboard.collections.placeholder.search": {
+    "message": "Search collections..."
+  },
+  "dashboard.collections.sort.name-ascending": {
+    "message": "Name (A-Z)"
+  },
+  "dashboard.collections.sort.recently-created": {
+    "message": "Recently Created"
+  },
+  "dashboard.collections.sort.recently-updated": {
+    "message": "Recently Updated"
   },
   "dashboard.creator-tax-form-modal.confirmation.download-button": {
     "message": "Download {formType}"
@@ -614,6 +1250,630 @@
   "dashboard.creator-tax-form-modal.us-citizen.question": {
     "message": "Are you a US citizen?"
   },
+  "dashboard.creator-withdraw-modal.complete-tax-form": {
+    "message": "Complete tax form"
+  },
+  "dashboard.creator-withdraw-modal.continue-with-limit": {
+    "message": "Continue with limit"
+  },
+  "dashboard.creator-withdraw-modal.details-label": {
+    "message": "Details"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-amount": {
+    "message": "Amount"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-exchange-rate": {
+    "message": "FX rate"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-fee": {
+    "message": "Fee"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-gift-card-value": {
+    "message": "Gift card value"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-net-amount": {
+    "message": "Net amount"
+  },
+  "dashboard.creator-withdraw-modal.fee-breakdown-usd-equivalent": {
+    "message": "USD equivalent"
+  },
+  "dashboard.creator-withdraw-modal.kyc.business-entity": {
+    "message": "Business entity"
+  },
+  "dashboard.creator-withdraw-modal.kyc.entity-description": {
+    "message": "A business entity refers to a registered organization such as a corporation, partnership, or LLC."
+  },
+  "dashboard.creator-withdraw-modal.kyc.entity-question": {
+    "message": "Are you withdrawing as an individual or a business?"
+  },
+  "dashboard.creator-withdraw-modal.kyc.private-individual": {
+    "message": "Private individual"
+  },
+  "dashboard.creator-withdraw-modal.method-selection.country-placeholder": {
+    "message": "Select your country"
+  },
+  "dashboard.creator-withdraw-modal.method-selection.country-search-placeholder": {
+    "message": "Search countries..."
+  },
+  "dashboard.creator-withdraw-modal.method-selection.error-text": {
+    "message": "Unable to fetch available payment methods. Please try again later."
+  },
+  "dashboard.creator-withdraw-modal.method-selection.error-title": {
+    "message": "Failed to load payment methods"
+  },
+  "dashboard.creator-withdraw-modal.method-selection.region": {
+    "message": "Region"
+  },
+  "dashboard.creator-withdraw-modal.method-selection.region-tooltip": {
+    "message": "Some payout methods are not available in certain regions."
+  },
+  "dashboard.creator-withdraw-modal.method-selection.select-method": {
+    "message": "Select withdraw method"
+  },
+  "dashboard.creator-withdraw-modal.method-selection.tax-limit-warning": {
+    "message": "Your withdraw limit is <b>{amount}</b>, <tax-link>complete a tax form</tax-link> to withdraw more."
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.account-owner": {
+    "message": "Account owner"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.bank-account-owner": {
+    "message": "Bank account owner"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.bank-account-owner-description": {
+    "message": "Enter the name of the person authorized to operate this bank account on behalf of the business."
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.coin": {
+    "message": "Coin"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.crypto-warning-header": {
+    "message": "Confirm your wallet address"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-national-id": {
+    "message": "National ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-national-id-placeholder": {
+    "message": "Enter national ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-passport": {
+    "message": "Passport number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-passport-placeholder": {
+    "message": "Enter passport number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-resident-id": {
+    "message": "Resident ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-resident-id-placeholder": {
+    "message": "Enter resident ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-ruc": {
+    "message": "RUC number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-ruc-placeholder": {
+    "message": "Enter RUC number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-tax-id": {
+    "message": "Tax ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.document-number-tax-id-placeholder": {
+    "message": "Enter tax ID number"
+  },
+  "dashboard.creator-withdraw-modal.muralpay-details.network": {
+    "message": "Network"
+  },
+  "dashboard.creator-withdraw-modal.nearing-threshold": {
+    "message": "You're nearing the withdraw threshold. You can withdraw <b>{amountRemaining}</b> now, but a tax form is required for more."
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.account": {
+    "message": "Account"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.disconnect-account": {
+    "message": "Disconnect account"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.payment-method": {
+    "message": "Payment method"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.paypal-account": {
+    "message": "PayPal account"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.paypal-auth-description": {
+    "message": "Connect your PayPal account to receive payments directly."
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.save-success": {
+    "message": "Venmo handle saved successfully!"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.sign-in-with-paypal": {
+    "message": "Sign in with PayPal"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.venmo-description": {
+    "message": "Enter your Venmo handle to receive payments."
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.venmo-handle": {
+    "message": "Venmo handle"
+  },
+  "dashboard.creator-withdraw-modal.paypal-details.venmo-handle-placeholder": {
+    "message": "@username"
+  },
+  "dashboard.creator-withdraw-modal.stage.completion": {
+    "message": "Complete"
+  },
+  "dashboard.creator-withdraw-modal.stage.method-selection": {
+    "message": "Method"
+  },
+  "dashboard.creator-withdraw-modal.stage.tax-form": {
+    "message": "Tax form"
+  },
+  "dashboard.creator-withdraw-modal.tax-form-required.body": {
+    "message": "To withdraw your full <b>{available}</b> available balance please complete the form below. It is required for tax reporting and only needs to be done once."
+  },
+  "dashboard.creator-withdraw-modal.tax-form-required.body-with-limit": {
+    "message": "You must complete a W-9 or W-8 form for Modrinth's tax records so we remain compliant with tax regulations."
+  },
+  "dashboard.creator-withdraw-modal.tax-form-required.header": {
+    "message": "Tax form required"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.available-denominations-label": {
+    "message": "Available denominations"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.balance-worth-hint": {
+    "message": "Your balance of {usdBalance} is currently worth {localBalance}."
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.enter-amount-hint": {
+    "message": "Find gift cards near this value."
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.enter-denomination-placeholder": {
+    "message": "Enter amount"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.payment-method": {
+    "message": "Payment method"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.reward": {
+    "message": "Reward"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.reward-placeholder": {
+    "message": "Select reward"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.reward-plural": {
+    "message": "Rewards"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.search-amount-label": {
+    "message": "Search amount"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.select-denomination-hint": {
+    "message": "Select a denomination:"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.select-denomination-required": {
+    "message": "Please select a denomination to continue"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.unverified-email-header": {
+    "message": "Unverified email"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.unverified-email-message": {
+    "message": "The delivery email you have entered is not associated with your Modrinth account. Modrinth cannot recover rewards sent to an incorrect email address."
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.usd-paypal-warning-header": {
+    "message": "Lower fees available"
+  },
+  "dashboard.creator-withdraw-modal.tremendous-details.usd-paypal-warning-message": {
+    "message": "You selected USD for PayPal International. <direct-paypal-link>Switch to direct PayPal</direct-paypal-link> for better fees (≈2% instead of ≈6%)."
+  },
+  "dashboard.creator-withdraw-modal.withdraw-button": {
+    "message": "Withdraw"
+  },
+  "dashboard.creator-withdraw-modal.withdraw-limit": {
+    "message": "Withdraw limit"
+  },
+  "dashboard.creator-withdraw-modal.withdraw-limit-used": {
+    "message": "You've used up your <b>{withdrawLimit}</b> withdrawal limit. You must complete a tax form to withdraw more."
+  },
+  "dashboard.discord-roles.banner.body": {
+    "message": "You're eligible for {roles}. Link your Discord account through Modrinth and we'll sync them automatically."
+  },
+  "dashboard.discord-roles.banner.cta": {
+    "message": "Link Discord"
+  },
+  "dashboard.discord-roles.banner.title": {
+    "message": "Claim your Discord roles"
+  },
+  "dashboard.discord-roles.role.big-creator": {
+    "message": "1M+ Downloads"
+  },
+  "dashboard.discord-roles.role.creator": {
+    "message": "Creator"
+  },
+  "dashboard.discord-roles.role.pride": {
+    "message": "Pride 2026"
+  },
+  "dashboard.head-title": {
+    "message": "Dashboard"
+  },
+  "dashboard.notifications.empty.no-unread": {
+    "message": "You have no unread notifications."
+  },
+  "dashboard.notifications.link.see-all": {
+    "message": "See all"
+  },
+  "dashboard.notifications.link.view-history": {
+    "message": "View notification history"
+  },
+  "dashboard.notifications.link.view-more": {
+    "message": "View {extraNotifs} more {extraNotifs, plural, one {notification} other {notifications}}"
+  },
+  "dashboard.organizations.button.create": {
+    "message": "Create organization"
+  },
+  "dashboard.organizations.empty.cta": {
+    "message": "Make an organization!"
+  },
+  "dashboard.organizations.error.fetch": {
+    "message": "Failed to fetch organizations"
+  },
+  "dashboard.organizations.member-count": {
+    "message": "{count} {count, plural, one {member} other {members}}"
+  },
+  "dashboard.organizations.title": {
+    "message": "Organizations"
+  },
+  "dashboard.overview.notifications.button.mark-all-as-read": {
+    "message": "Mark all as read"
+  },
+  "dashboard.overview.notifications.button.view-history": {
+    "message": "View history"
+  },
+  "dashboard.overview.notifications.empty.no-unread": {
+    "message": "You don't have any unread notifications."
+  },
+  "dashboard.overview.notifications.error.loading": {
+    "message": "Error loading notifications:"
+  },
+  "dashboard.overview.notifications.history.label": {
+    "message": "History"
+  },
+  "dashboard.overview.notifications.history.title": {
+    "message": "Notification history"
+  },
+  "dashboard.overview.notifications.loading": {
+    "message": "Loading notifications..."
+  },
+  "dashboard.projects.bulk-edit-hint": {
+    "message": "You can edit multiple projects at once by selecting them below."
+  },
+  "dashboard.projects.bulk-edit.server-disabled": {
+    "message": "Server projects do not support bulk editing"
+  },
+  "dashboard.projects.empty": {
+    "message": "You don't have any projects yet. Click the green button above to begin."
+  },
+  "dashboard.projects.head-title": {
+    "message": "Projects"
+  },
+  "dashboard.projects.links.and-more": {
+    "message": "and {count} more..."
+  },
+  "dashboard.projects.links.button.clear-link": {
+    "message": "Clear link"
+  },
+  "dashboard.projects.links.button.edit": {
+    "message": "Edit links"
+  },
+  "dashboard.projects.links.changes-applied": {
+    "message": "Changes will be applied to <strong>{count}</strong> {count, plural, one {project} other {projects}}."
+  },
+  "dashboard.projects.links.description": {
+    "message": "Any links you specify below will be overwritten on each of the selected projects. Any you leave blank will be ignored. You can clear a link from all selected projects using the trash can button."
+  },
+  "dashboard.projects.links.discord-invite.description": {
+    "message": "An invitation link to your Discord server."
+  },
+  "dashboard.projects.links.discord-invite.label": {
+    "message": "Discord invite"
+  },
+  "dashboard.projects.links.header.edit": {
+    "message": "Edit links"
+  },
+  "dashboard.projects.links.issue-tracker.description": {
+    "message": "A place for users to report bugs, issues, and concerns about your project."
+  },
+  "dashboard.projects.links.issue-tracker.label": {
+    "message": "Issue tracker"
+  },
+  "dashboard.projects.links.placeholder.cleared": {
+    "message": "Existing link will be cleared"
+  },
+  "dashboard.projects.links.placeholder.valid-discord-url": {
+    "message": "Enter a valid Discord invite URL"
+  },
+  "dashboard.projects.links.placeholder.valid-url": {
+    "message": "Enter a valid URL"
+  },
+  "dashboard.projects.links.show-all-projects": {
+    "message": "Show all projects"
+  },
+  "dashboard.projects.links.source-code.description": {
+    "message": "A page/repository containing the source code for your project"
+  },
+  "dashboard.projects.links.source-code.label": {
+    "message": "Source code"
+  },
+  "dashboard.projects.links.wiki-page.description": {
+    "message": "A page containing information, documentation, and help for the project"
+  },
+  "dashboard.projects.links.wiki-page.label": {
+    "message": "Wiki page"
+  },
+  "dashboard.projects.notification.bulk-edit-success": {
+    "message": "Bulk edited selected project's links."
+  },
+  "dashboard.projects.project.icon-alt": {
+    "message": "Icon for {title}"
+  },
+  "dashboard.projects.project.moderator-message-aria": {
+    "message": "Project has a message from the moderators. View the project to see more."
+  },
+  "dashboard.projects.project.review-environment-metadata": {
+    "message": "Please review environment metadata"
+  },
+  "dashboard.projects.sort.ascending": {
+    "message": "Ascending"
+  },
+  "dashboard.projects.sort.descending": {
+    "message": "Descending"
+  },
+  "dashboard.projects.sort.option.name": {
+    "message": "Name"
+  },
+  "dashboard.projects.sort.option.status": {
+    "message": "Status"
+  },
+  "dashboard.projects.sort.option.type": {
+    "message": "Type"
+  },
+  "dashboard.projects.table.icon": {
+    "message": "Icon"
+  },
+  "dashboard.projects.table.id": {
+    "message": "ID"
+  },
+  "dashboard.projects.table.name": {
+    "message": "Name"
+  },
+  "dashboard.projects.table.status": {
+    "message": "Status"
+  },
+  "dashboard.projects.table.type": {
+    "message": "Type"
+  },
+  "dashboard.report.title": {
+    "message": "Report {id}"
+  },
+  "dashboard.reports.active-title": {
+    "message": "Active reports"
+  },
+  "dashboard.reports.title": {
+    "message": "Reports"
+  },
+  "dashboard.revenue.available-now": {
+    "message": "Available now"
+  },
+  "dashboard.revenue.balance": {
+    "message": "Balance"
+  },
+  "dashboard.revenue.estimated-tooltip.msg1": {
+    "message": "Estimated revenue may be subject to change until it is made available."
+  },
+  "dashboard.revenue.estimated-tooltip.msg2": {
+    "message": "Click to read about how Modrinth handles your revenue."
+  },
+  "dashboard.revenue.estimated-with-date": {
+    "message": "Estimated {date}"
+  },
+  "dashboard.revenue.processing": {
+    "message": "Processing"
+  },
+  "dashboard.revenue.processing.tooltip": {
+    "message": "Revenue stays in processing until the end of the month, then becomes available 60 days later."
+  },
+  "dashboard.revenue.stats.received": {
+    "message": "Received"
+  },
+  "dashboard.revenue.stats.transactions": {
+    "message": "Transactions"
+  },
+  "dashboard.revenue.stats.withdrawn": {
+    "message": "Withdrawn"
+  },
+  "dashboard.revenue.tos": {
+    "message": "By uploading projects to Modrinth and withdrawing money from your account, you agree to our <terms-link>Rewards Program Terms</terms-link>. Learn more about the <info-link>Reward Program</info-link>."
+  },
+  "dashboard.revenue.transactions.btn.download-csv": {
+    "message": "Download as CSV"
+  },
+  "dashboard.revenue.transactions.head-title": {
+    "message": "Transaction history"
+  },
+  "dashboard.revenue.transactions.header": {
+    "message": "Transactions"
+  },
+  "dashboard.revenue.transactions.none": {
+    "message": "No transactions"
+  },
+  "dashboard.revenue.transactions.none.desc": {
+    "message": "Your payouts and withdrawals will appear here."
+  },
+  "dashboard.revenue.transactions.period.last-month": {
+    "message": "Last month"
+  },
+  "dashboard.revenue.transactions.period.this-month": {
+    "message": "This month"
+  },
+  "dashboard.revenue.transactions.see-all": {
+    "message": "See all"
+  },
+  "dashboard.revenue.transactions.year.all": {
+    "message": "All years"
+  },
+  "dashboard.revenue.withdraw.blocked-tin-mismatch": {
+    "message": "Your withdrawals are temporarily locked because your TIN or SSN didn't match IRS records. Please contact support to reset and resubmit your tax form."
+  },
+  "dashboard.revenue.withdraw.card.description": {
+    "message": "Withdraw from your available balance to any payout method."
+  },
+  "dashboard.revenue.withdraw.card.title": {
+    "message": "Withdraw"
+  },
+  "dashboard.revenue.withdraw.header": {
+    "message": "Withdraw"
+  },
+  "dashboard.sidebar.label.activeReports": {
+    "message": "Active reports"
+  },
+  "dashboard.sidebar.label.analytics": {
+    "message": "Analytics"
+  },
+  "dashboard.sidebar.label.creators": {
+    "message": "Creators"
+  },
+  "dashboard.sidebar.label.dashboard": {
+    "message": "Dashboard"
+  },
+  "dashboard.sidebar.label.notifications": {
+    "message": "Notifications"
+  },
+  "dashboard.sidebar.label.organizations": {
+    "message": "Organizations"
+  },
+  "dashboard.sidebar.label.overview": {
+    "message": "Overview"
+  },
+  "dashboard.sidebar.label.projects": {
+    "message": "Projects"
+  },
+  "dashboard.sidebar.label.revenue": {
+    "message": "Revenue"
+  },
+  "dashboard.withdraw.completion.account": {
+    "message": "Account"
+  },
+  "dashboard.withdraw.completion.amount": {
+    "message": "Amount"
+  },
+  "dashboard.withdraw.completion.date": {
+    "message": "Date"
+  },
+  "dashboard.withdraw.completion.email-confirmation": {
+    "message": "You'll receive an email at <b>{email}</b> with instructions to redeem your withdrawal."
+  },
+  "dashboard.withdraw.completion.exchange-rate": {
+    "message": "Exchange rate"
+  },
+  "dashboard.withdraw.completion.fee": {
+    "message": "Fee"
+  },
+  "dashboard.withdraw.completion.method": {
+    "message": "Method"
+  },
+  "dashboard.withdraw.completion.net-amount": {
+    "message": "Net amount"
+  },
+  "dashboard.withdraw.completion.recipient": {
+    "message": "Recipient"
+  },
+  "dashboard.withdraw.completion.title": {
+    "message": "Withdraw complete"
+  },
+  "dashboard.withdraw.completion.transactions-button": {
+    "message": "Transactions"
+  },
+  "dashboard.withdraw.completion.wallet": {
+    "message": "Wallet"
+  },
+  "dashboard.withdraw.error.account-not-linked.text": {
+    "message": "Please link your payment account before withdrawing."
+  },
+  "dashboard.withdraw.error.account-not-linked.title": {
+    "message": "Account not linked"
+  },
+  "dashboard.withdraw.error.email-verification.text": {
+    "message": "You must verify your email address before withdrawing funds."
+  },
+  "dashboard.withdraw.error.email-verification.title": {
+    "message": "Email verification required"
+  },
+  "dashboard.withdraw.error.generic.text": {
+    "message": "We were unable to submit your withdrawal request, please check your details or contact support.\n{error}"
+  },
+  "dashboard.withdraw.error.generic.title": {
+    "message": "Unable to withdraw"
+  },
+  "dashboard.withdraw.error.insufficient-balance.text": {
+    "message": "You do not have enough funds to make this withdrawal."
+  },
+  "dashboard.withdraw.error.insufficient-balance.title": {
+    "message": "Insufficient balance"
+  },
+  "dashboard.withdraw.error.invalid-address.text": {
+    "message": "The address you provided could not be verified. Please check your address details."
+  },
+  "dashboard.withdraw.error.invalid-address.title": {
+    "message": "Address verification failed"
+  },
+  "dashboard.withdraw.error.invalid-bank.text": {
+    "message": "The bank account details you provided are invalid. Please verify your information."
+  },
+  "dashboard.withdraw.error.invalid-bank.title": {
+    "message": "Invalid bank details"
+  },
+  "dashboard.withdraw.error.invalid-wallet.text": {
+    "message": "The crypto wallet address you provided is invalid. Please double-check and try again."
+  },
+  "dashboard.withdraw.error.invalid-wallet.title": {
+    "message": "Invalid wallet address"
+  },
+  "dashboard.withdraw.error.minimum-not-met.text": {
+    "message": "The withdrawal amount (after fees) doesn't meet the minimum requirement. Please increase your withdrawal amount."
+  },
+  "dashboard.withdraw.error.minimum-not-met.title": {
+    "message": "Amount too low"
+  },
+  "dashboard.withdraw.error.paypal-country-mismatch.text": {
+    "message": "Please use the correct PayPal transfer option for your region (US or International)."
+  },
+  "dashboard.withdraw.error.paypal-country-mismatch.title": {
+    "message": "PayPal region mismatch"
+  },
+  "dashboard.withdraw.error.tax-form.text": {
+    "message": "You must complete a tax form to submit your withdrawal request."
+  },
+  "dashboard.withdraw.error.tax-form.title": {
+    "message": "Please complete tax form"
+  },
+  "discover.install.back-to-server": {
+    "message": "Back to server"
+  },
+  "discover.install.back-to-setup": {
+    "message": "Back to setup"
+  },
+  "discover.install.cancel-reset": {
+    "message": "Cancel reset"
+  },
+  "discover.install.error.no-server-world": {
+    "message": "No server world is available for install."
+  },
+  "discover.install.error.unsupported-content-type": {
+    "message": "This content type cannot be installed to a server from Discover."
+  },
+  "discover.install.heading.reset-modpack": {
+    "message": "Selecting modpack to install after reset"
+  },
+  "discover.seo.description": {
+    "message": "Search and browse thousands of Minecraft {projectType} on Modrinth with instant, accurate search results. Our filters help you quickly find the best Minecraft {projectType}."
+  },
+  "discover.seo.title": {
+    "message": "Search {projectType}"
+  },
+  "discover.seo.title-with-query": {
+    "message": "Search {projectType} | {query}"
+  },
   "error.collection.404.list_item.1": {
     "message": "You may have mistyped the collection's URL."
   },
@@ -628,6 +1888,12 @@
   },
   "error.collection.404.title": {
     "message": "Collection not found"
+  },
+  "error.generic.401.signed-in-as": {
+    "message": "You're currently signed in as:"
+  },
+  "error.generic.401.title": {
+    "message": "You don't have access to this page"
   },
   "error.generic.404.subtitle": {
     "message": "The page you were looking for doesn't seem to exist."
@@ -707,14 +1973,215 @@
   "frog.altText": {
     "message": "A photorealistic painting of a frog labyrinth"
   },
-  "frog.froggedPeople": {
-    "message": "{count, plural, one {{count} more person} other {{count} more people}} were also frogged!"
-  },
-  "frog.sinceOpened": {
-    "message": "This page was opened {ago}"
-  },
   "frog.title": {
     "message": "Frog"
+  },
+  "hosting-marketing.available-locations": {
+    "message": "Available in North America, Europe, Southeast Asia, and Australia for wide coverage."
+  },
+  "hosting-marketing.billing.monthly": {
+    "message": "Pay monthly"
+  },
+  "hosting-marketing.billing.quarterly": {
+    "message": "Pay quarterly"
+  },
+  "hosting-marketing.billing.save-with-quarterly": {
+    "message": "Save 16% with quarterly billing!"
+  },
+  "hosting-marketing.billing.starting-at": {
+    "message": "Starting at {price} / month"
+  },
+  "hosting-marketing.billing.yearly": {
+    "message": "Pay yearly"
+  },
+  "hosting-marketing.faq.burst-threads": {
+    "message": "How do CPU burst threads work?"
+  },
+  "hosting-marketing.faq.burst-threads.answer": {
+    "message": "When your server is under heavy load, we temporarily give it access to additional CPU threads to help mitigate lag spikes and instability. This helps prevent the TPS from going below 20, ensuring the smoothest experience possible. Since those extra CPU threads are only shortly available during high load periods, they might not show up in Spark reports or other profiling tools."
+  },
+  "hosting-marketing.faq.cpu-kind": {
+    "message": "What kind of CPUs do Modrinth Hosting servers run on?"
+  },
+  "hosting-marketing.faq.cpu-kind.answer": {
+    "message": "Modrinth Hosting servers are powered by AMD Ryzen 7900 and 7950X3D equivalent CPUs at 5+ GHz, paired with DDR5 memory."
+  },
+  "hosting-marketing.faq.currency": {
+    "message": "What currency are the prices in?"
+  },
+  "hosting-marketing.faq.currency.answer": {
+    "message": "All prices are listed in United States Dollars (USD)."
+  },
+  "hosting-marketing.faq.ddos-protection": {
+    "message": "Do Modrinth Hosting servers have DDoS protection?"
+  },
+  "hosting-marketing.faq.ddos-protection.answer": {
+    "message": "Yes. All Modrinth Hosting servers come with DDoS protection, with up to 17 Tbps capacity in some locations."
+  },
+  "hosting-marketing.faq.heading": {
+    "message": "Frequently Asked Questions"
+  },
+  "hosting-marketing.faq.how-fast": {
+    "message": "How fast are Modrinth Hosting servers?"
+  },
+  "hosting-marketing.faq.how-fast.answer.one": {
+    "message": "Modrinth Hosting servers are hosted on very modern high-performance hardware, but it's tough to say how exactly that will translate into how fast your server will run because there are so many factors that affect it, such as the mods, data packs, or plugins you're running on your server, and even user behavior."
+  },
+  "hosting-marketing.faq.how-fast.answer.two": {
+    "message": "Most performance issues that arise tend to be the fault of an unoptimized modpack, mod, data pack, or plugin that causes the server to lag. Since our servers are very high-end, you shouldn't run into much trouble as long as you pick an appropriate plan for the content you're running on the server."
+  },
+  "hosting-marketing.faq.increase-storage": {
+    "message": "Can I increase the storage on my server?"
+  },
+  "hosting-marketing.faq.increase-storage.answer": {
+    "message": "Yes, storage can be increased on your server at no additional cost. If you need more storage, reach out to Modrinth Support."
+  },
+  "hosting-marketing.faq.location": {
+    "message": "Where are Modrinth Hosting servers located? Can I choose a region?"
+  },
+  "hosting-marketing.faq.location.answer": {
+    "message": "We have servers available across North America, Europe, Southeast Asia, and Australia at the moment that you can choose upon purchase. More regions to come in the future! If you'd like to switch your region, please contact support."
+  },
+  "hosting-marketing.faq.versions-loaders": {
+    "message": "What Minecraft versions and loaders can be used?"
+  },
+  "hosting-marketing.faq.versions-loaders.answer.one": {
+    "message": "Modrinth Hosting servers can run any version of Minecraft: Java Edition going all the way back to version 1.2.5, including snapshot versions."
+  },
+  "hosting-marketing.faq.versions-loaders.answer.two": {
+    "message": "We also support a wide range of mod and plugin loaders, including Fabric, Quilt, Forge, and NeoForge for mods, as well as Paper and Purpur for plugins. Availability depends on whether the mod or plugin loader supports the selected Minecraft version."
+  },
+  "hosting-marketing.get-started": {
+    "message": "Get started"
+  },
+  "hosting-marketing.hero.button.manage-your-servers": {
+    "message": "Manage your servers"
+  },
+  "hosting-marketing.hero.button.start-a-new-server": {
+    "message": "Start a new server"
+  },
+  "hosting-marketing.hero.button.start-your-server": {
+    "message": "Start your server"
+  },
+  "hosting-marketing.hero.host-with-modrinth": {
+    "message": "Host your next server with Modrinth Hosting"
+  },
+  "hosting-marketing.hero.hosting-description": {
+    "message": "Modrinth Hosting is the easiest way to host your own Minecraft: Java Edition server. Seamlessly install and play your favorite mods and modpacks, all within the Modrinth platform."
+  },
+  "hosting-marketing.included.advanced-networking": {
+    "message": "Advanced networking management"
+  },
+  "hosting-marketing.included.advanced-networking.description": {
+    "message": "Add your own domain to your server, reserve up to 15 ports for mods that require them, and more."
+  },
+  "hosting-marketing.included.backups-included": {
+    "message": "Backups included"
+  },
+  "hosting-marketing.included.backups-included.description": {
+    "message": "Every server comes with 15 backups stored securely off-site."
+  },
+  "hosting-marketing.included.custom-url": {
+    "message": "Custom URL"
+  },
+  "hosting-marketing.included.custom-url.description": {
+    "message": "Share your server with a custom <contrast>modrinth.gg</contrast> URL."
+  },
+  "hosting-marketing.included.description": {
+    "message": "Included with every server is a suite of features designed to provide a hosting experience that only Modrinth can offer."
+  },
+  "hosting-marketing.included.file-manager": {
+    "message": "Easy to use file manager"
+  },
+  "hosting-marketing.included.file-manager.description": {
+    "message": "Search, manage, edit, and upload files directly to your server with ease."
+  },
+  "hosting-marketing.included.heading": {
+    "message": "Comes with all the features you need."
+  },
+  "hosting-marketing.included.help": {
+    "message": "Help when you need it"
+  },
+  "hosting-marketing.included.help.description": {
+    "message": "Reach out to the Modrinth team for help with your server at any time."
+  },
+  "hosting-marketing.included.powerful-console": {
+    "message": "A powerful console, server properties manager, and more"
+  },
+  "hosting-marketing.included.powerful-console.description": {
+    "message": "Modrinth Hosting comes with powerful tools to manage your server."
+  },
+  "hosting-marketing.included.sftp-access": {
+    "message": "SFTP access"
+  },
+  "hosting-marketing.included.sftp-access.description": {
+    "message": "Access your server's files directly with SFTP built into Modrinth Hosting."
+  },
+  "hosting-marketing.included.with-your-server": {
+    "message": "Included with your server"
+  },
+  "hosting-marketing.know-what-you-need": {
+    "message": "Know exactly what you need?"
+  },
+  "hosting-marketing.medal.info": {
+    "message": "Try a free <orange>3 GB server</orange> for 5 days powered by <orange>Medal</orange>"
+  },
+  "hosting-marketing.medal.learn-more": {
+    "message": "Learn more"
+  },
+  "hosting-marketing.medal.text-secondary": {
+    "message": "Limited-time offer. No credit card required. Available for US servers."
+  },
+  "hosting-marketing.pick-customized-plan": {
+    "message": "Pick a customized plan with just the specs you need."
+  },
+  "hosting-marketing.server-for-everyone": {
+    "message": "There's a server for everyone"
+  },
+  "hosting-marketing.why.all-on-modrinth": {
+    "message": "Manage it all on Modrinth"
+  },
+  "hosting-marketing.why.all-on-modrinth.description": {
+    "message": "Your server, mods, players, and more are all on Modrinth. No need to switch between platforms."
+  },
+  "hosting-marketing.why.consistently-fast": {
+    "message": "Consistently fast"
+  },
+  "hosting-marketing.why.consistently-fast.description": {
+    "message": "Our infrastructure is never overloaded, meaning each server hosted with Modrinth always runs at its full performance."
+  },
+  "hosting-marketing.why.description": {
+    "message": "Choose from the thousands of modpacks on Modrinth or create your own. Invite your friends when you're ready to play."
+  },
+  "hosting-marketing.why.heading": {
+    "message": "Find a modpack. Now it's a server."
+  },
+  "hosting-marketing.why.modern-reliable-hosting": {
+    "message": "Experience modern, reliable hosting"
+  },
+  "hosting-marketing.why.modern-reliable-hosting.description": {
+    "message": "Modrinth Hosting servers are hosted on <contrast>high-performance AMD CPUs with DDR5 RAM</contrast>, running on custom-built software to ensure your server performs smoothly."
+  },
+  "hosting-marketing.why.where-mods-are": {
+    "message": "Play where your mods are"
+  },
+  "hosting-marketing.why.where-mods-are.description": {
+    "message": "Modrinth Hosting seamlessly integrates the mod and modpack installation process into your server."
+  },
+  "hosting-marketing.why.why-modrinth-hosting": {
+    "message": "Why Modrinth Hosting?"
+  },
+  "hosting-marketing.why.your-favorite-mods": {
+    "message": "All your favorite mods"
+  },
+  "hosting-marketing.why.your-favorite-mods.description": {
+    "message": "Choose between Vanilla, Fabric, Forge, Quilt and NeoForge. If it's on Modrinth, it can run on your server."
+  },
+  "hosting.plan.out-of-stock": {
+    "message": "Out of stock"
+  },
+  "hosting.plan.select-plan": {
+    "message": "Select plan"
   },
   "landing.button.discover-mods": {
     "message": "Discover mods"
@@ -827,15 +2294,6 @@
   "landing.notifications.version-released": {
     "message": "Version {version} has been released for {gameVersion}"
   },
-  "landing.search.label": {
-    "message": "Search"
-  },
-  "landing.search.placeholder": {
-    "message": "Search..."
-  },
-  "landing.search.sort-by.label": {
-    "message": "Sort by"
-  },
   "landing.section.for-creators.description": {
     "message": "Give an online home to your creations and reach a massive audience of dedicated players."
   },
@@ -852,10 +2310,13 @@
     "message": "For Players"
   },
   "landing.section.for-players.tagline": {
-    "message": "Discover over {count} creations"
+    "message": "Discover over {count, number} creations"
   },
   "landing.subheading": {
     "message": "Discover, play, and share Minecraft content through our open-source platform built for the community."
+  },
+  "layout.action.analytics-events": {
+    "message": "Analytics events"
   },
   "layout.action.change-theme": {
     "message": "Change theme"
@@ -863,11 +2324,17 @@
   "layout.action.create-new": {
     "message": "Create new..."
   },
+  "layout.action.external-projects": {
+    "message": "External projects"
+  },
   "layout.action.file-lookup": {
     "message": "File lookup"
   },
   "layout.action.lookup-by-email": {
     "message": "Lookup by email"
+  },
+  "layout.action.manage-affiliates": {
+    "message": "Manage affiliate links"
   },
   "layout.action.manage-server-notices": {
     "message": "Manage server notices"
@@ -881,11 +2348,20 @@
   "layout.action.new-project": {
     "message": "New project"
   },
+  "layout.action.new-server-project": {
+    "message": "New server"
+  },
+  "layout.action.publish": {
+    "message": "Publish"
+  },
   "layout.action.reports": {
-    "message": "Reports"
+    "message": "Review reports"
   },
   "layout.action.review-projects": {
-    "message": "Review projects"
+    "message": "Project review"
+  },
+  "layout.action.tech-review": {
+    "message": "Tech review"
   },
   "layout.avatar.alt": {
     "message": "Your avatar"
@@ -899,11 +2375,23 @@
   "layout.banner.add-email.description": {
     "message": "For security reasons, Modrinth needs you to register an email address to your account."
   },
+  "layout.banner.build-fail.always-ignore": {
+    "message": "Always ignore"
+  },
   "layout.banner.build-fail.description": {
     "message": "This deploy of Modrinth's frontend failed to generate state from the API. This may be due to an outage or an error in configuration. Rebuild when the API is available. Error codes: {errors}; Current API URL is: {url}"
   },
+  "layout.banner.build-fail.ignore": {
+    "message": "Ignore"
+  },
   "layout.banner.build-fail.title": {
     "message": "Error generating state from API when building."
+  },
+  "layout.banner.preview.description": {
+    "message": "If you meant to access the official Modrinth website, visit {url}. This preview deploy is used by Modrinth staff for testing purposes. It was built using {ref}."
+  },
+  "layout.banner.preview.title": {
+    "message": "This is a preview deploy of the Modrinth website."
   },
   "layout.banner.staging.description": {
     "message": "The staging environment is completely separate from the production Modrinth database. This is used for testing and debugging purposes, and may be running in-development versions of the Modrinth backend or frontend newer than the production instance."
@@ -924,7 +2412,7 @@
     "message": "Complete tax form"
   },
   "layout.banner.tax.description": {
-    "message": "You've already withdrawn over $600 from Modrinth this year. To comply with tax regulations, you need to complete a tax form. Your withdrawals are paused until this form is submitted."
+    "message": "You've already withdrawn over {threshold} from Modrinth this year. To comply with tax regulations, you need to complete a tax form. Your withdrawals are paused until this form is submitted."
   },
   "layout.banner.tax.title": {
     "message": "Tax form required"
@@ -999,7 +2487,7 @@
     "message": "Modrinth+"
   },
   "layout.footer.products.servers": {
-    "message": "Modrinth Servers"
+    "message": "Modrinth Hosting"
   },
   "layout.footer.resources": {
     "message": "Resources"
@@ -1040,17 +2528,20 @@
   "layout.meta.og-description": {
     "message": "Discover and publish Minecraft content!"
   },
-  "layout.nav.analytics": {
-    "message": "Analytics"
+  "layout.mobile.close-menu": {
+    "message": "Close menu"
+  },
+  "layout.mobile.open-menu": {
+    "message": "Open menu"
+  },
+  "layout.nav.active-reports": {
+    "message": "Active reports"
   },
   "layout.nav.discover": {
     "message": "Discover"
   },
   "layout.nav.discover-content": {
     "message": "Discover content"
-  },
-  "layout.nav.feature-flags": {
-    "message": "Feature flags"
   },
   "layout.nav.get-modrinth-app": {
     "message": "Get Modrinth App"
@@ -1066,6 +2557,9 @@
   },
   "layout.nav.modrinth-home-page": {
     "message": "Modrinth home page"
+  },
+  "layout.nav.my-servers": {
+    "message": "My servers"
   },
   "layout.nav.organizations": {
     "message": "Organizations"
@@ -1088,11 +2582,11 @@
   "layout.nav.upgrade-to-modrinth-plus": {
     "message": "Upgrade to Modrinth+"
   },
-  "moderation.filter.by": {
-    "message": "Filter by"
-  },
   "moderation.moderate": {
     "message": "Moderate"
+  },
+  "moderation.page.external-projects": {
+    "message": "External projects"
   },
   "moderation.page.projects": {
     "message": "Projects"
@@ -1101,22 +2595,286 @@
     "message": "Reports"
   },
   "moderation.page.technicalReview": {
-    "message": "Technical Review"
+    "message": "Tech review"
   },
-  "moderation.search.placeholder": {
-    "message": "Search..."
+  "muralpay.account-type.checking": {
+    "message": "Checking"
   },
-  "moderation.sort.by": {
-    "message": "Sort by"
+  "muralpay.account-type.savings": {
+    "message": "Savings"
   },
-  "moderation.technical.search.placeholder": {
-    "message": "Search tech reviews..."
+  "muralpay.country.at": {
+    "message": "Austria"
+  },
+  "muralpay.country.be": {
+    "message": "Belgium"
+  },
+  "muralpay.country.cy": {
+    "message": "Cyprus"
+  },
+  "muralpay.country.de": {
+    "message": "Germany"
+  },
+  "muralpay.country.ee": {
+    "message": "Estonia"
+  },
+  "muralpay.country.es": {
+    "message": "Spain"
+  },
+  "muralpay.country.fi": {
+    "message": "Finland"
+  },
+  "muralpay.country.fr": {
+    "message": "France"
+  },
+  "muralpay.country.gr": {
+    "message": "Greece"
+  },
+  "muralpay.country.ie": {
+    "message": "Ireland"
+  },
+  "muralpay.country.it": {
+    "message": "Italy"
+  },
+  "muralpay.country.lt": {
+    "message": "Lithuania"
+  },
+  "muralpay.country.lu": {
+    "message": "Luxembourg"
+  },
+  "muralpay.country.lv": {
+    "message": "Latvia"
+  },
+  "muralpay.country.mt": {
+    "message": "Malta"
+  },
+  "muralpay.country.nl": {
+    "message": "Netherlands"
+  },
+  "muralpay.country.pt": {
+    "message": "Portugal"
+  },
+  "muralpay.country.sk": {
+    "message": "Slovakia"
+  },
+  "muralpay.document-type.national-id": {
+    "message": "National ID"
+  },
+  "muralpay.document-type.passport": {
+    "message": "Passport"
+  },
+  "muralpay.document-type.resident-id": {
+    "message": "Resident ID"
+  },
+  "muralpay.document-type.ruc": {
+    "message": "RUC"
+  },
+  "muralpay.document-type.tax-id": {
+    "message": "Tax ID"
+  },
+  "muralpay.field.account-number": {
+    "message": "Account number"
+  },
+  "muralpay.field.account-number-cbu-cvu": {
+    "message": "Account number (CBU/CVU)"
+  },
+  "muralpay.field.account-number-cci": {
+    "message": "Account number (CCI)"
+  },
+  "muralpay.field.account-number-type": {
+    "message": "Account number type"
+  },
+  "muralpay.field.account-type": {
+    "message": "Account type"
+  },
+  "muralpay.field.bank-account-number": {
+    "message": "Account number"
+  },
+  "muralpay.field.clabe": {
+    "message": "CLABE"
+  },
+  "muralpay.field.country": {
+    "message": "Country"
+  },
+  "muralpay.field.cpf-cnpj": {
+    "message": "CPF/CNPJ"
+  },
+  "muralpay.field.cuit-cuil": {
+    "message": "CUIT/CUIL"
+  },
+  "muralpay.field.document-type": {
+    "message": "Document type"
+  },
+  "muralpay.field.iban": {
+    "message": "IBAN"
+  },
+  "muralpay.field.phone-number": {
+    "message": "Phone number"
+  },
+  "muralpay.field.pix-email": {
+    "message": "PIX email"
+  },
+  "muralpay.field.pix-key-type": {
+    "message": "PIX key type"
+  },
+  "muralpay.field.pix-phone": {
+    "message": "PIX phone"
+  },
+  "muralpay.field.random-key": {
+    "message": "Random key"
+  },
+  "muralpay.field.routing-number": {
+    "message": "Routing number"
+  },
+  "muralpay.field.swift-bic": {
+    "message": "SWIFT/BIC"
+  },
+  "muralpay.field.wallet-address": {
+    "message": "Wallet address"
+  },
+  "muralpay.help.cbu-cvu": {
+    "message": "Clave Bancaria Uniforme or Clave Virtual Uniforme"
+  },
+  "muralpay.help.cci": {
+    "message": "Código de Cuenta Interbancaria"
+  },
+  "muralpay.help.clabe": {
+    "message": "Clave Bancaria Estandarizada (Mexican bank account number)"
+  },
+  "muralpay.help.cpf-cnpj": {
+    "message": "Brazilian tax identification number"
+  },
+  "muralpay.help.cuit-cuil": {
+    "message": "Argentine tax ID"
+  },
+  "muralpay.help.iban": {
+    "message": "International Bank Account Number"
+  },
+  "muralpay.help.swift-bic": {
+    "message": "Bank Identifier Code"
+  },
+  "muralpay.pix-type.bank-account": {
+    "message": "Bank account"
+  },
+  "muralpay.pix-type.document": {
+    "message": "CPF/CNPJ"
+  },
+  "muralpay.pix-type.email": {
+    "message": "Email"
+  },
+  "muralpay.pix-type.phone": {
+    "message": "Phone number"
+  },
+  "muralpay.placeholder.account-number": {
+    "message": "Enter account number"
+  },
+  "muralpay.placeholder.cbu-cvu": {
+    "message": "Enter CBU or CVU"
+  },
+  "muralpay.placeholder.cbu-cvu-type": {
+    "message": "CBU or CVU"
+  },
+  "muralpay.placeholder.cci": {
+    "message": "Enter 20-digit CCI"
+  },
+  "muralpay.placeholder.cuit-cuil": {
+    "message": "Enter CUIT or CUIL"
+  },
+  "muralpay.placeholder.enter-account-number": {
+    "message": "Enter account number"
+  },
+  "muralpay.placeholder.enter-clabe": {
+    "message": "Enter 18-digit CLABE"
+  },
+  "muralpay.placeholder.enter-cpf-cnpj": {
+    "message": "Enter CPF or CNPJ"
+  },
+  "muralpay.placeholder.enter-iban": {
+    "message": "Enter IBAN"
+  },
+  "muralpay.placeholder.enter-pix-email": {
+    "message": "Enter PIX email"
+  },
+  "muralpay.placeholder.enter-random-key": {
+    "message": "Enter random key"
+  },
+  "muralpay.placeholder.enter-routing-number": {
+    "message": "Enter 9-digit routing number"
+  },
+  "muralpay.placeholder.enter-swift-bic": {
+    "message": "Enter SWIFT/BIC code"
+  },
+  "muralpay.placeholder.iban-crc": {
+    "message": "Enter Costa Rican IBAN"
+  },
+  "muralpay.placeholder.phone-cop": {
+    "message": "+57..."
+  },
+  "muralpay.placeholder.pix-phone": {
+    "message": "+55..."
+  },
+  "muralpay.placeholder.wallet-address-eth": {
+    "message": "0x..."
+  },
+  "muralpay.rail.fiat-ars.name": {
+    "message": "Bank Transfer (ARS)"
+  },
+  "muralpay.rail.fiat-brl.name": {
+    "message": "PIX Transfer (BRL)"
+  },
+  "muralpay.rail.fiat-clp.name": {
+    "message": "Bank Transfer (CLP)"
+  },
+  "muralpay.rail.fiat-cop.name": {
+    "message": "Bank Transfer (COP)"
+  },
+  "muralpay.rail.fiat-crc.name": {
+    "message": "Bank Transfer (CRC)"
+  },
+  "muralpay.rail.fiat-eur.name": {
+    "message": "Bank Transfer (EUR)"
+  },
+  "muralpay.rail.fiat-mxn.name": {
+    "message": "Bank Transfer (MXN)"
+  },
+  "muralpay.rail.fiat-pen.name": {
+    "message": "Bank Transfer (PEN)"
+  },
+  "muralpay.rail.fiat-usd-peru.name": {
+    "message": "Bank Transfer (USD - Peru)"
+  },
+  "muralpay.rail.fiat-usd.name": {
+    "message": "Bank Transfer (USD)"
+  },
+  "muralpay.rail.fiat-zar.name": {
+    "message": "Bank Transfer (ZAR)"
+  },
+  "muralpay.rail.usdc-base.name": {
+    "message": "USDC (Base)"
+  },
+  "muralpay.rail.usdc-celo.name": {
+    "message": "USDC (Celo)"
+  },
+  "muralpay.rail.usdc-ethereum.name": {
+    "message": "USDC (Ethereum)"
+  },
+  "muralpay.rail.usdc-polygon.name": {
+    "message": "Crypto (USDC)"
+  },
+  "muralpay.warning.wallet-address": {
+    "message": "Double-check your wallet address. Funds sent to an incorrect address cannot be recovered."
+  },
+  "organization.settings.projects.edit-links.affected-projects": {
+    "message": "Changes will be applied to {count, plural, one {# project} other {# projects}}."
   },
   "profile.bio.fallback.creator": {
     "message": "A Modrinth creator."
   },
   "profile.bio.fallback.user": {
     "message": "A Modrinth user."
+  },
+  "profile.button.analytics": {
+    "message": "View user analytics"
   },
   "profile.button.billing": {
     "message": "Manage user billing"
@@ -1130,11 +2888,23 @@
   "profile.button.manage-projects": {
     "message": "Manage projects"
   },
+  "profile.button.remove-affiliate": {
+    "message": "Remove as affiliate"
+  },
+  "profile.button.set-affiliate": {
+    "message": "Set as affiliate"
+  },
+  "profile.collection.projects-count": {
+    "message": "{count, plural, one {# project} other {# projects}}"
+  },
   "profile.details.label.auth-providers": {
     "message": "Auth providers"
   },
   "profile.details.label.email": {
     "message": "Email"
+  },
+  "profile.details.label.email-verified": {
+    "message": "Email verified"
   },
   "profile.details.label.has-password": {
     "message": "Has password"
@@ -1154,23 +2924,20 @@
   "profile.error.not-found": {
     "message": "User not found"
   },
+  "profile.label.affiliate": {
+    "message": "Affiliate"
+  },
   "profile.label.badges": {
     "message": "Badges"
   },
   "profile.label.collection": {
     "message": "Collection"
   },
-  "profile.label.details": {
-    "message": "Details"
-  },
   "profile.label.downloads": {
-    "message": "{count} {count, plural, one {download} other {downloads}}"
+    "message": "{count} {countPlural, plural, one {download} other {downloads}}"
   },
   "profile.label.joined": {
     "message": "Joined"
-  },
-  "profile.label.no": {
-    "message": "No"
   },
   "profile.label.no-collections": {
     "message": "This user has no collections!"
@@ -1188,13 +2955,10 @@
     "message": "Organizations"
   },
   "profile.label.projects": {
-    "message": "{count} {count, plural, one {project} other {projects}}"
+    "message": "{count} {countPlural, plural, one {project} other {projects}}"
   },
   "profile.label.saving": {
     "message": "Saving..."
-  },
-  "profile.label.yes": {
-    "message": "Yes"
   },
   "profile.meta.description": {
     "message": "Download {username}'s projects on Modrinth"
@@ -1202,20 +2966,17 @@
   "profile.meta.description-with-bio": {
     "message": "{bio} - Download {username}'s projects on Modrinth"
   },
+  "profile.official-account": {
+    "message": "Official Modrinth account"
+  },
+  "profile.official-account.bio": {
+    "message": "The official user account of Modrinth. Get support at <support-link></support-link> or via email at <email></email>"
+  },
   "profile.stats.projects-followers": {
     "message": "{count, plural, one {<stat>{count}</stat> project follower} other {<stat>{count}</stat> project followers}}"
   },
   "profile.user-id": {
     "message": "User ID: {id}"
-  },
-  "project-member-header.accept": {
-    "message": "Accept"
-  },
-  "project-member-header.decline": {
-    "message": "Decline"
-  },
-  "project-member-header.error": {
-    "message": "Error"
   },
   "project-member-header.error-decline": {
     "message": "Failed to decline team invitation"
@@ -1231,9 +2992,6 @@
   },
   "project-member-header.invitation-with-role": {
     "message": "You've been invited to be a member of this project with the role of ''{role}''."
-  },
-  "project-member-header.success": {
-    "message": "Success"
   },
   "project-member-header.success-decline": {
     "message": "You have declined the team invitation"
@@ -1251,7 +3009,7 @@
     "message": "Resubmit for review"
   },
   "project-moderation-nags.resubmit-for-review-desc": {
-    "message": "Your project has been {status} by Modrinth's staff. In most cases, you can resubmit for review after addressing the staff's message."
+    "message": "Your project has been {status, select, rejected {rejected} withheld {withheld} other {{status}}} by Modrinth's staff. In most cases, you can resubmit for review after addressing the staff's message."
   },
   "project-moderation-nags.submit-checklist-tooltip": {
     "message": "You must complete the required steps in the publishing checklist!"
@@ -1286,6 +3044,12 @@
   "project-type.datapack.singular": {
     "message": "Data Pack"
   },
+  "project-type.minecraft_java_server.plural": {
+    "message": "Servers"
+  },
+  "project-type.minecraft_java_server.singular": {
+    "message": "Server"
+  },
   "project-type.mod.plural": {
     "message": "Mods"
   },
@@ -1315,6 +3079,12 @@
   },
   "project-type.resourcepack.singular": {
     "message": "Resource Pack"
+  },
+  "project-type.server.plural": {
+    "message": "Servers"
+  },
+  "project-type.server.singular": {
+    "message": "Server"
   },
   "project-type.shader.plural": {
     "message": "Shaders"
@@ -1353,7 +3123,7 @@
     "message": "Review project"
   },
   "project.actions.servers-promo.description": {
-    "message": "Modrinth Servers is the easiest way to play with your friends without hassle!"
+    "message": "Modrinth Hosting is the easiest way to play with your friends without hassle!"
   },
   "project.actions.servers-promo.pricing": {
     "message": "Starting at {price}<small> / month</small>"
@@ -1434,7 +3204,7 @@
     "message": "Learn more about this change"
   },
   "project.environment.migration.message": {
-    "message": "We've just overhauled the Environments system on Modrinth and new options are now available. Please visit your project's settings and verify that the metadata is correct."
+    "message": "We've just overhauled the Environments system on Modrinth and new options are now available. Please verify that the metadata is correct."
   },
   "project.environment.migration.review-button": {
     "message": "Review environment settings"
@@ -1463,6 +3233,84 @@
   "project.license.title": {
     "message": "License"
   },
+  "project.moderation.admonition.approved.body.private": {
+    "message": "Your project is private, meaning it can only be accessed by you and people you invite."
+  },
+  "project.moderation.admonition.approved.body.public": {
+    "message": "Your project is published and discoverable on Modrinth."
+  },
+  "project.moderation.admonition.approved.body.unlisted": {
+    "message": "Your project is unlisted, meaning it can only be accessed with a direct link and is not discoverable on Modrinth."
+  },
+  "project.moderation.admonition.approved.body.visibility-message": {
+    "message": "You can change the visibility of your project in your project's <visibility-settings-link>visibility settings</visibility-settings-link>."
+  },
+  "project.moderation.admonition.approved.header": {
+    "message": "Project approved"
+  },
+  "project.moderation.admonition.draft.body": {
+    "message": "This is a draft project that cannot be seen by others until submitted for review and approved by Modrinth's moderation team."
+  },
+  "project.moderation.admonition.draft.header": {
+    "message": "Draft project"
+  },
+  "project.moderation.admonition.draft.submit-for-review": {
+    "message": "Once you have completed all required steps and ensured your project complies with Modrinth's <rules-link>Content Rules</rules-link> you can submit your project for review."
+  },
+  "project.moderation.admonition.rejected.address-all-concerns": {
+    "message": "Please address all moderation concerns, including any issues listed in messages below, before resubmitting this project."
+  },
+  "project.moderation.admonition.rejected.header": {
+    "message": "Changes requested"
+  },
+  "project.moderation.admonition.rejected.spam-notice": {
+    "message": "Repeatedly submitting your project without addressing all moderation concerns first may result in account suspension."
+  },
+  "project.moderation.admonition.under-review.body.1": {
+    "message": "Your project is in queue to be reviewed by Modrinth's moderation team."
+  },
+  "project.moderation.admonition.under-review.body.2": {
+    "message": "Your project will be scanned and then reviewed by human moderators to ensure it meets Modrinth's <rules-link>Content Rules</rules-link> and <terms-link>Terms of Use</terms-link>."
+  },
+  "project.moderation.admonition.under-review.body.3": {
+    "message": "You can still modify your project, it won't affect your position in the queue."
+  },
+  "project.moderation.admonition.under-review.body.4": {
+    "message": "We aim to review submissions in 24-48 hours, but some projects may face delays. This does not reflect an issue with your submission."
+  },
+  "project.moderation.admonition.under-review.body.5": {
+    "message": "<emphasis>We appreciate your patience while our moderators work hard to keep Modrinth safe, and look forward to helping you share your content! 💚</emphasis>"
+  },
+  "project.moderation.admonition.under-review.header": {
+    "message": "Project under review"
+  },
+  "project.moderation.admonition.withheld.body": {
+    "message": "Your project will not appear publicly and can only be accessed with a direct link.{requestedStatus, select, unlisted { Based on your selected <visibility-settings-link>visibility settings</visibility-settings-link>, most likely no action is necessary.} other { Please address all moderation concerns, including any issues listed in messages below before resubmitting this project.}}"
+  },
+  "project.moderation.admonition.withheld.header": {
+    "message": "Unlisted by staff"
+  },
+  "project.moderation.error.unauthorized": {
+    "message": "Unauthorized"
+  },
+  "project.moderation.thread.approved-warning": {
+    "message": "This thread is not actively monitored, but may be reviewed for information about your project if needed."
+  },
+  "project.moderation.thread.help-center-note.1": {
+    "message": "Content moderators cannot provide support for most issues and messages to this thread do not notify staff."
+  },
+  "project.moderation.thread.help-center-note.2": {
+    "message": "If you need assistance or have additional inquiries, please visit the <help-center-link>Modrinth Help Center</help-center-link> and click the blue bubble to contact support."
+  },
+  "project.moderation.thread.moderator-see-user-ui-toggle": {
+    "message": "Show member UI"
+  },
+  "project.moderation.thread.private-description": {
+    "message": "This is a private conversation thread with the Modrinth moderators. They may message you with issues concerning this project."
+  },
+  "project.moderation.thread.title": {
+    "message": "Moderation messages"
+  },
   "project.moderation.title": {
     "message": "Moderation"
   },
@@ -1480,36 +3328,6 @@
   },
   "project.notification.updated.title": {
     "message": "Project updated"
-  },
-  "project.settings.environment.notice.missing-env.description": {
-    "message": "Your project is missing environment metadata, please select the appropriate option below."
-  },
-  "project.settings.environment.notice.missing-env.title": {
-    "message": "Please select an environment for your project"
-  },
-  "project.settings.environment.notice.multiple-environments.description": {
-    "message": "Different versions of your project have different environments selected, so you can't edit them globally at this time."
-  },
-  "project.settings.environment.notice.multiple-environments.title": {
-    "message": "Your project has multiple environments"
-  },
-  "project.settings.environment.notice.review-options.description": {
-    "message": "We've just overhauled the Environments system on Modrinth and new options are now available. Please ensure the correct option is selected below and then click 'Verify' when you're done!"
-  },
-  "project.settings.environment.notice.review-options.title": {
-    "message": "Please review the options below"
-  },
-  "project.settings.environment.notice.wrong-project-type.description": {
-    "message": "Only mod or modpack projects can have environment metadata."
-  },
-  "project.settings.environment.notice.wrong-project-type.title": {
-    "message": "This project type does not support environment metadata"
-  },
-  "project.settings.environment.verification.verify-button": {
-    "message": "Verify"
-  },
-  "project.settings.environment.verification.verify-text": {
-    "message": "Verify that this project's environment is set correctly."
   },
   "project.settings.general.name.description": {
     "message": "Avoid prefixes, suffixes, parentheticals, or added descriptions—just the project's actual name."
@@ -1556,6 +3374,45 @@
   "project.settings.general.url.title": {
     "message": "URL"
   },
+  "project.settings.permissions.attention-needed.description.proj-approved": {
+    "message": "Please provide proof that you have permission to redistribute all of the following files and any withheld versions will be automatically published."
+  },
+  "project.settings.permissions.attention-needed.description.proj-draft": {
+    "message": "Please provide proof that you have permission to redistribute all of the following files before you can submit your project for review."
+  },
+  "project.settings.permissions.attention-needed.title": {
+    "message": "Unknown embedded content"
+  },
+  "project.settings.permissions.completed.description": {
+    "message": "All external content has attributions provided."
+  },
+  "project.settings.permissions.completed.title": {
+    "message": "Attributions completed!"
+  },
+  "project.settings.permissions.empty-state.description": {
+    "message": "None of your versions contain external content, so you don't need to worry about obtaining permissions."
+  },
+  "project.settings.permissions.empty-state.heading": {
+    "message": "You're all set!"
+  },
+  "project.settings.permissions.fail.description": {
+    "message": "You don't have permission to redistribute some of the external content you've added. In order to publish on Modrinth, remove the infringing content."
+  },
+  "project.settings.permissions.fail.title": {
+    "message": "Some content can't be included"
+  },
+  "project.settings.permissions.info-banner.description": {
+    "message": "If you include content that isn’t hosted on Modrinth, you need to let us know where it’s from and verify that you have permission to distribute the files. Check out <link>our guide</link> to learn about how to do this properly!"
+  },
+  "project.settings.permissions.info-banner.title": {
+    "message": "Learn how attributions work"
+  },
+  "project.settings.permissions.learn-more": {
+    "message": "Learn more"
+  },
+  "project.settings.permissions.search-placeholder": {
+    "message": "Search {count} {count, plural, one {external project} other {external projects}}..."
+  },
   "project.settings.title": {
     "message": "Settings"
   },
@@ -1563,22 +3420,25 @@
     "message": "Visit projects dashboard"
   },
   "project.stats.downloads-label": {
-    "message": "download{count, plural, one {} other {s}}"
+    "message": "{count, plural, one {download} other {downloads}}"
   },
   "project.stats.followers-label": {
-    "message": "follower{count, plural, one {} other {s}}"
+    "message": "{count, plural, one {follower} other {followers}}"
   },
   "project.status.archived.message": {
     "message": "{title} has been archived. {title} will not receive any further updates unless the author decides to unarchive the project."
   },
-  "project.version.all-versions": {
-    "message": "All versions"
-  },
-  "project.version.back-to-versions": {
-    "message": "Back to versions"
-  },
   "project.versions.title": {
     "message": "Versions"
+  },
+  "project.versions.withheld-versions-warning.description": {
+    "message": "{count, plural, one {This version is} other {These versions are}} currently withheld and not publicly listed. Please provide proof that you have permission to redistribute certain files included in the modpack {count, plural, one {version} other {versions}}."
+  },
+  "project.versions.withheld-versions-warning.resolve-button": {
+    "message": "Resolve"
+  },
+  "project.versions.withheld-versions-warning.title": {
+    "message": "{count, plural, one {Version {version_name}} other {Versions}} withheld due to unknown embedded content"
   },
   "report.already-reported": {
     "message": "You've already reported {title}"
@@ -1658,23 +3518,47 @@
   "report.submit": {
     "message": "Submit report"
   },
-  "revenue.transfers.total": {
-    "message": "You have withdrawn {amount} in total."
-  },
-  "revenue.transfers.total.method": {
-    "message": "You have withdrawn {amount} through {method}."
-  },
-  "revenue.transfers.total.year": {
-    "message": "You have withdrawn {amount} in {year}."
-  },
-  "revenue.transfers.total.year_method": {
-    "message": "You have withdrawn {amount} in {year} through {method}."
-  },
   "scopes.analytics.description": {
     "message": "Access your analytics data"
   },
   "scopes.analytics.label": {
     "message": "Read analytics"
+  },
+  "scopes.category.analytics": {
+    "message": "Analytics"
+  },
+  "scopes.category.collections": {
+    "message": "Collections"
+  },
+  "scopes.category.notifications": {
+    "message": "Notifications"
+  },
+  "scopes.category.organizations": {
+    "message": "Organizations"
+  },
+  "scopes.category.pats": {
+    "message": "PATs"
+  },
+  "scopes.category.payouts": {
+    "message": "Payouts"
+  },
+  "scopes.category.projects": {
+    "message": "Projects"
+  },
+  "scopes.category.reports": {
+    "message": "Reports"
+  },
+  "scopes.category.sessions": {
+    "message": "Sessions"
+  },
+  "scopes.category.threads": {
+    "message": "Threads"
+  },
+  "scopes.category.user-account": {
+    "message": "User account"
+  },
+  "scopes.category.versions": {
+    "message": "Versions"
   },
   "scopes.collectionCreate.description": {
     "message": "Create collections"
@@ -1737,25 +3621,25 @@
     "message": "Write organizations"
   },
   "scopes.patCreate.description": {
-    "message": "Create personal API tokens"
+    "message": "Create personal access tokens"
   },
   "scopes.patCreate.label": {
     "message": "Create PATs"
   },
   "scopes.patDelete.description": {
-    "message": "Delete your personal API tokens"
+    "message": "Delete your personal access tokens"
   },
   "scopes.patDelete.label": {
     "message": "Delete PATs"
   },
   "scopes.patRead.description": {
-    "message": "View created API tokens"
+    "message": "View created personal access tokens"
   },
   "scopes.patRead.label": {
     "message": "Read PATs"
   },
   "scopes.patWrite.description": {
-    "message": "Edit personal API tokens"
+    "message": "Edit personal access tokens"
   },
   "scopes.patWrite.label": {
     "message": "Write PATs"
@@ -1827,7 +3711,7 @@
     "message": "Write reports"
   },
   "scopes.sessionAccess.description": {
-    "message": "Access modrinth-issued sessions"
+    "message": "Access Modrinth-issued sessions"
   },
   "scopes.sessionAccess.label": {
     "message": "Access sessions"
@@ -1910,6 +3794,9 @@
   "scopes.versionWrite.label": {
     "message": "Write versions"
   },
+  "search.filter.game-version-shader-message": {
+    "message": "Shader packs for older versions most likely work on newer versions with only minor issues."
+  },
   "search.filter.locked.server": {
     "message": "Provided by the server"
   },
@@ -1922,53 +3809,8 @@
   "search.filter.locked.server.sync": {
     "message": "Sync with server"
   },
-  "servers.backup.create.in-progress.tooltip": {
-    "message": "Backup creation in progress"
-  },
-  "servers.backup.restore.in-progress.tooltip": {
-    "message": "Backup restore in progress"
-  },
-  "servers.backups.item.automated": {
-    "message": "Automated"
-  },
-  "servers.backups.item.creating-backup": {
-    "message": "Creating backup..."
-  },
-  "servers.backups.item.downloading": {
-    "message": "Downloading"
-  },
-  "servers.backups.item.downloading-backup": {
-    "message": "Downloading backup..."
-  },
-  "servers.backups.item.failed-to-create-backup": {
-    "message": "Failed to create backup"
-  },
-  "servers.backups.item.failed-to-restore-backup": {
-    "message": "Failed to restore from backup"
-  },
-  "servers.backups.item.lock": {
-    "message": "Lock"
-  },
-  "servers.backups.item.locked": {
-    "message": "Locked"
-  },
-  "servers.backups.item.queued-for-backup": {
-    "message": "Queued for backup"
-  },
-  "servers.backups.item.rename": {
-    "message": "Rename"
-  },
-  "servers.backups.item.restore": {
-    "message": "Restore"
-  },
-  "servers.backups.item.restoring-backup": {
-    "message": "Restoring from backup..."
-  },
-  "servers.backups.item.retry": {
-    "message": "Retry"
-  },
-  "servers.backups.item.unlock": {
-    "message": "Unlock"
+  "servers.manage.content.title": {
+    "message": "Content - {serverName} - Modrinth"
   },
   "servers.notice.actions": {
     "message": "Actions"
@@ -2000,20 +3842,398 @@
   "servers.plan.large.description": {
     "message": "Ideal for 15–25 players, modpacks, or heavy modding."
   },
-  "servers.plan.large.name": {
-    "message": "Large"
-  },
   "servers.plan.medium.description": {
     "message": "Great for 6–15 players and multiple mods."
-  },
-  "servers.plan.medium.name": {
-    "message": "Medium"
   },
   "servers.plan.small.description": {
     "message": "Perfect for 1–5 friends with a few light mods."
   },
-  "servers.plan.small.name": {
-    "message": "Small"
+  "servers.purchase.step.plan.billed": {
+    "message": "billed {interval, select, monthly {monthly} quarterly {quarterly} yearly {yearly} other {{interval}}}"
+  },
+  "settings.account.button.complete-setup": {
+    "message": "Complete setup"
+  },
+  "settings.account.data-export.action.download": {
+    "message": "Download export"
+  },
+  "settings.account.data-export.action.generate": {
+    "message": "Generate export"
+  },
+  "settings.account.data-export.action.generating": {
+    "message": "Generating export..."
+  },
+  "settings.account.data-export.description": {
+    "message": "Request a copy of all your personal data you have uploaded to Modrinth. This may take several minutes to complete."
+  },
+  "settings.account.data-export.title": {
+    "message": "Data export"
+  },
+  "settings.account.delete.confirm.description": {
+    "message": "This will **immediately delete all of your user data and follows**. This will not delete your projects. Deleting your account cannot be reversed.<br><br>If you need help with your account, get support on the [Modrinth Discord](https://discord.modrinth.com)."
+  },
+  "settings.account.delete.confirm.proceed": {
+    "message": "Delete this account"
+  },
+  "settings.account.delete.confirm.title": {
+    "message": "Are you sure you want to delete your account?"
+  },
+  "settings.account.delete.section.action": {
+    "message": "Delete account"
+  },
+  "settings.account.delete.section.description": {
+    "message": "Once you delete your account, there is no going back. Deleting your account will remove all attached data, excluding projects, from our servers."
+  },
+  "settings.account.delete.section.title": {
+    "message": "Delete account"
+  },
+  "settings.account.email.action.save": {
+    "message": "Save email"
+  },
+  "settings.account.email.field.label": {
+    "message": "Email address"
+  },
+  "settings.account.email.field.placeholder": {
+    "message": "Enter your email address..."
+  },
+  "settings.account.email.modal.header.add": {
+    "message": "Add email"
+  },
+  "settings.account.email.modal.header.change": {
+    "message": "Change email"
+  },
+  "settings.account.email.modal.notice": {
+    "message": "Your account information is not displayed publicly."
+  },
+  "settings.account.password.action.remove": {
+    "message": "Remove password"
+  },
+  "settings.account.password.action.save": {
+    "message": "Save password"
+  },
+  "settings.account.password.error.mismatch": {
+    "message": "Input passwords do not match!"
+  },
+  "settings.account.password.field.confirm-current.description": {
+    "message": "Please enter your password to proceed."
+  },
+  "settings.account.password.field.confirm-current.label": {
+    "message": "Confirm password"
+  },
+  "settings.account.password.field.confirm-current.placeholder": {
+    "message": "Confirm password"
+  },
+  "settings.account.password.field.confirm-new.label": {
+    "message": "Confirm new password"
+  },
+  "settings.account.password.field.confirm-new.placeholder": {
+    "message": "Confirm new password"
+  },
+  "settings.account.password.field.new.label": {
+    "message": "New password"
+  },
+  "settings.account.password.field.new.placeholder": {
+    "message": "New password"
+  },
+  "settings.account.password.field.old.label": {
+    "message": "Old password"
+  },
+  "settings.account.password.field.old.placeholder": {
+    "message": "Old password"
+  },
+  "settings.account.password.modal.header.add": {
+    "message": "Add password"
+  },
+  "settings.account.password.modal.header.change": {
+    "message": "Change password"
+  },
+  "settings.account.password.modal.header.remove": {
+    "message": "Remove password"
+  },
+  "settings.account.providers.action.add": {
+    "message": "Add"
+  },
+  "settings.account.providers.modal.header": {
+    "message": "Authentication providers"
+  },
+  "settings.account.providers.table.actions": {
+    "message": "Actions"
+  },
+  "settings.account.providers.table.provider": {
+    "message": "Provider"
+  },
+  "settings.account.security.email.action.add": {
+    "message": "Add email"
+  },
+  "settings.account.security.email.action.change": {
+    "message": "Change email"
+  },
+  "settings.account.security.email.description": {
+    "message": "Changes the email associated with your account."
+  },
+  "settings.account.security.email.title": {
+    "message": "Email"
+  },
+  "settings.account.security.password.action.add": {
+    "message": "Add password"
+  },
+  "settings.account.security.password.action.change": {
+    "message": "Change password"
+  },
+  "settings.account.security.password.description.change": {
+    "message": "Change the password used to login to your account."
+  },
+  "settings.account.security.password.description.change-or-remove": {
+    "message": "Change or remove the password used to login to your account."
+  },
+  "settings.account.security.password.description.set": {
+    "message": "Set a permanent password to login to your account."
+  },
+  "settings.account.security.password.title": {
+    "message": "Password"
+  },
+  "settings.account.security.providers.action.manage": {
+    "message": "Manage providers"
+  },
+  "settings.account.security.providers.description": {
+    "message": "Add or remove sign-on methods from your account, including GitHub, GitLab, Microsoft, Discord, Steam, and Google."
+  },
+  "settings.account.security.providers.title": {
+    "message": "Manage authentication providers"
+  },
+  "settings.account.security.title": {
+    "message": "Account security"
+  },
+  "settings.account.security.two-factor.action.remove": {
+    "message": "Remove 2FA"
+  },
+  "settings.account.security.two-factor.action.setup": {
+    "message": "Setup 2FA"
+  },
+  "settings.account.security.two-factor.description": {
+    "message": "Add an additional layer of security to your account during login."
+  },
+  "settings.account.security.two-factor.modal.remove.header": {
+    "message": "Remove 2FA"
+  },
+  "settings.account.security.two-factor.modal.setup.header": {
+    "message": "Setup 2FA"
+  },
+  "settings.account.security.two-factor.title": {
+    "message": "Two-factor authentication"
+  },
+  "settings.account.two-factor.backup.intro": {
+    "message": "Download and save these back-up codes in a safe place. You can use these in-place of a 2FA code if you ever lose access to your device! You should protect these codes like your password."
+  },
+  "settings.account.two-factor.backup.single-use": {
+    "message": "Backup codes can only be used once."
+  },
+  "settings.account.two-factor.error.incorrect-code": {
+    "message": "The code entered is incorrect!"
+  },
+  "settings.account.two-factor.field.code.description": {
+    "message": "Please enter a two-factor code to proceed."
+  },
+  "settings.account.two-factor.field.code.label": {
+    "message": "Enter two-factor code"
+  },
+  "settings.account.two-factor.field.code.placeholder": {
+    "message": "Enter code..."
+  },
+  "settings.account.two-factor.setup.intro": {
+    "message": "Two-factor authentication keeps your account secure by requiring access to a second device in order to sign in."
+  },
+  "settings.account.two-factor.setup.manual-secret": {
+    "message": "If the QR code does not scan, you can manually enter the secret:"
+  },
+  "settings.account.two-factor.setup.scan": {
+    "message": "Scan the QR code with <authy-link>Authy</authy-link>, <microsoft-authenticator-link>Microsoft Authenticator</microsoft-authenticator-link>, or any other 2FA app to begin."
+  },
+  "settings.account.two-factor.verify.description": {
+    "message": "Enter the one-time code from authenticator to verify access."
+  },
+  "settings.account.two-factor.verify.label": {
+    "message": "Verify code"
+  },
+  "settings.applications.about": {
+    "message": "About"
+  },
+  "settings.applications.button.add-more": {
+    "message": "Add more"
+  },
+  "settings.applications.button.add-redirect-uri": {
+    "message": "Add a redirect URI"
+  },
+  "settings.applications.button.cancel": {
+    "message": "Cancel"
+  },
+  "settings.applications.button.create": {
+    "message": "Create app"
+  },
+  "settings.applications.button.delete": {
+    "message": "Delete"
+  },
+  "settings.applications.button.edit": {
+    "message": "Edit"
+  },
+  "settings.applications.button.new": {
+    "message": "New application"
+  },
+  "settings.applications.button.save-changes": {
+    "message": "Save changes"
+  },
+  "settings.applications.button.upload-icon": {
+    "message": "Upload icon"
+  },
+  "settings.applications.client-id": {
+    "message": "Client ID"
+  },
+  "settings.applications.client-secret": {
+    "message": "Client secret"
+  },
+  "settings.applications.created-on": {
+    "message": "Created on {date}"
+  },
+  "settings.applications.delete.confirm.button": {
+    "message": "Delete this application"
+  },
+  "settings.applications.delete.confirm.description": {
+    "message": "This will permanently delete this application and revoke all access tokens. (forever!)"
+  },
+  "settings.applications.delete.confirm.title": {
+    "message": "Are you sure you want to delete this application?"
+  },
+  "settings.applications.description.intro": {
+    "message": "Applications can be used to authenticate Modrinth's users with your products. For more information, see <docs-link>Modrinth's API documentation</docs-link>."
+  },
+  "settings.applications.field.description": {
+    "message": "Description"
+  },
+  "settings.applications.field.description.placeholder": {
+    "message": "Enter the application's description..."
+  },
+  "settings.applications.field.icon": {
+    "message": "Icon"
+  },
+  "settings.applications.field.name": {
+    "message": "Name"
+  },
+  "settings.applications.field.name.placeholder": {
+    "message": "Enter the application's name..."
+  },
+  "settings.applications.field.redirect-uri.placeholder": {
+    "message": "https://example.com/auth/callback"
+  },
+  "settings.applications.field.redirect-uris": {
+    "message": "Redirect URIs"
+  },
+  "settings.applications.field.scopes": {
+    "message": "Scopes"
+  },
+  "settings.applications.field.url": {
+    "message": "URL"
+  },
+  "settings.applications.field.url.placeholder": {
+    "message": "https://example.com"
+  },
+  "settings.applications.head-title": {
+    "message": "Applications"
+  },
+  "settings.applications.modal.header": {
+    "message": "Application information"
+  },
+  "settings.applications.notification.icon-updated.description": {
+    "message": "Your application icon has been updated."
+  },
+  "settings.applications.notification.icon-updated.title": {
+    "message": "Icon updated"
+  },
+  "settings.applications.secret.disclaimer": {
+    "message": "Save your secret now, it will be hidden after you leave this page!"
+  },
+  "settings.authorizations.about-this-app": {
+    "message": "About this app"
+  },
+  "settings.authorizations.by": {
+    "message": "by"
+  },
+  "settings.authorizations.description": {
+    "message": "When you authorize an application with your Modrinth account, you grant it access to your account. You can manage and review access to your account here at any time."
+  },
+  "settings.authorizations.empty-state": {
+    "message": "We currently can't display your authorized apps, we're working to fix this. Please visit this page at a later date!"
+  },
+  "settings.authorizations.head-title": {
+    "message": "Authorizations"
+  },
+  "settings.authorizations.revoke.action": {
+    "message": "Revoke"
+  },
+  "settings.authorizations.revoke.confirm.description": {
+    "message": "This will revoke the application's access to your account. You can always re-authorize it later."
+  },
+  "settings.authorizations.revoke.confirm.title": {
+    "message": "Are you sure you want to revoke this application?"
+  },
+  "settings.billing.charges.description": {
+    "message": "All of your past charges to your Modrinth account will be listed here:"
+  },
+  "settings.billing.charges.product.medal-trial": {
+    "message": "Medal Server Trial"
+  },
+  "settings.billing.charges.product.midas": {
+    "message": "Modrinth Plus"
+  },
+  "settings.billing.charges.product.pyro": {
+    "message": "Modrinth Hosting"
+  },
+  "settings.billing.charges.title": {
+    "message": "Past charges"
+  },
+  "settings.billing.expires": {
+    "message": "Expires {date}"
+  },
+  "settings.billing.interval.month": {
+    "message": "month"
+  },
+  "settings.billing.interval.quarter": {
+    "message": "quarter"
+  },
+  "settings.billing.interval.year": {
+    "message": "year"
+  },
+  "settings.billing.midas.benefits.ad-free": {
+    "message": "Ad-free browsing on modrinth.com and Modrinth App"
+  },
+  "settings.billing.midas.benefits.badge": {
+    "message": "Modrinth+ badge on your profile"
+  },
+  "settings.billing.midas.benefits.support": {
+    "message": "Support Modrinth and creators directly"
+  },
+  "settings.billing.midas.benefits.title": {
+    "message": "Benefits"
+  },
+  "settings.billing.midas.save-per-year": {
+    "message": "Save {amount}/year by switching to yearly billing!"
+  },
+  "settings.billing.midas.status.cancelled.line1": {
+    "message": "You've cancelled your subscription."
+  },
+  "settings.billing.midas.status.cancelled.line2": {
+    "message": "You will retain your perks until the end of the current billing cycle."
+  },
+  "settings.billing.midas.status.failed": {
+    "message": "Your subscription payment failed. Please update your payment method."
+  },
+  "settings.billing.midas.status.open": {
+    "message": "You're currently subscribed to:"
+  },
+  "settings.billing.midas.status.processing": {
+    "message": "Your payment is being processed. Perks will activate once payment is complete."
+  },
+  "settings.billing.midas.upsell": {
+    "message": "Become a subscriber to Modrinth Plus!"
   },
   "settings.billing.modal.cancel.action": {
     "message": "Cancel subscription"
@@ -2033,6 +4253,12 @@
   "settings.billing.modal.delete.title": {
     "message": "Are you sure you want to remove this payment method?"
   },
+  "settings.billing.next": {
+    "message": "Next:"
+  },
+  "settings.billing.or-yearly-save": {
+    "message": "Or {price} / year (save {percent}%)!"
+  },
   "settings.billing.payment_method.action.add": {
     "message": "Add payment method"
   },
@@ -2041,9 +4267,6 @@
   },
   "settings.billing.payment_method.action.primary": {
     "message": "Make primary"
-  },
-  "settings.billing.payment_method.card_display": {
-    "message": "{card_brand} ending in {last_four}"
   },
   "settings.billing.payment_method.card_expiry": {
     "message": "Expires {month}/{year}"
@@ -2057,41 +4280,53 @@
   "settings.billing.payment_method.title": {
     "message": "Payment methods"
   },
-  "settings.billing.payment_method_type.amazon_pay": {
-    "message": "Amazon Pay"
+  "settings.billing.plan.title": {
+    "message": "{size} Plan"
   },
-  "settings.billing.payment_method_type.amex": {
-    "message": "American Express"
+  "settings.billing.price.per-interval": {
+    "message": "{price} / {interval}"
   },
-  "settings.billing.payment_method_type.cashapp": {
-    "message": "Cash App"
+  "settings.billing.pyro.cpu": {
+    "message": "{shared} Shared CPUs (Bursts up to {bursts} CPUs)"
   },
-  "settings.billing.payment_method_type.diners": {
-    "message": "Diners Club"
+  "settings.billing.pyro.linked-server.not-found": {
+    "message": "A linked server couldn't be found for this subscription. There are a few possible explanations for this. If you just purchased your server, this is normal. It could take up to an hour for your server to be provisioned. Otherwise, if you purchased this server a while ago, it has likely since been suspended. If this is not what you were expecting, please contact Modrinth Support with the following information:"
   },
-  "settings.billing.payment_method_type.discover": {
-    "message": "Discover"
+  "settings.billing.pyro.linked-server.server-id": {
+    "message": "Server ID: {id}"
   },
-  "settings.billing.payment_method_type.eftpos": {
-    "message": "EFTPOS"
+  "settings.billing.pyro.linked-server.stripe-id": {
+    "message": "Stripe ID: {id}"
   },
-  "settings.billing.payment_method_type.jcb": {
-    "message": "JCB"
+  "settings.billing.pyro.ram": {
+    "message": "{gb} GB RAM"
   },
-  "settings.billing.payment_method_type.mastercard": {
-    "message": "MasterCard"
+  "settings.billing.pyro.resubscribe.error.text": {
+    "message": "An error occurred while resubscribing to your Modrinth server."
   },
-  "settings.billing.payment_method_type.paypal": {
-    "message": "PayPal"
+  "settings.billing.pyro.resubscribe.error.title": {
+    "message": "Error resubscribing"
   },
-  "settings.billing.payment_method_type.unionpay": {
-    "message": "UnionPay"
+  "settings.billing.pyro.resubscribe.request-submitted.text": {
+    "message": "If the server is currently cancelled, it may take 10-15 minutes to set up the server."
   },
-  "settings.billing.payment_method_type.unknown": {
-    "message": "Unknown payment method"
+  "settings.billing.pyro.resubscribe.request-submitted.title": {
+    "message": "Resubscription request submitted"
   },
-  "settings.billing.payment_method_type.visa": {
-    "message": "Visa"
+  "settings.billing.pyro.resubscribe.success.text": {
+    "message": "Server subscription resubscribed successfully"
+  },
+  "settings.billing.pyro.status.failed": {
+    "message": "Your subscription payment failed. Please update your payment method, then resubscribe."
+  },
+  "settings.billing.pyro.status.processing": {
+    "message": "Your payment is being processed. Your server will activate once payment is complete."
+  },
+  "settings.billing.pyro.storage": {
+    "message": "{gb} GB SSD"
+  },
+  "settings.billing.pyro.swap": {
+    "message": "{gb} GB Swap"
   },
   "settings.billing.pyro_subscription.description": {
     "message": "Manage your Modrinth Server subscriptions."
@@ -2099,11 +4334,41 @@
   "settings.billing.pyro_subscription.title": {
     "message": "Modrinth Server Subscriptions"
   },
+  "settings.billing.renews": {
+    "message": "Renews {date}"
+  },
+  "settings.billing.resubscribe": {
+    "message": "Resubscribe"
+  },
+  "settings.billing.since": {
+    "message": "Since {date}"
+  },
+  "settings.billing.subscribe": {
+    "message": "Subscribe"
+  },
   "settings.billing.subscription.description": {
     "message": "Manage your Modrinth subscriptions."
   },
   "settings.billing.subscription.title": {
     "message": "Subscriptions"
+  },
+  "settings.billing.switch.switching-to-interval": {
+    "message": "Switching to {interval, select, monthly {monthly} yearly {yearly} other {{interval}}}"
+  },
+  "settings.billing.switch.to-interval": {
+    "message": "Switch to {interval, select, monthly {monthly} yearly {yearly} other {{interval}}}"
+  },
+  "settings.billing.switch.tooltip.monthly-additional-per-year": {
+    "message": "Monthly billing will cost you an additional {amount} per year"
+  },
+  "settings.billing.switches-to-billing-on": {
+    "message": "Switches to {interval, select, monthly {monthly} yearly {yearly} other {{interval}}} billing on {date}"
+  },
+  "settings.billing.update-method": {
+    "message": "Update method"
+  },
+  "settings.billing.upgrade": {
+    "message": "Upgrade"
   },
   "settings.display.banner.developer-mode.button": {
     "message": "Deactivate developer mode"
@@ -2117,6 +4382,12 @@
   "settings.display.flags.title": {
     "message": "Toggle features"
   },
+  "settings.display.notification.developer-mode-deactivated.text": {
+    "message": "Developer mode has been disabled"
+  },
+  "settings.display.notification.developer-mode-deactivated.title": {
+    "message": "Developer mode deactivated"
+  },
   "settings.display.project-list-layouts.datapack": {
     "message": "Data Packs page"
   },
@@ -2126,6 +4397,15 @@
   "settings.display.project-list-layouts.mod": {
     "message": "Mods page"
   },
+  "settings.display.project-list-layouts.mode.gallery": {
+    "message": "Gallery"
+  },
+  "settings.display.project-list-layouts.mode.grid": {
+    "message": "Grid"
+  },
+  "settings.display.project-list-layouts.mode.rows": {
+    "message": "Rows"
+  },
   "settings.display.project-list-layouts.modpack": {
     "message": "Modpacks page"
   },
@@ -2134,6 +4414,9 @@
   },
   "settings.display.project-list-layouts.resourcepack": {
     "message": "Resource Packs page"
+  },
+  "settings.display.project-list-layouts.server": {
+    "message": "Servers page"
   },
   "settings.display.project-list-layouts.shader": {
     "message": "Shaders page"
@@ -2183,56 +4466,14 @@
   "settings.display.theme.title": {
     "message": "Color theme"
   },
-  "settings.language.categories.auto": {
-    "message": "Automatic"
-  },
-  "settings.language.categories.default": {
-    "message": "Standard languages"
-  },
-  "settings.language.categories.experimental": {
-    "message": "Experimental languages"
-  },
-  "settings.language.categories.fun": {
-    "message": "Fun languages"
-  },
-  "settings.language.categories.search-result": {
-    "message": "Search results"
-  },
-  "settings.language.description": {
-    "message": "Choose your preferred language for the site. Translations are contributed by volunteers <crowdin-link>on Crowdin</crowdin-link>."
-  },
-  "settings.language.languages.automatic": {
-    "message": "Sync with the system language"
-  },
-  "settings.language.languages.language-label-applying": {
-    "message": "{label}. Applying..."
-  },
-  "settings.language.languages.language-label-error": {
-    "message": "{label}. Error"
-  },
-  "settings.language.languages.load-failed": {
-    "message": "Cannot load this language. Try again in a bit."
-  },
-  "settings.language.languages.search-field.description": {
-    "message": "Submit to focus the first search result"
-  },
-  "settings.language.languages.search-field.placeholder": {
-    "message": "Search for a language..."
-  },
-  "settings.language.languages.search-results-announcement": {
-    "message": "{matches, plural, =0 {No languages match} one {# language matches} other {# languages match}} your search."
-  },
-  "settings.language.languages.search.no-results": {
-    "message": "No languages match your search."
-  },
-  "settings.language.warning": {
-    "message": "Changing the site language may cause some content to appear in English if a translation is not available. The site is not yet fully translated, so some content may remain in English for certain languages. We are still working on improving our localization system, so occasionally content may appear broken."
+  "settings.head-title": {
+    "message": "Display settings"
   },
   "settings.pats.action.create": {
     "message": "Create a PAT"
   },
   "settings.pats.description": {
-    "message": "PATs can be used to access Modrinth's API. For more information, see <doc-link>Modrinth's API documentation</doc-link>. They can be created and revoked at any time."
+    "message": "PATs can be used to access Modrinth's API. They can be created and revoked at any time. For more information, see <doc-link>Modrinth's API documentation</doc-link>."
   },
   "settings.pats.modal.create.action": {
     "message": "Create PAT"
@@ -2288,20 +4529,17 @@
   "settings.profile.description": {
     "message": "Your profile information is publicly viewable on Modrinth and through the <docs-link>Modrinth API</docs-link>."
   },
+  "settings.profile.head-title": {
+    "message": "Profile settings"
+  },
   "settings.profile.profile-info": {
     "message": "Profile information"
-  },
-  "settings.profile.profile-picture.reset": {
-    "message": "Reset"
   },
   "settings.profile.profile-picture.title": {
     "message": "Profile picture"
   },
   "settings.profile.username.description": {
     "message": "A unique case-insensitive name to identify your profile."
-  },
-  "settings.profile.username.title": {
-    "message": "Username"
   },
   "settings.sessions.action.revoke-session": {
     "message": "Revoke session"
@@ -2324,10 +4562,40 @@
   "settings.sessions.unknown-platform": {
     "message": "Unknown platform"
   },
+  "settings.sidebar.label.account": {
+    "message": "Account"
+  },
+  "settings.sidebar.label.developer": {
+    "message": "Developer"
+  },
+  "settings.sidebar.label.display": {
+    "message": "Display"
+  },
   "ui.latest-news-row.latest-news": {
     "message": "Latest news from Modrinth"
   },
   "ui.latest-news-row.view-all": {
     "message": "View all news"
+  },
+  "ui.newsletter-button.subscribe": {
+    "message": "Subscribe"
+  },
+  "ui.newsletter-button.subscribed": {
+    "message": "Subscribed!"
+  },
+  "ui.newsletter-button.tooltip": {
+    "message": "Subscribe to the Modrinth newsletter"
+  },
+  "version.environment.none.description": {
+    "message": "The environment for this version has not been specified."
+  },
+  "version.environment.none.title": {
+    "message": "No environment set"
+  },
+  "version.environment.unknown.description": {
+    "message": "The environment: \"{environment}\" is not recognized."
+  },
+  "version.environment.unknown.title": {
+    "message": "Unknown environment"
   }
 }

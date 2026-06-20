@@ -1,4 +1,5 @@
 use super::MailError;
+use crate::database::PgTransaction;
 use crate::database::models::ids::*;
 use crate::database::models::notifications_template_item::{
     NotificationTemplate, get_or_set_cached_dynamic_html,
@@ -7,6 +8,7 @@ use crate::database::models::{
     DBOrganization, DBProject, DBUser, DatabaseError,
 };
 use crate::database::redis::RedisPool;
+use crate::env::ENV;
 use crate::models::v3::notifications::NotificationBody;
 use crate::routes::ApiError;
 use crate::util::error::Context;
@@ -59,6 +61,10 @@ const ORGINVITE_INVITER_NAME: &str = "organizationinvite.inviter.name";
 const ORGINVITE_ORG_NAME: &str = "organizationinvite.organization.name";
 const ORGINVITE_ROLE_NAME: &str = "organizationinvite.role.name";
 
+const SERVERINVITE_INVITER_NAME: &str = "inviter.name";
+const SERVERINVITE_SERVER_NAME: &str = "server.name";
+const SERVERINVITE_ROLE_NAME: &str = "server.role";
+
 const STATUSCHANGE_PROJECT_NAME: &str = "statuschange.project.name";
 const STATUSCHANGE_OLD_STATUS: &str = "statuschange.old.status";
 const STATUSCHANGE_NEW_STATUS: &str = "statuschange.new.status";
@@ -84,6 +90,8 @@ const NEWOWNER_NAME: &str = "new_owner.name";
 const PAYOUTAVAILABLE_AMOUNT: &str = "payout.amount";
 const PAYOUTAVAILABLE_PERIOD: &str = "payout.period";
 
+const DISCORD_LINK_URL: &str = "discord.link_url";
+
 #[derive(Clone)]
 pub struct MailingIdentity {
     from_name: String,
@@ -93,19 +101,27 @@ pub struct MailingIdentity {
 }
 
 impl MailingIdentity {
-    pub fn from_env() -> dotenvy::Result<Self> {
-        Ok(Self {
-            from_name: dotenvy::var("SMTP_FROM_NAME")?,
-            from_address: dotenvy::var("SMTP_FROM_ADDRESS")?,
-            reply_name: dotenvy::var("SMTP_REPLY_TO_NAME").ok(),
-            reply_address: dotenvy::var("SMTP_REPLY_TO_ADDRESS").ok(),
-        })
+    pub fn from_env() -> Self {
+        Self {
+            from_name: ENV.SMTP_FROM_NAME.clone(),
+            from_address: ENV.SMTP_FROM_ADDRESS.clone(),
+            reply_name: if ENV.SMTP_REPLY_TO_NAME.is_empty() {
+                None
+            } else {
+                Some(ENV.SMTP_REPLY_TO_NAME.clone())
+            },
+            reply_address: if ENV.SMTP_REPLY_TO_ADDRESS.is_empty() {
+                None
+            } else {
+                Some(ENV.SMTP_REPLY_TO_ADDRESS.clone())
+            },
+        }
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 pub async fn build_email(
-    exec: &mut sqlx::PgTransaction<'_>,
+    exec: &mut PgTransaction<'_>,
     redis: &RedisPool,
     client: &reqwest::Client,
     user_id: DBUserId,
@@ -147,7 +163,7 @@ pub async fn build_email(
         reply_address,
     } = from;
 
-    let db_user = DBUser::get_id(user_id, &mut **exec, redis)
+    let db_user = DBUser::get_id(user_id, &mut *exec, redis)
         .await?
         .ok_or(DatabaseError::Database(sqlx::Error::RowNotFound))?;
 
@@ -297,7 +313,7 @@ enum EmailTemplate {
 }
 
 async fn collect_template_variables(
-    exec: &mut sqlx::PgTransaction<'_>,
+    exec: &mut PgTransaction<'_>,
     redis: &RedisPool,
     user_id: DBUserId,
     n: &NotificationBody,
@@ -339,7 +355,7 @@ async fn collect_template_variables(
                 "#,
                 report_id.0 as i64
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(REPORT_ID, to_base62(report_id.0));
@@ -361,7 +377,7 @@ async fn collect_template_variables(
                 "#,
                 report_id.0 as i64
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(REPORT_TITLE, result.title);
@@ -376,7 +392,7 @@ async fn collect_template_variables(
                 "#,
                 project_id.0 as i64
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(PROJECT_ID, to_base62(project_id.0));
@@ -414,7 +430,7 @@ async fn collect_template_variables(
         } => {
             let project = DBProject::get_id(
                 DBProjectId(project_id.0 as i64),
-                &mut **exec,
+                &mut *exec,
                 redis,
             )
             .await?
@@ -428,7 +444,7 @@ async fn collect_template_variables(
             if let Some(new_owner_user_id) = new_owner_user_id {
                 let user = DBUser::get_id(
                     DBUserId(new_owner_user_id.0 as i64),
-                    &mut **exec,
+                    &mut *exec,
                     redis,
                 )
                 .await?
@@ -444,7 +460,7 @@ async fn collect_template_variables(
             {
                 let org = DBOrganization::get_id(
                     DBOrganizationId(new_owner_organization_id.0 as i64),
-                    &mut **exec,
+                    &mut *exec,
                     redis,
                 )
                 .await?
@@ -484,7 +500,7 @@ async fn collect_template_variables(
                 project_id.0 as i64,
                 user_id.0 as i64
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(TEAMINVITE_INVITER_NAME, result.inviter_name);
@@ -516,7 +532,7 @@ async fn collect_template_variables(
                 organization_id.0 as i64,
                 user_id.0 as i64
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(ORGINVITE_INVITER_NAME, result.inviter_name);
@@ -544,7 +560,7 @@ async fn collect_template_variables(
                 project_id.0 as i64,
                 user_id.0 as i64,
             )
-            .fetch_one(&mut **exec)
+            .fetch_one(&mut *exec)
             .await?;
 
             map.insert(STATUSCHANGE_PROJECT_NAME, result.project_name);
@@ -557,9 +573,7 @@ async fn collect_template_variables(
         NotificationBody::ResetPassword { flow } => {
             let url = format!(
                 "{}/{}?flow={}",
-                dotenvy::var("SITE_URL")?,
-                dotenvy::var("SITE_RESET_PASSWORD_PATH")?,
-                flow
+                ENV.SITE_URL, ENV.SITE_RESET_PASSWORD_PATH, flow
             );
 
             map.insert(RESETPASSWORD_URL, url);
@@ -570,9 +584,7 @@ async fn collect_template_variables(
         NotificationBody::VerifyEmail { flow } => {
             let url = format!(
                 "{}/{}?flow={}",
-                dotenvy::var("SITE_URL")?,
-                dotenvy::var("SITE_VERIFY_EMAIL_PATH")?,
-                flow
+                ENV.SITE_URL, ENV.SITE_VERIFY_EMAIL_PATH, flow
             );
 
             map.insert(VERIFYEMAIL_URL, url);
@@ -592,6 +604,15 @@ async fn collect_template_variables(
         | NotificationBody::PasswordChanged
         | NotificationBody::PasswordRemoved => Ok(EmailTemplate::Static(map)),
 
+        NotificationBody::DiscordRoleCreatorClub => {
+            map.insert(
+                DISCORD_LINK_URL,
+                format!("{}/discord/link", ENV.SITE_URL.trim_end_matches('/')),
+            );
+
+            Ok(EmailTemplate::Static(map))
+        }
+
         NotificationBody::EmailChanged {
             new_email,
             to_email: _,
@@ -602,11 +623,7 @@ async fn collect_template_variables(
         }
 
         NotificationBody::PaymentFailed { amount, service } => {
-            let url = format!(
-                "{}/{}",
-                dotenvy::var("SITE_URL")?,
-                dotenvy::var("SITE_BILLING_PATH")?,
-            );
+            let url = format!("{}/{}", ENV.SITE_URL, ENV.SITE_BILLING_PATH,);
 
             let mut map = HashMap::new();
             map.insert(PAYMENTFAILED_AMOUNT, amount.clone());
@@ -631,7 +648,7 @@ async fn collect_template_variables(
 
             map.insert(
                 PAYOUTAVAILABLE_AMOUNT,
-                format!("USD${:.2}", *amount as f64 / 100.0),
+                format!("${:.2} USD", *amount as f64 / 100.0),
             );
 
             Ok(EmailTemplate::Static(map))
@@ -706,12 +723,12 @@ async fn collect_template_variables(
             // Resolve product metadata via price_id join
             if let Some(info) = crate::database::models::user_subscription_item::DBUserSubscription::get(
                 (*subscription_id).into(),
-                &mut **exec,
+                &mut *exec,
             )
             .await
             .ok()
             .flatten()
-                && let Ok(Some(pinfo)) = crate::database::models::products_tax_identifier_item::product_info_by_product_price_id(info.price_id, &mut **exec).await {
+                && let Ok(Some(pinfo)) = crate::database::models::products_tax_identifier_item::product_info_by_product_price_id(info.price_id, &mut *exec).await {
                     let label = match pinfo.product_metadata {
                         crate::models::billing::ProductMetadata::Pyro { .. } => "server".to_string(),
                         crate::models::billing::ProductMetadata::Medal { .. } => "server".to_string(),
@@ -733,6 +750,27 @@ async fn collect_template_variables(
             title: title.to_string(),
         }),
 
+        NotificationBody::ServerInvite {
+            server_name,
+            invited_by,
+            role,
+            ..
+        } => {
+            let inviter = DBUser::get_id(
+                DBUserId(invited_by.0 as i64),
+                &mut *exec,
+                redis,
+            )
+            .await?
+            .ok_or_else(|| DatabaseError::Database(sqlx::Error::RowNotFound))?;
+
+            map.insert(SERVERINVITE_INVITER_NAME, inviter.username);
+            map.insert(SERVERINVITE_SERVER_NAME, server_name.clone());
+            map.insert(SERVERINVITE_ROLE_NAME, role.clone());
+
+            Ok(EmailTemplate::Static(map))
+        }
+
         NotificationBody::ProjectUpdate { .. }
         | NotificationBody::ModeratorMessage { .. }
         | NotificationBody::LegacyMarkdown { .. }
@@ -747,8 +785,7 @@ async fn dynamic_email_body(
     key: &str,
 ) -> Result<String, ApiError> {
     get_or_set_cached_dynamic_html(redis, key, || async {
-        let site_url = dotenvy::var("SITE_URL")
-            .wrap_internal_err("SITE_URL is not set")?;
+        let site_url = &ENV.SITE_URL;
         let site_url = site_url.trim_end_matches('/');
 
         let url = format!("{site_url}/_internal/templates/email/dynamic");

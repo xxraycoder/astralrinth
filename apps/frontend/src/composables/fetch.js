@@ -1,3 +1,33 @@
+/**
+ * @deprecated Use `@modrinth/api-client` via `injectModrinthClient()` instead.
+ * This composable is kept for legacy code that hasn't been migrated yet.
+ */
+
+import { withLabrinthCanaryHeader } from '~/helpers/canary.ts'
+
+let cachedRateLimitKey = undefined
+let rateLimitKeyPromise = undefined
+
+async function getRateLimitKey(config) {
+	if (config.rateLimitKey) return config.rateLimitKey
+	if (cachedRateLimitKey !== undefined) return cachedRateLimitKey
+
+	if (!rateLimitKeyPromise) {
+		rateLimitKeyPromise = (async () => {
+			try {
+				const mod = 'cloudflare:workers'
+				const { env } = await import(/* @vite-ignore */ mod)
+				return await env.RATE_LIMIT_IGNORE_KEY?.get()
+			} catch {
+				return undefined
+			}
+		})()
+	}
+
+	cachedRateLimitKey = await rateLimitKeyPromise
+	return cachedRateLimitKey
+}
+
 export const useBaseFetch = async (url, options = {}, skipAuth = false) => {
 	const config = useRuntimeConfig()
 	let base = import.meta.server ? config.apiBaseUrl : config.public.apiBaseUrl
@@ -6,8 +36,10 @@ export const useBaseFetch = async (url, options = {}, skipAuth = false) => {
 		options.headers = {}
 	}
 
+	options.headers = withLabrinthCanaryHeader(options.headers)
+
 	if (import.meta.server) {
-		options.headers['x-ratelimit-key'] = config.rateLimitKey
+		options.headers['x-ratelimit-key'] = await getRateLimitKey(config)
 	}
 
 	if (!skipAuth) {
@@ -32,5 +64,8 @@ export const useBaseFetch = async (url, options = {}, skipAuth = false) => {
 		delete options.apiVersion
 	}
 
-	return await $fetch(`${base}${url}`, options)
+	return await $fetch(`${base}${url}`, {
+		timeout: import.meta.server ? 10000 : undefined,
+		...options,
+	})
 }

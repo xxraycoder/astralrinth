@@ -38,10 +38,13 @@
 		</ul>
 		<p>Our designated copyright agent to receive DMCA Notices is:</p>
 		<p>
-			&emsp;Jai Agrawal<br />
+			&emsp;DMCA Designated Agent<br />
 			&emsp;Rinth, Inc.<br />
-			&emsp;410 N Scottsdale Road, Suite 1000, Tempe, Arizona, 85281<br />
-			&emsp;<a href="mailto:support@modrinth.com">support@modrinth.com</a><br />
+			&emsp;800 N King St<br />
+			&emsp;Suite 304 #3133<br />
+			&emsp;Wilmington, DE 19801<br />
+			&emsp;Phone: +1 (201) 431-5015<br />
+			&emsp;<a href="mailto:dmca@modrinth.com">dmca@modrinth.com</a><br />
 		</p>
 		<p>
 			If you fail to comply with all of the requirements of Section 512(c)(3) of the DMCA, your DMCA

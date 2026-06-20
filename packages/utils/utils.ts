@@ -60,67 +60,38 @@ export const computeVersions = (versions, members) => {
 		.sort((a, b) => dayjs(b.date_published) - dayjs(a.date_published))
 }
 
-export const sortedCategories = (tags) => {
+const SERVER_HEADER_ORDER = [
+	'minecraft_server_features',
+	'minecraft_server_gameplay',
+	'minecraft_server_meta',
+	'minecraft_server_community',
+]
+
+export const sortedCategories = (tags, formatCategoryName, locale) => {
 	return tags.categories.slice().sort((a, b) => {
 		const headerCompare = a.header.localeCompare(b.header)
 		if (headerCompare !== 0) {
+			const aServerIdx = SERVER_HEADER_ORDER.indexOf(a.header)
+			const bServerIdx = SERVER_HEADER_ORDER.indexOf(b.header)
+			if (aServerIdx !== -1 && bServerIdx !== -1) {
+				return aServerIdx - bServerIdx
+			}
+
 			return headerCompare
 		}
-		if (a.header === 'resolutions' && b.header === 'resolutions') {
-			return a.name.replace(/\D/g, '') - b.name.replace(/\D/g, '')
-		} else if (a.header === 'performance impact' && b.header === 'performance impact') {
-			const x = ['potato', 'low', 'medium', 'high', 'screenshot']
 
+		if (a.header === 'performance impact' && b.header === 'performance impact') {
+			const x = ['potato', 'low', 'medium', 'high', 'screenshot']
 			return x.indexOf(a.name) - x.indexOf(b.name)
 		}
-		return 0
+
+		if (a.name === 'pokemon') return -1
+		if (b.name === 'pokemon') return 1
+
+		const aFormatted = formatCategoryName(a.name)
+		const bFormatted = formatCategoryName(b.name)
+		return aFormatted.localeCompare(bFormatted, locale, { numeric: true })
 	})
-}
-
-export const formatNumber = (number, abbreviate = true) => {
-	const x = Number(number)
-	if (x >= 1000000 && abbreviate) {
-		return `${(x / 1000000).toFixed(2).toString()}M`
-	} else if (x >= 10000 && abbreviate) {
-		return `${(x / 1000).toFixed(1).toString()}k`
-	}
-	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-}
-
-export function formatDate(
-	date: dayjs.Dayjs,
-	options: Intl.DateTimeFormatOptions = {
-		month: 'long',
-		day: 'numeric',
-		year: 'numeric',
-	},
-): string {
-	return date.toDate().toLocaleDateString(undefined, options)
-}
-
-export function formatMoney(number, abbreviate = false) {
-	const x = Number(number)
-	if (x >= 1000000 && abbreviate) {
-		return `$${(x / 1000000).toFixed(2).toString()}M`
-	} else if (x >= 10000 && abbreviate) {
-		return `$${(x / 1000).toFixed(2).toString()}k`
-	}
-	return `$${x
-		.toFixed(2)
-		.toString()
-		.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
-}
-
-export const formatBytes = (bytes, decimals = 2) => {
-	if (bytes === 0) return '0 Bytes'
-
-	const k = 1024
-	const dm = decimals < 0 ? 0 : decimals
-	const sizes = ['Bytes', 'KiB', 'MiB', 'GiB']
-
-	const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-	return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
 export const capitalizeString = (name) => {
@@ -134,68 +105,35 @@ export const formatWallet = (name) => {
 	return capitalizeString(name)
 }
 
-export const formatProjectType = (name) => {
+export const formatProjectType = (name, short = false) => {
+	if (short) {
+		if (name === 'resourcepack') {
+			return 'RPK'
+		} else if (name === 'mod') {
+			return 'MOD'
+		} else if (name === 'modpack') {
+			return 'MPK'
+		} else if (name === 'shader') {
+			return 'SHD'
+		} else if (name === 'plugin') {
+			return 'PLG'
+		} else if (name === 'datapack') {
+			return 'DPK'
+		} else if (name === 'minecraft_java_server') {
+			return 'SRV'
+		}
+	}
+
 	if (name === 'resourcepack') {
 		return 'Resource Pack'
 	} else if (name === 'datapack') {
 		return 'Data Pack'
-	}
-
-	return capitalizeString(name)
-}
-
-export const formatCategory = (name) => {
-	if (name === 'modloader') {
-		return "Risugami's ModLoader"
-	} else if (name === 'bungeecord') {
-		return 'BungeeCord'
-	} else if (name === 'liteloader') {
-		return 'LiteLoader'
-	} else if (name === 'neoforge') {
-		return 'NeoForge'
-	} else if (name === 'game-mechanics') {
-		return 'Game Mechanics'
-	} else if (name === 'worldgen') {
-		return 'World Generation'
-	} else if (name === 'core-shaders') {
-		return 'Core Shaders'
-	} else if (name === 'gui') {
-		return 'GUI'
-	} else if (name === '8x-') {
-		return '8x or lower'
-	} else if (name === '512x+') {
-		return '512x or higher'
-	} else if (name === 'kitchen-sink') {
-		return 'Kitchen Sink'
-	} else if (name === 'path-tracing') {
-		return 'Path Tracing'
-	} else if (name === 'pbr') {
-		return 'PBR'
-	} else if (name === 'datapack') {
-		return 'Data Pack'
-	} else if (name === 'colored-lighting') {
-		return 'Colored Lighting'
-	} else if (name === 'optifine') {
-		return 'OptiFine'
-	} else if (name === 'bta-babric') {
-		return 'BTA (Babric)'
-	} else if (name === 'legacy-fabric') {
-		return 'Legacy Fabric'
-	} else if (name === 'java-agent') {
-		return 'Java Agent'
-	} else if (name === 'nilloader') {
-		return 'NilLoader'
-	} else if (name === 'mrpack') {
+	} else if (name === 'modpack') {
 		return 'Modpack'
-	} else if (name === 'minecraft') {
-		return 'Resource Pack'
-	} else if (name === 'vanilla') {
-		return 'Vanilla Shader'
+	} else if (name === 'minecraft_java_server') {
+		return 'Server'
 	}
-	return capitalizeString(name)
-}
 
-export const formatCategoryHeader = (name) => {
 	return capitalizeString(name)
 }
 
@@ -285,12 +223,12 @@ export const formatVersions = (versionArray, gameVersions) => {
 	return (output.length === 0 ? versionArray : output).join(', ')
 }
 
-export function cycleValue(value, values) {
+export function cycleValue<T extends string>(value: T, values: T[]): T {
 	const index = values.indexOf(value) + 1
 	return values[index % values.length]
 }
 
-export const fileIsValid = (file, validationOptions) => {
+export const fileIsValid = (file, validationOptions, formatBytes) => {
 	const { maxSize, alertOnInvalid } = validationOptions
 	if (maxSize !== null && maxSize !== undefined && file.size > maxSize) {
 		if (alertOnInvalid) {
@@ -303,48 +241,24 @@ export const fileIsValid = (file, validationOptions) => {
 }
 
 export const acceptFileFromProjectType = (projectType) => {
+	const commonTypes = '.sig,.asc,.gpg,application/pgp-signature,application/pgp-keys'
 	switch (projectType) {
 		case 'mod':
-			return '.jar,.zip,.litemod,application/java-archive,application/x-java-archive,application/zip'
+			return `.jar,.zip,.litemod,application/java-archive,application/x-java-archive,application/zip,${commonTypes}`
 		case 'plugin':
-			return '.jar,.zip,application/java-archive,application/x-java-archive,application/zip'
+			return `.jar,.zip,application/java-archive,application/x-java-archive,application/zip,${commonTypes}`
 		case 'resourcepack':
-			return '.zip,application/zip'
+			return `.zip,application/zip,${commonTypes}`
 		case 'shader':
-			return '.zip,application/zip'
+			return `.zip,application/zip,${commonTypes}`
 		case 'datapack':
-			return '.zip,application/zip'
+			return `.jar,.zip,.litemod,application/java-archive,application/x-java-archive,application/zip,${commonTypes}`
 		case 'modpack':
-			return '.mrpack,application/x-modrinth-modpack+zip,application/zip'
+			return `.mrpack,application/x-modrinth-modpack+zip,application/zip,${commonTypes}`
 		default:
-			return '*'
+			// all of the above
+			return `.jar,.zip,.litemod,.mrpack,application/java-archive,application/x-java-archive,application/zip,application/x-modrinth-modpack+zip,${commonTypes}`
 	}
-}
-
-// Sorts alphabetically, but correctly identifies 8x, 128x, 256x, etc
-// identifier[0], then if it ties, identifier[1], etc
-export const sortByNameOrNumber = (sortable, identifiers) => {
-	sortable.sort((a, b) => {
-		for (const identifier of identifiers) {
-			const aNum = parseFloat(a[identifier])
-			const bNum = parseFloat(b[identifier])
-			if (isNaN(aNum) && isNaN(bNum)) {
-				// Both are strings, sort alphabetically
-				const stringComp = a[identifier].localeCompare(b[identifier])
-				if (stringComp != 0) return stringComp
-			} else if (!isNaN(aNum) && !isNaN(bNum)) {
-				// Both are numbers, sort numerically
-				const numComp = aNum - bNum
-				if (numComp != 0) return numComp
-			} else {
-				// One is a number and one is a string, numbers go first
-				const numStringComp = isNaN(aNum) ? 1 : -1
-				if (numStringComp != 0) return numStringComp
-			}
-		}
-		return 0
-	})
-	return sortable
 }
 
 export const getArrayOrString = (x: string[] | string): string[] => {

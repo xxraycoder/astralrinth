@@ -1,7 +1,7 @@
 <template>
 	<nav
 		ref="scrollContainer"
-		class="card-shadow experimental-styles-within relative flex w-fit overflow-x-auto rounded-full bg-bg-raised p-1 text-sm font-bold"
+		class="card-shadow relative flex w-fit overflow-x-auto rounded-full bg-bg-raised p-1 text-sm font-bold"
 	>
 		<button
 			v-for="(option, index) in options"
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const modelValue = defineModel<T>({ required: true })
 

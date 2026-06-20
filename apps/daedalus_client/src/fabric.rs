@@ -1,17 +1,17 @@
 use crate::util::{download_file, fetch_json, format_url};
-use crate::{Error, MirrorArtifact, UploadFile, insert_mirrored_artifact};
+use crate::{
+    Error, FetchResult, MirrorArtifact, UploadFile, insert_mirrored_artifact,
+};
 use daedalus::modded::{DUMMY_REPLACE_STRING, Manifest, PartialVersionInfo};
 use dashmap::DashMap;
 use serde::Deserialize;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 
-#[tracing::instrument(skip(semaphore, upload_files, mirror_artifacts))]
+#[tracing::instrument(skip(semaphore))]
 pub async fn fetch_fabric(
     semaphore: Arc<Semaphore>,
-    upload_files: &DashMap<String, UploadFile>,
-    mirror_artifacts: &DashMap<String, MirrorArtifact>,
-) -> Result<(), Error> {
+) -> Result<FetchResult, Error> {
     fetch(
         daedalus::modded::CURRENT_FABRIC_FORMAT_VERSION,
         "fabric",
@@ -19,18 +19,14 @@ pub async fn fetch_fabric(
         "https://maven.fabricmc.net/",
         &[],
         semaphore,
-        upload_files,
-        mirror_artifacts,
     )
     .await
 }
 
-#[tracing::instrument(skip(semaphore, upload_files, mirror_artifacts))]
+#[tracing::instrument(skip(semaphore))]
 pub async fn fetch_quilt(
     semaphore: Arc<Semaphore>,
-    upload_files: &DashMap<String, UploadFile>,
-    mirror_artifacts: &DashMap<String, MirrorArtifact>,
-) -> Result<(), Error> {
+) -> Result<FetchResult, Error> {
     fetch(
         daedalus::modded::CURRENT_QUILT_FORMAT_VERSION,
         "quilt",
@@ -41,14 +37,12 @@ pub async fn fetch_quilt(
             "0.17.5-beta.4",
         ],
         semaphore,
-        upload_files,
-        mirror_artifacts,
     )
     .await
 }
 
 #[allow(clippy::too_many_arguments)]
-#[tracing::instrument(skip(semaphore, upload_files, mirror_artifacts))]
+#[tracing::instrument(skip(semaphore))]
 async fn fetch(
     format_version: usize,
     mod_loader: &str,
@@ -56,9 +50,9 @@ async fn fetch(
     maven_url: &str,
     skip_versions: &[&str],
     semaphore: Arc<Semaphore>,
-    upload_files: &DashMap<String, UploadFile>,
-    mirror_artifacts: &DashMap<String, MirrorArtifact>,
-) -> Result<(), Error> {
+) -> Result<FetchResult, Error> {
+    let upload_files = DashMap::new();
+    let mirror_artifacts = DashMap::<String, MirrorArtifact>::new();
     let modrinth_manifest = fetch_json::<Manifest>(
         &format_url(&format!("{mod_loader}/v{format_version}/manifest.json",)),
         &semaphore,
@@ -71,49 +65,65 @@ async fn fetch(
     )
     .await?;
 
-    // We check Modrinth's fabric version manifest and compare if the fabric version exists in Modrinth's database
-    // We also check intermediary versions that are newly added to query
-    let (fetch_fabric_versions, fetch_intermediary_versions) =
-        if let Some(modrinth_manifest) = modrinth_manifest {
-            let (mut fetch_versions, mut fetch_intermediary_versions) =
-                (Vec::new(), Vec::new());
+    // We check Modrinth's manifest to find newly added loader versions,
+    // intermediary/mapping artifacts, and game versions.
+    let (
+        fetch_fabric_versions,
+        fetch_intermediary_versions,
+        has_new_game_versions,
+    ) = if let Some(modrinth_manifest) = modrinth_manifest {
+        let (mut fetch_versions, mut fetch_intermediary_versions) =
+            (Vec::new(), Vec::new());
 
-            for version in &fabric_manifest.loader {
-                if !modrinth_manifest
-                    .game_versions
-                    .iter()
-                    .any(|x| x.loaders.iter().any(|x| x.id == version.version))
-                    && !skip_versions.contains(&&*version.version)
-                {
-                    fetch_versions.push(version);
-                }
+        for version in &fabric_manifest.loader {
+            if !modrinth_manifest
+                .game_versions
+                .iter()
+                .any(|x| x.loaders.iter().any(|x| x.id == version.version))
+                && !skip_versions.contains(&&*version.version)
+            {
+                fetch_versions.push(version);
             }
+        }
 
-            for version in &fabric_manifest.intermediary {
-                if !modrinth_manifest
+        for version in &fabric_manifest.intermediary {
+            if !modrinth_manifest
+                .game_versions
+                .iter()
+                .any(|x| x.id == version.version)
+                && fabric_manifest
+                    .game
+                    .iter()
+                    .any(|x| x.version == version.version)
+            {
+                fetch_intermediary_versions.push(version);
+            }
+        }
+
+        let has_new_game_versions =
+            fabric_manifest.game.iter().any(|version| {
+                !modrinth_manifest
                     .game_versions
                     .iter()
                     .any(|x| x.id == version.version)
-                    && fabric_manifest
-                        .game
-                        .iter()
-                        .any(|x| x.version == version.version)
-                {
-                    fetch_intermediary_versions.push(version);
-                }
-            }
+            });
 
-            (fetch_versions, fetch_intermediary_versions)
-        } else {
-            (
-                fabric_manifest
-                    .loader
-                    .iter()
-                    .filter(|x| !skip_versions.contains(&&*x.version))
-                    .collect(),
-                fabric_manifest.intermediary.iter().collect(),
-            )
-        };
+        (
+            fetch_versions,
+            fetch_intermediary_versions,
+            has_new_game_versions,
+        )
+    } else {
+        (
+            fabric_manifest
+                .loader
+                .iter()
+                .filter(|x| !skip_versions.contains(&&*x.version))
+                .collect(),
+            fabric_manifest.intermediary.iter().collect(),
+            true,
+        )
+    };
 
     const DUMMY_GAME_VERSION: &str = "1.21";
 
@@ -124,7 +134,7 @@ async fn fetch(
                 None,
                 vec![maven_url.to_string()],
                 false,
-                mirror_artifacts,
+                &mirror_artifacts,
             )?;
         }
     }
@@ -175,7 +185,7 @@ async fn fetch(
                                     .unwrap_or_else(|| maven_url.to_string()),
                             ],
                             false,
-                            mirror_artifacts,
+                            &mirror_artifacts,
                         )?;
                     } else {
                         lib.name = new_name;
@@ -222,6 +232,7 @@ async fn fetch(
 
     if !fetch_fabric_versions.is_empty()
         || !fetch_intermediary_versions.is_empty()
+        || has_new_game_versions
     {
         let fabric_manifest_path =
             format!("{mod_loader}/v{format_version}/manifest.json",);
@@ -268,7 +279,10 @@ async fn fetch(
         );
     }
 
-    Ok(())
+    Ok(FetchResult {
+        upload_files,
+        mirror_artifacts,
+    })
 }
 
 #[derive(Deserialize, Debug, Clone)]

@@ -1,15 +1,17 @@
 use super::ids::{DBProjectId, DBUserId};
 use super::{DBCollectionId, DBReportId, DBThreadId};
-use crate::database::models;
 use crate::database::models::charge_item::DBCharge;
 use crate::database::models::user_subscription_item::DBUserSubscription;
 use crate::database::models::{DBOrganizationId, DatabaseError};
 use crate::database::redis::RedisPool;
+use crate::database::{PgTransaction, models};
 use crate::models::billing::ChargeStatus;
 use crate::models::users::Badges;
+use crate::util::error::Context;
 use ariadne::ids::base62_impl::{parse_base62, to_base62};
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
@@ -47,16 +49,32 @@ pub struct DBUser {
     pub created: DateTime<Utc>,
     pub role: String,
     pub badges: Badges,
+    #[serde(default)]
+    pub campaign_pride_26: Option<Pride26CampaignDonation>,
 
     pub allow_friend_requests: bool,
 
     pub is_subscribed_to_newsletter: bool,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct DBSearchUser {
+    pub id: DBUserId,
+    pub username: String,
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, utoipa::ToSchema)]
+pub struct Pride26CampaignDonation {
+    pub last_donated_at: DateTime<Utc>,
+    pub has_badge: bool,
+    pub has_midas: bool,
+}
+
 impl DBUser {
     pub async fn insert(
         &self,
-        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        transaction: &mut PgTransaction<'_>,
     ) -> Result<(), sqlx::error::Error> {
         sqlx::query!(
             "
@@ -97,7 +115,7 @@ impl DBUser {
             self.allow_friend_requests,
             self.is_subscribed_to_newsletter,
         )
-        .execute(&mut **transaction)
+        .execute(&mut *transaction)
         .await?;
 
         Ok(())
@@ -109,7 +127,7 @@ impl DBUser {
         redis: &RedisPool,
     ) -> Result<Option<DBUser>, DatabaseError>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         DBUser::get_many(&[string], executor, redis)
             .await
@@ -122,7 +140,7 @@ impl DBUser {
         redis: &RedisPool,
     ) -> Result<Option<DBUser>, DatabaseError>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         DBUser::get_many(&[ariadne::ids::UserId::from(id)], executor, redis)
             .await
@@ -135,7 +153,7 @@ impl DBUser {
         redis: &RedisPool,
     ) -> Result<Vec<DBUser>, DatabaseError>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         let ids = user_ids
             .iter()
@@ -154,7 +172,7 @@ impl DBUser {
         redis: &RedisPool,
     ) -> Result<Vec<DBUser>, DatabaseError>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::TryStreamExt;
 
@@ -179,6 +197,16 @@ impl DBUser {
                     SELECT id, email,
                         avatar_url, raw_avatar_url, username, bio,
                         created, role, badges,
+                        (
+                            SELECT MAX(campaign_donations.donated_at)
+                            FROM campaign_donations
+                            WHERE campaign_donations.user_id = users.id
+                        ) AS campaign_pride_26_last_donated_at,
+                        (
+                            SELECT SUM(campaign_donations.amount_usd)
+                            FROM campaign_donations
+                            WHERE campaign_donations.user_id = users.id
+                        ) AS campaign_pride_26_total_amount_donated_usd,
                         github_id, discord_id, gitlab_id, google_id, steam_id, microsoft_id,
                         email_verified, password, totp_secret, paypal_id, paypal_country, paypal_email,
                         venmo_handle, stripe_customer_id, allow_friend_requests, is_subscribed_to_newsletter
@@ -207,6 +235,21 @@ impl DBUser {
                             created: u.created,
                             role: u.role,
                             badges: Badges::from_bits(u.badges as u64).unwrap_or_default(),
+                            campaign_pride_26: u
+                                .campaign_pride_26_last_donated_at
+                                .zip(u.campaign_pride_26_total_amount_donated_usd)
+                                .map(
+                                    |(
+                                        last_donated_at,
+                                        total_amount_donated_usd,
+                                    )| Pride26CampaignDonation {
+                                        last_donated_at,
+                                        has_badge: total_amount_donated_usd
+                                            >= Decimal::ONE,
+                                        has_midas: total_amount_donated_usd
+                                            >= Decimal::from(5),
+                                    },
+                                ),
                             password: u.password,
                             paypal_id: u.paypal_id,
                             paypal_country: u.paypal_country,
@@ -228,12 +271,50 @@ impl DBUser {
         Ok(val)
     }
 
+    pub async fn search<'a, E>(
+        query: &str,
+        exec: E,
+    ) -> Result<Vec<DBSearchUser>, sqlx::Error>
+    where
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
+    {
+        if query.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let lowercase_query = query.to_lowercase();
+        let escaped_query = format!("{}%", escape_like(&lowercase_query));
+
+        let users = sqlx::query!(
+            r#"
+            SELECT id, username, avatar_url
+            FROM users
+            WHERE LOWER(username) LIKE $1 ESCAPE '\'
+            ORDER BY LOWER(username) = $2 DESC, LOWER(username), username
+            LIMIT 25
+            "#,
+            escaped_query,
+            lowercase_query
+        )
+        .fetch_all(exec)
+        .await?
+        .into_iter()
+        .map(|row| DBSearchUser {
+            id: DBUserId(row.id),
+            username: row.username,
+            avatar_url: row.avatar_url,
+        })
+        .collect();
+
+        Ok(users)
+    }
+
     pub async fn get_by_email<'a, E>(
         email: &str,
         exec: E,
     ) -> Result<Option<DBUserId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         let user = sqlx::query!(
             "
@@ -254,7 +335,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<DBUserId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         let users = sqlx::query!(
             "
@@ -276,7 +357,7 @@ impl DBUser {
         exec: E,
     ) -> Result<bool, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         let ids = user_ids.iter().map(|x| x.0).collect::<Vec<_>>();
         let count = sqlx::query_scalar!(
@@ -295,21 +376,23 @@ impl DBUser {
         redis: &RedisPool,
     ) -> Result<Vec<DBProjectId>, DatabaseError>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
-        let mut redis = redis.connect().await?;
+        {
+            let mut redis = redis.connect().await?;
 
-        let cached_projects = redis
-            .get_deserialized_from_json::<Vec<DBProjectId>>(
-                USERS_PROJECTS_NAMESPACE,
-                &user_id.0.to_string(),
-            )
-            .await?;
+            let cached_projects = redis
+                .get_deserialized_from_json::<Vec<DBProjectId>>(
+                    USERS_PROJECTS_NAMESPACE,
+                    &user_id.0.to_string(),
+                )
+                .await?;
 
-        if let Some(projects) = cached_projects {
-            return Ok(projects);
+            if let Some(projects) = cached_projects {
+                return Ok(projects);
+            }
         }
 
         let db_projects = sqlx::query!(
@@ -325,6 +408,8 @@ impl DBUser {
         .map_ok(|m| DBProjectId(m.id))
         .try_collect::<Vec<DBProjectId>>()
         .await?;
+
+        let mut redis = redis.connect().await?;
 
         redis
             .set_serialized_to_json(
@@ -343,7 +428,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<DBOrganizationId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
@@ -368,7 +453,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<DBCollectionId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
@@ -392,7 +477,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<DBProjectId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
@@ -416,7 +501,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<DBReportId>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
@@ -440,7 +525,7 @@ impl DBUser {
         exec: E,
     ) -> Result<Vec<String>, sqlx::Error>
     where
-        E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
@@ -498,14 +583,17 @@ impl DBUser {
 
     pub async fn remove(
         id: DBUserId,
-        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        transaction: &mut PgTransaction<'_>,
         redis: &RedisPool,
-    ) -> Result<Option<()>, DatabaseError> {
-        let user = Self::get_id(id, &mut **transaction, redis).await?;
+    ) -> Result<Option<()>, eyre::Report> {
+        let user = Self::get_id(id, &mut *transaction, redis)
+            .await
+            .wrap_err("failed to get user by ID")?;
 
         if let Some(delete_user) = user {
             DBUser::clear_caches(&[(id, Some(delete_user.username))], redis)
-                .await?;
+                .await
+                .wrap_err("failed to clear caches")?;
 
             let deleted_user: DBUserId =
                 crate::models::users::DELETED_USER.into();
@@ -519,8 +607,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update team_members owner")?;
 
             sqlx::query!(
                 "
@@ -531,8 +620,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update versions author_id")?;
 
             sqlx::query!(
                 "
@@ -543,8 +633,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update shared_instances owner_id")?;
 
             use futures::TryStreamExt;
             let notifications: Vec<i64> = sqlx::query!(
@@ -554,30 +645,44 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .fetch(&mut **transaction)
+            .fetch(&mut *transaction)
             .map_ok(|m| m.id)
             .try_collect::<Vec<i64>>()
-            .await?;
+            .await
+            .wrap_err("failed to fetch notifications")?;
 
             sqlx::query!(
                 "
-                DELETE FROM notifications_actions
-                 WHERE notification_id = ANY($1)
-                ",
+				DELETE FROM notifications_actions
+				 WHERE notification_id = ANY($1)
+				",
                 &notifications
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete notifications_actions")?;
 
             sqlx::query!(
                 "
-                DELETE FROM notifications_deliveries
-                WHERE notification_id = ANY($1)
-                ",
+				DELETE FROM notifications_deliveries
+				WHERE notification_id = ANY($1)
+				",
                 &notifications
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete notifications_deliveries")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM notifications_deliveries
+				WHERE user_id = $1
+				",
+                id as DBUserId
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete notifications_deliveries")?;
 
             sqlx::query!(
                 "
@@ -586,8 +691,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete notifications")?;
 
             let user_collections = sqlx::query!(
                 "
@@ -597,14 +703,16 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .fetch(&mut **transaction)
+            .fetch(&mut *transaction)
             .map_ok(|x| DBCollectionId(x.id))
             .try_collect::<Vec<_>>()
-            .await?;
+            .await
+            .wrap_err("failed to fetch user collections")?;
 
             for collection_id in user_collections {
                 models::DBCollection::remove(collection_id, transaction, redis)
-                    .await?;
+                    .await
+                    .wrap_err("failed to remove collection")?;
             }
 
             let report_threads = sqlx::query!(
@@ -616,13 +724,16 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .fetch(&mut **transaction)
+            .fetch(&mut *transaction)
             .map_ok(|x| DBThreadId(x.id))
             .try_collect::<Vec<_>>()
-            .await?;
+            .await
+            .wrap_err("failed to fetch report threads")?;
 
             for thread_id in report_threads {
-                models::DBThread::remove_full(thread_id, transaction).await?;
+                models::DBThread::remove_full(thread_id, transaction)
+                    .await
+                    .wrap_err("failed to remove thread")?;
             }
 
             sqlx::query!(
@@ -632,8 +743,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete reports")?;
 
             sqlx::query!(
                 "
@@ -644,8 +756,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update reports user_id")?;
 
             sqlx::query!(
                 "
@@ -654,8 +767,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete mod_follows")?;
 
             sqlx::query!(
                 "
@@ -664,30 +778,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
-
-            sqlx::query!(
-                "
-                DELETE FROM payouts_values
-                WHERE user_id = $1
-                ",
-                id as DBUserId,
-            )
-            .execute(&mut **transaction)
-            .await?;
-
-            sqlx::query!(
-                "
-                UPDATE payouts
-                SET user_id = $1
-                WHERE user_id = $2
-                ",
-                deleted_user as DBUserId,
-                id as DBUserId,
-            )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete team_members")?;
 
             sqlx::query!(
                 r#"
@@ -698,8 +791,9 @@ impl DBUser {
                 id as DBUserId,
                 deleted_user as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update threads_messages")?;
 
             sqlx::query!(
                 "
@@ -708,8 +802,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete threads_members")?;
 
             sqlx::query!(
                 "
@@ -720,8 +815,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update uploaded_images owner_id")?;
 
             sqlx::query!(
                 "
@@ -730,8 +826,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete sessions")?;
 
             sqlx::query!(
                 "
@@ -740,8 +837,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete pats")?;
 
             sqlx::query!(
                 "
@@ -750,8 +848,9 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete friends")?;
 
             sqlx::query!(
                 "
@@ -761,8 +860,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update affiliate_codes created_by")?;
 
             sqlx::query!(
                 "
@@ -770,19 +870,33 @@ impl DBUser {
                 WHERE affiliate = $1",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete affiliate_codes")?;
 
             sqlx::query!(
                 "
-                UPDATE payouts_values
-                SET user_id = $1
-                WHERE user_id = $2",
+				UPDATE payouts_values
+				SET user_id = $1
+				WHERE user_id = $2",
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update payouts_values user_id")?;
+
+            sqlx::query!(
+                "
+				UPDATE payouts
+				SET user_id = $1
+				WHERE user_id = $2",
+                deleted_user as DBUserId,
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update payouts user_id")?;
 
             sqlx::query!(
                 "
@@ -790,23 +904,42 @@ impl DBUser {
                 WHERE user_id = $1",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete payouts_values_notifications")?;
+
+            sqlx::query!(
+                "
+                UPDATE charges
+                SET user_id = $1
+                WHERE user_id = $2
+                ",
+                deleted_user as DBUserId,
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update charges user_id")?;
 
             let open_subscriptions =
-                DBUserSubscription::get_all_user(id, &mut **transaction)
-                    .await?;
+                DBUserSubscription::get_all_user(id, &mut *transaction)
+                    .await
+                    .wrap_err("failed to get user subscriptions")?;
 
             for x in open_subscriptions {
                 let charge =
-                    DBCharge::get_open_subscription(x.id, &mut **transaction)
-                        .await?;
+                    DBCharge::get_open_subscription(x.id, &mut *transaction)
+                        .await
+                        .wrap_err("failed to get open subscription charge")?;
                 if let Some(mut charge) = charge {
                     charge.status = ChargeStatus::Cancelled;
                     charge.due = Utc::now();
                     charge.user_id = deleted_user;
 
-                    charge.upsert(transaction).await?;
+                    charge
+                        .upsert(transaction)
+                        .await
+                        .wrap_err("failed to upsert charge")?;
                 }
             }
 
@@ -819,8 +952,9 @@ impl DBUser {
                 deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update users_subscriptions user_id")?;
 
             sqlx::query!(
                 "
@@ -829,22 +963,140 @@ impl DBUser {
                 ",
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete user_backup_codes")?;
 
             sqlx::query!(
                 "
-                DELETE FROM users
-                WHERE id = $1
-                ",
+				UPDATE oauth_clients
+				SET created_by = $1
+				WHERE created_by = $2
+				",
+                deleted_user as DBUserId,
                 id as DBUserId,
             )
-            .execute(&mut **transaction)
-            .await?;
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to update oauth_clients created_by")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM users
+				WHERE id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete user")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM oauth_client_authorizations
+				WHERE user_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete oauth_client_authorizations")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM shared_instance_users
+				WHERE user_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete shared_instance_users")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM shared_instance_invited_users
+				WHERE invited_user_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete shared_instance_invited_users")?;
+
+            sqlx::query!(
+                "
+				UPDATE users_redeemals
+				SET user_id = $1
+				WHERE user_id = $2
+				",
+                deleted_user as DBUserId,
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete users_redeemals")?;
+
+            sqlx::query!(
+                "
+				UPDATE users_compliance
+				SET user_id = $1
+				WHERE user_id = $2
+				",
+                deleted_user as DBUserId,
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete users_compliance")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM user_limits
+				WHERE user_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete user_limits")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM users_notifications_preferences
+				WHERE user_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete users_notifications_preferences")?;
+
+            sqlx::query!(
+                "
+				DELETE FROM moderation_locks
+				WHERE moderator_id = $1
+				",
+                id as DBUserId,
+            )
+            .execute(&mut *transaction)
+            .await
+            .wrap_err("failed to delete moderation_locks")?;
 
             Ok(Some(()))
         } else {
             Ok(None)
         }
     }
+}
+
+fn escape_like(query: &str) -> String {
+    let mut escaped = String::with_capacity(query.len());
+    for ch in query.chars() {
+        if matches!(ch, '\\' | '%' | '_') {
+            escaped.push('\\');
+        }
+        escaped.push(ch);
+    }
+    escaped
 }
