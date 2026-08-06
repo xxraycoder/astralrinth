@@ -64,7 +64,7 @@ body:
       label: Installation source
       description: Where did you get this build from?
       options:
-        - Git Astralium (You're here)
+        - Git Xorison (You're here)
         - Telegram
         - Black Minecraft
         - External web resource (Other)
