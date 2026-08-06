@@ -1,130 +1,59 @@
-# 📘 Navigation
+# AstralRinth
 
-- [🔧 Install Instructions](#install-instructions)
-- [✨ Features](#features)
-- [🚀 Getting Started](#getting-started)
-- [🛠️ Разработка](#development)
-- [⚠️ Disclaimer](#disclaimer)
-- [💰 Donate](#support-our-project-crypto-wallets)
+AstralRinth is a Minecraft launcher with its own visual identity, built for a clean and flexible game experience. It offers a neon-inspired interface, no advertising or promotional blocks, flexible account support, and updates delivered through Xorison services.
 
-## Other languages
-> [Русский](readme/ru_ru/README.md)
+## Languages
 
-## Support channel
-> [Telegram](https://xorison.dev/product/astralrinth/support)
+[Русский](readme/ru_ru/README.md)
 
----
+## Download and install
 
-# About Project
+1. Open the [AstralRinth releases page](https://xorison.dev/product/astralrinth/).
+2. Download the package for your operating system.
+3. Run the installer or open the downloaded package.
 
-## **AstralRinth • Empowering Your Minecraft Experience**
+| File type | Operating system | Notes |
+| --- | --- | --- |
+| `.msi, .exe` | Windows 10/11 | Run the installer and follow its prompts. |
+| `.dmg, .app` | macOS | Open the image and move AstralRinth to Applications. |
+| `.deb, .rpm, .AppImage` | Linux | Install it using your distribution's package installer. |
 
-**AstralRinth** — a powerful fork of Modrinth, reimagined to enhance your Minecraft journey. Whether you're a GUI enthusiast or a developer building with Modrinth’s API, **Theseus Core** is your launchpad into a new era of Minecraft gameplay.
+Avoid releases whose version begins with `dev`, `nightly`, or `dirty`: they are intended for testing and may be unstable.
 
-## **About the Software**
+## What AstralRinth offers
 
-**AstralRinth** is a dedicated branch of the Modrinth (a.k.a Theseus) project, focused on **offline authentication**, offering you more flexibility and control. Play Minecraft without the need for constant online verification — a user-first approach to modern modded gaming.
+- A complete AstralRinth identity: name, icons, splash screen, window titles, and a neon-styled interface.
+- A focused experience without advertising, promo content, surveys, Pride media, or Modrinth components unavailable in Russia.
+- Russian and English interfaces for AstralRinth screens and messages.
+- Account support for:
+  - Microsoft accounts;
+  - Ely.by accounts, including skin management through Ely.by;
+  - external Minecraft accounts through OAuth Device Authorization;
+  - offline accounts for local play and testing.
+- Safer account controls: skin management is available only for account types that support it.
+- `authlib-injector` library management: browse installed versions, install one, select it, or let AstralRinth install a suitable current version when needed.
+- Reliable offline-account launches, including Minecraft 1.16.4 and 1.16.5, and clearer recovery after account validation errors.
+- A dedicated AstralRinth settings section.
+- Updates from Xorison services: AstralRinth checks for releases, selects the appropriate installer for Windows, macOS, or Linux, then downloads and starts it. The update diagnostics page shows the current update status and details.
+- Discord Rich Presence with AstralRinth phrases and a link to download the launcher.
 
----
+## Getting started
 
-# Install Instructions
+1. Download and install the latest stable release.
+2. In **Accounts**, sign in with Microsoft or Ely.by, complete the device-code flow for a supported external account, or create an offline account.
+3. Create or choose a Minecraft instance.
+4. For an external account that uses an authentication server, open the instance settings and configure `authlib-injector`.
+5. Launch the game. AstralRinth will use the recommended Java version when possible; you can choose Java manually in settings if needed.
 
-To install the launcher:
+## Updates and support
 
-1. Visit the [releases page](https://xorison.dev/product/astralrinth/source) to download the correct version for your system.
-2. Run the downloaded file or extract and launch it, depending on the format.
+AstralRinth notifies you when an update is available. Choose to install it from the update window; the launcher will use the correct package for your system. If an update does not complete, open update diagnostics in AstralRinth settings before contacting support.
 
-### Downloadable File Extensions
+Support: [AstralRinth Telegram channel](https://xorison.dev/product/astralrinth/support)
 
-| Extension | OS      | Notes                                                                 |
-| --------- | ------- | --------------------------------------------------------------------- |
-| `.msi`    | Windows | Supported on all recent Windows versions (10/11)                              |
-| `.dmg`    | macOS   | Works on Ventura, Sonoma, Sequoia, Tahoe _(may also support older versions)_ |
-| `.deb`    | Linux   | Basic support; compatibility may vary by distribution                 |
+## Notice
 
-### Installation Warnings
-
-Avoid using builds with these prefixes — they may be unstable or experimental:
-
-- `dev`
-- `nightly`
-- `dirty`
-- `dirty-dev`
-- `dirty-nightly`
-- `dirty_dev`
-- `dirty_nightly`
-
----
-
-# Features
-
-> _The launcher provides an opportunity to use the well-known Modrinth, but with an improved user experience._
-
-## Included exclusive features
-
-- No ads in the entire launcher.
-- Custom `.svg` vector icons for a distinct UI.
-- Improved compatibility with both licensed and offline accounts.
-  - Use **official microsoft accounts** or **offline accounts**.
-  - Supports license-free access for testing or personal use.
-  - No dependence on official authentication services.
-- Discord Rich Presence integration:
-  - Dynamic status messages.
-  - In-game timer and AFK counter.
-- Strict disabling of statistics and other Modrinth metrics.
-- Optimized archive/package size.
-- Integrated update fetcher for seamless version management.
-  - Built-in update alerts for new versions posted on Git Astralium.
-  - Automatic download and installation capabilities.
-- Database migration fixes, when error occurred (Interactive Mode) (Modrinth issue)
-- Ely.by full integration
-  - The official account skin system is managed by ely.by
-  - Offline accounts must install AuthLib through the instance settings
-
----
-
-# Getting Started
-
-To begin using AstralRinth:
-
-1. **Download Latest Release**
-
-   - Go to the [releases page](https://xorison.dev/product/astralrinth)
-   - [How to choose a file](#downloadable-file-extensions)
-   - [How to choose a release](#installation-warnings)
-
-2. **Log in or create new offline account**
-
-   - Use your official Microsoft account (MSA), or test using a non-licensed account (Offline).
-
-3. **Launch Minecraft**
-   - Start Minecraft from the launcher.
-   - The launcher will auto-detect the recommended JVM version.
-   - You can also configure Java manually in the settings.
-
----
-
-# Development
-
-Before continue you need to install `mise` tool for easy install libraries and running application on any OS (Windows, macOS, Linux)
-
-1. `mise activate`
-2. `mise install`
-3. `mise exec rust -- rustup toolchain install stable`
-4. `mise exec pnpm -- pnpm install`
-5. `mise exec rust -- cargo install tauri-cli --version "^2.5.0"`
-6. `mise exec pnpm -- pnpm app:dev` — Development (unoptimized)
-7. `mise exec pnpm -- pnpm app:build` — Production
-
----
-
-# Disclaimer
-
-- **AstralRinth** is intended **solely for educational and experimental use**.
-- We **do not condone piracy** — users are encouraged to purchase a legitimate Minecraft license.
-- Respect all relevant licensing agreements and support Minecraft developers.
-
----
+AstralRinth is an independent Modrinth-based project. Please comply with Minecraft's terms and the terms of any account or authentication service you use. We encourage players to own a legitimate Minecraft license.
 
 # Support Our Project (Crypto Wallets)
 
