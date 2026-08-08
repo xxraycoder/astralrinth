@@ -564,9 +564,6 @@ importers:
       '@modrinth/ui':
         specifier: workspace:*
         version: link:../ui
-      typescript:
-        specifier: ^5.4.5
-        version: 5.9.3
 
   packages/tooling-config:
     dependencies:
