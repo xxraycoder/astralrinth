@@ -5,14 +5,12 @@
 	>
 		<span>{{ formatMessage(messages.notSignedIn) }}</span>
 		<!-- BEGIN: This code block modified by AstralRinth -->
-		<ButtonStyled class="w-full">
-			<button type="button" class="w-full justify-between text-left" @click="showAccountLoginModal">
-				<span class="inline-flex items-center gap-2">
-					<PlusIcon />
-					{{ formatMessage(messages.addAccount) }}
-				</span>
-			</button>
-		</ButtonStyled>
+		<Button type="colored" color="brand" @click="showAccountLoginModal">
+			<span class="inline-flex items-center gap-2">
+				<PlusIcon />
+				{{ formatMessage(messages.addAccount) }}
+			</span>
+		</Button>
 		<!-- END: This code block modified by AstralRinth -->
 	</div>
 	<Accordion
@@ -81,30 +79,25 @@
 							<span class="truncate">{{ account.profile.name }}</span>
 						</p>
 					</button>
-					<ButtonStyled circular color="red" color-fill="none" hover-color-fill="background">
-						<button
-							v-tooltip="formatMessage(messages.removeAccount)"
-							class="mr-2"
-							@click="logout(account.profile.id)"
-						>
-							<TrashIcon />
-						</button>
-					</ButtonStyled>
+					<IconButton
+						v-tooltip="formatMessage(messages.removeAccount)"
+						type="quiet"
+						color="red"
+						:label="formatMessage(messages.removeAccount)"
+						class="mr-2 !bg-button-bg !text-primary ![box-shadow:var(--shadow-button)] hover:!bg-red focus-visible:!bg-red hover:!text-[var(--color-accent-contrast)] focus-visible:!text-[var(--color-accent-contrast)]"
+						@click="logout(account.profile.id)"
+					>
+						<TrashIcon />
+					</IconButton>
 				</div>
 			</template>
 			<div class="flex flex-col gap-2 px-2 pt-2">
-				<ButtonStyled class="w-full">
-					<button
-						type="button"
-						class="w-full justify-between text-left"
-						@click="showAccountLoginModal"
-					>
-						<span class="inline-flex items-center gap-2">
-							<PlusIcon />
-							{{ formatMessage(messages.addAccount) }}
-						</span>
-					</button>
-				</ButtonStyled>
+				<Button type="colored" color="brand" @click="showAccountLoginModal">
+					<span class="inline-flex items-center gap-2">
+						<PlusIcon />
+						{{ formatMessage(messages.addAccount) }}
+					</span>
+				</Button>
 			</div>
 		</div>
 	</Accordion>
@@ -164,8 +157,9 @@ import {
 import {
 	Accordion,
 	Avatar,
-	ButtonStyled,
+	Button,
 	defineMessages,
+	IconButton,
 	injectNotificationManager,
 	useVIntl,
 } from '@modrinth/ui'

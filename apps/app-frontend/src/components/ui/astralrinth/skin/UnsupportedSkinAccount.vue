@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ExternalIcon } from '@modrinth/assets'
-import { ButtonStyled, defineMessages, useVIntl } from '@modrinth/ui'
+import { Button, defineMessages, useVIntl } from '@modrinth/ui'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -96,19 +96,22 @@ function openExternalProviderSkins() {
 					}}
 				</p>
 				<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-					<ButtonStyled v-if="externalAuthProvider" color="brand">
-						<button @click.stop="openExternalProviderSkins" @keydown.stop>
-							{{
-								formatMessage(messages.externalAction, { providerName: externalAuthProvider.name })
-							}}
-							<ExternalIcon aria-hidden="true" />
-						</button>
-					</ButtonStyled>
-					<ButtonStyled :type="externalAuthProvider ? 'outlined' : 'standard'" color="brand">
-						<button @click.stop="returnHome">
-							{{ formatMessage(messages.returnHome) }}
-						</button>
-					</ButtonStyled>
+					<Button
+						v-if="externalAuthProvider"
+						type="colored"
+						color="brand"
+						@click.stop="openExternalProviderSkins"
+					>
+						{{ formatMessage(messages.externalAction, { providerName: externalAuthProvider.name }) }}
+						<ExternalIcon aria-hidden="true" />
+					</Button>
+					<Button
+						:type="externalAuthProvider ? 'outlined' : 'colored'"
+						color="brand"
+						@click.stop="returnHome"
+					>
+						{{ formatMessage(messages.returnHome) }}
+					</Button>
 				</div>
 			</div>
 		</div>

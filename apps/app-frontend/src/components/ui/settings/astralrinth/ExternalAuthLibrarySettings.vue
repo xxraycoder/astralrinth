@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CheckIcon, DownloadIcon, RefreshCwIcon, SpinnerIcon } from '@modrinth/assets'
 import {
-	ButtonStyled,
+	Button,
 	defineMessages,
 	DropdownSelect,
 	injectNotificationManager,
@@ -247,16 +247,15 @@ onUnmounted(() => {
 		:description="formatMessage(messages.pageDescription)"
 	>
 		<template #actions>
-			<ButtonStyled type="outlined">
-				<button
-					:disabled="loading || refreshing || refreshLocked || busy"
-					@click="refreshLibraries"
-				>
-					<SpinnerIcon v-if="refreshing" class="animate-spin" />
-					<RefreshCwIcon v-else />
-					{{ formatMessage(refreshing ? messages.requestingServer : messages.requestServer) }}
-				</button>
-			</ButtonStyled>
+			<Button
+				type="outlined"
+				:disabled="loading || refreshing || refreshLocked || busy"
+				@click="refreshLibraries"
+			>
+				<SpinnerIcon v-if="refreshing" class="animate-spin" />
+				<RefreshCwIcon v-else />
+				{{ formatMessage(refreshing ? messages.requestingServer : messages.requestServer) }}
+			</Button>
 		</template>
 
 		<div v-if="loading" class="flex items-center gap-2 text-secondary">
@@ -268,12 +267,10 @@ onUnmounted(() => {
 			<p class="m-0 text-red">
 				{{ formatMessage(messages.loadFailed, { error: loadError }) }}
 			</p>
-			<ButtonStyled type="outlined">
-				<button @click="loadLibraries()">
-					<RefreshCwIcon />
-					{{ formatMessage(messages.retry) }}
-				</button>
-			</ButtonStyled>
+			<Button type="outlined" @click="loadLibraries()">
+				<RefreshCwIcon />
+				{{ formatMessage(messages.retry) }}
+			</Button>
 		</div>
 
 		<div v-else class="flex flex-col gap-4">
@@ -327,26 +324,24 @@ onUnmounted(() => {
 							@change="selectLibrary(library, $event.option)"
 						/>
 					</div>
-					<ButtonStyled color="brand">
-						<button
-							:disabled="
-								library.localOnly || !library.selectedAssetName || library.busy || refreshing
-							"
-							@click="installLibrary(library)"
-						>
-							<SpinnerIcon v-if="library.busy === 'installing'" class="animate-spin" />
-							<DownloadIcon v-else />
-							{{
-								formatMessage(
-									library.busy === 'installing'
-										? messages.installing
-										: library.localAssetNames.includes(library.selectedAssetName ?? '')
-											? messages.reinstall
-											: messages.install,
-								)
-							}}
-						</button>
-					</ButtonStyled>
+					<Button
+						type="colored"
+						color="brand"
+						:disabled="library.localOnly || !library.selectedAssetName || library.busy || refreshing"
+						@click="installLibrary(library)"
+					>
+						<SpinnerIcon v-if="library.busy === 'installing'" class="animate-spin" />
+						<DownloadIcon v-else />
+						{{
+							formatMessage(
+								library.busy === 'installing'
+									? messages.installing
+									: library.localAssetNames.includes(library.selectedAssetName ?? '')
+										? messages.reinstall
+										: messages.install,
+							)
+						}}
+					</Button>
 				</div>
 			</section>
 		</div>

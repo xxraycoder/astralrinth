@@ -172,7 +172,8 @@ defineExpose({
 			/>
 			<div class="mt-6 ml-auto">
 				<Button
-					color="primary"
+					type="colored"
+					color="brand"
 					:disabled="props.offlineLoginDisabled"
 					@click="emit('submit-offline')"
 				>

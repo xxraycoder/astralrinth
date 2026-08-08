@@ -90,7 +90,7 @@ defineExpose({
 				<li>{{ formatMessage(messages.inputOfflineFormatHint, { nameExp: props.nameExp }) }}</li>
 			</ul>
 			<div class="mt-6 ml-auto">
-				<Button color="primary" @click="emit('retry-offline')">
+				<Button type="colored" color="brand" @click="emit('retry-offline')">
 					{{ formatMessage(messages.retryAction) }}
 				</Button>
 			</div>
