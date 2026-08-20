@@ -261,7 +261,7 @@
 						</div>
 					</nuxt-link>
 				</SidebarCard>
-				<AdPlaceholder v-if="!auth.user" />
+				<!-- <AdPlaceholder v-if="!auth.user" /> -->
 				<SidebarCard
 					v-if="collection.id !== 'following'"
 					:title="formatMessage(commonMessages.detailsLabel)"
@@ -439,7 +439,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import dayjs from 'dayjs'
 import { onServerPrefetch } from 'vue'
 
-import AdPlaceholder from '~/components/ui/AdPlaceholder.vue'
+// import AdPlaceholder from '~/components/ui/AdPlaceholder.vue'
 
 const { handleError } = injectNotificationManager()
 const api = injectModrinthClient()
@@ -740,7 +740,7 @@ watch(
 				}),
 				ogTitle: formatMessage(messages.collectionTitle, { name: col.name }),
 				ogDescription: col.description,
-				ogImage: col.icon_url ?? 'https://cdn.modrinth.com/placeholder.png',
+				ogImage: col.icon_url ?? 'https://cdn-raw.modrinth.com/placeholder-square.png',
 				ogUrl: canonicalUrl,
 				robots: col.status === 'listed' ? 'all' : 'noindex',
 			})

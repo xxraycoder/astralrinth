@@ -334,6 +334,7 @@ defineExpose({
 	setEquippedSkin,
 	setLoginDisabled,
 	showAccountLoginModal,
+	login,
 	loginDisabled,
 })
 

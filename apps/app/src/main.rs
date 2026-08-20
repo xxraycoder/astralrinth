@@ -166,20 +166,8 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_filename(
-                    if std::env::current_dir()
-                        .ok()
-                        .map(|dir| dir.join("portable.txt").exists())
-                        .unwrap_or(false)
-                    {
-                        std::env::current_dir()
-                            .ok()
-                            .map(|dir| dir.join("UserData/app-window-state.json").to_string_lossy().into_owned())
-                            .unwrap()
-                    } else {
-                        "app-window-state.json".to_string()
-                    },
-				)
+                .with_filename("app-window-state.json")
+                .with_denylist(&["signin"])
                 // Use *only* POSITION and SIZE state flags, because saving VISIBLE causes the `visible: false` to not take effect
                 .with_state_flags(
                     tauri_plugin_window_state::StateFlags::POSITION
@@ -240,6 +228,7 @@ fn main() {
     builder = builder
         .plugin(api::auth::init())
         .plugin(api::mr_auth::init())
+        .plugin(api::onboarding_checklist::init())
         .plugin(api::import::init())
         .plugin(api::install::init())
         .plugin(api::instance::init())

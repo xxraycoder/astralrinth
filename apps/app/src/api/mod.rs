@@ -13,6 +13,7 @@ pub mod logs;
 pub mod metadata;
 pub mod minecraft_skins;
 pub mod mr_auth;
+pub mod onboarding_checklist;
 pub mod process;
 pub mod reports;
 pub mod settings;
