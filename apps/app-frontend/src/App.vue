@@ -9,7 +9,6 @@ import {
 	VerboseLoggingFeature,
 } from '@modrinth/api-client'
 import {
-	ArrowBigUpDashIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	CompassIcon,
@@ -51,16 +50,15 @@ import {
 	useHostingIntercom,
 	useVIntl,
 } from '@modrinth/ui'
-import astralrinthAppLogo from '@/assets/astralrinth-app.svg?url'
 import { renderString } from '@modrinth/utils'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
-import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
@@ -85,11 +83,13 @@ import SplashScreen from '@/components/ui/SplashScreen.vue'
 import SurveyPopup from '@/components/ui/SurveyPopup.vue'
 import WindowControls from '@/components/ui/WindowControls.vue'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
+import { useAppEvent } from '@/composables/use-app-event'
 import { config } from '@/config'
-import { debugAnalytics, initAnalytics, trackEvent } from '@/helpers/analytics'
+import { trackEvent } from '@/helpers/analytics'
+// This code line modified by AstralRinth
+import { fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user, get_version } from '@/helpers/cache.js'
-import { command_listener, notification_listener, warning_listener, info_listener } from '@/helpers/events.js'
 import { install_create_modpack_instance, install_get_modpack_preview } from '@/helpers/install'
 import { can_current_user_use_shared_instances, get as getInstance, run } from '@/helpers/instance'
 import { get as getCreds, login, logout } from '@/helpers/mr_auth.ts'
@@ -109,6 +109,7 @@ import { createContentInstall, provideContentInstall } from '@/providers/content
 import { provideAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
 import { createServerInstall, provideServerInstall } from '@/providers/server-install'
 import { setupProviders } from '@/providers/setup'
+import { setupAppEventsProvider } from '@/providers/setup/app-events'
 import { setupAuthProvider } from '@/providers/setup/auth'
 import { setupLoadingStateProvider } from '@/providers/setup/loading-state'
 import { useError } from '@/store/error.js'
@@ -121,12 +122,10 @@ import { AppNotificationManager } from './providers/app-notifications'
 import { AppPopupNotificationManager } from './providers/app-popup-notifications'
 import { appSettingsModalOpenProfileKey } from './providers/app-settings-modal'
 
-// This code line modified by AstralRinth
-import { fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
-
 const themeStore = useTheming()
 const router = useRouter()
 const route = useRoute()
+const { channel: appEventChannel, events: appEvents } = setupAppEventsProvider()
 const breadcrumbManager = createBreadcrumbManager()
 provideBreadcrumbManager(breadcrumbManager)
 const canNavigateBack = ref(false)
@@ -165,11 +164,17 @@ const filteredNewsPhrases = [
 const credentials = ref()
 let credentialsRefreshId = 0
 const sidebarToggled = ref(true)
-const unsubscribeSidebarToggle = themeStore.$subscribe(() => {
-	sidebarToggled.value = !themeStore.toggleSidebar
-})
+watch(
+	() => themeStore.toggleSidebar,
+	(toggleSidebar) => {
+		sidebarToggled.value = !toggleSidebar
+	},
+)
 const forceSidebar = computed(
-	() => route.path.startsWith('/browse') || route.path.startsWith('/project'),
+	() =>
+		route.path.startsWith('/browse') ||
+		route.path.startsWith('/project') ||
+		route.path.startsWith('/user'),
 )
 const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
 const hostingRouteActive = computed(() => route.path.startsWith('/hosting'))
@@ -195,11 +200,21 @@ const notificationManager = new AppNotificationManager()
 provideNotificationManager(notificationManager)
 const { handleError, addNotification } = notificationManager
 
+useAppEvent(
+	'warning',
+	(event) =>
+		addNotification({
+			title: 'Warning',
+			text: event.message,
+			type: 'warning',
+		}),
+	appEvents,
+)
+let unlistenInfo = () => {}
+
 const popupNotificationManager = new AppPopupNotificationManager()
 providePopupNotificationManager(popupNotificationManager)
 const { addPopupNotification } = popupNotificationManager
-let adsConsentPopupId = null
-let unlistenAdsConsent
 
 const appVersion = getVersion()
 const tauriApiClient = new TauriModrinthClient({
@@ -224,7 +239,7 @@ const tauriApiClient = new TauriModrinthClient({
 	],
 })
 provideModrinthClient(tauriApiClient)
-const { data: authenticatedModrinthUser } = useQuery({
+useQuery({
 	queryKey: computed(() => ['authenticated-user', 'campaigns', credentials.value?.user?.id]),
 	queryFn: () => tauriApiClient.labrinth.users_v3.getAuthenticated(),
 	enabled: () => !!credentials.value?.session,
@@ -244,10 +259,6 @@ const hasPlus = computed(
 	() =>
 		!!credentials.value?.user,
 )
-const showAd = computed(
-	() => sidebarVisible.value && !hasPlus.value && credentials.value !== undefined,
-)
-const adConsentAvailable = computed(() => credentials.value !== undefined && !hasPlus.value)
 providePageContext({
 	hierarchicalSidebarAvailable: ref(true),
 	floatingActionBarOffsets: {
@@ -278,7 +289,7 @@ const {
 	setModpackAlreadyInstalledModal,
 	handleModpackDuplicateCreateAnyway,
 	handleModpackDuplicateGoToInstance,
-} = setupProviders(notificationManager, popupNotificationManager)
+} = setupProviders(tauriApiClient, notificationManager, popupNotificationManager)
 
 const news = ref([])
 const displayedServerInviteNotifications = new Set()
@@ -298,7 +309,6 @@ const showOnboarding = ref(false)
 const nativeDecorations = ref(false)
 
 const os = ref('')
-const isDevEnvironment = ref(false)
 
 const stateInitialized = ref(false)
 
@@ -352,10 +362,11 @@ onMounted(async () => {
 	document.querySelector('body').addEventListener('auxclick', handleAuxClick)
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
 	document.querySelector('body').removeEventListener('click', handleClick)
 	document.querySelector('body').removeEventListener('auxclick', handleAuxClick)
 	unsubscribeSidebarToggle()
+	unlistenInfo()
 })
 
 const { formatMessage } = useVIntl()
@@ -381,27 +392,6 @@ const messages = defineMessages({
 	launcherUpdateAvailableAction: {
 		id: 'astralrinth.app.launcher-update.available.action',
 		defaultMessage: 'View update',
-	},
-	adsConsentTitle: {
-		id: 'app.ads-consent.title',
-		defaultMessage: 'Your privacy and how ads support Modrinth',
-	},
-	adsConsentBody: {
-		id: 'app.ads-consent.body',
-		defaultMessage:
-			'Ads make Modrinth possible and fund creator payouts. Our partners may store or access cookies in the app to personalize ads and measure performance.',
-	},
-	adsConsentManage: {
-		id: 'app.ads-consent.manage',
-		defaultMessage: 'Manage preferences',
-	},
-	adsConsentReject: {
-		id: 'app.ads-consent.reject',
-		defaultMessage: 'Reject all',
-	},
-	adsConsentAccept: {
-		id: 'app.ads-consent.accept',
-		defaultMessage: 'Accept all',
 	},
 	home: {
 		id: 'app.nav.home',
@@ -509,7 +499,6 @@ async function setupApp() {
 
 	os.value = await getOS()
 	const dev = await isDev()
-	isDevEnvironment.value = dev
 	const version = await getVersion()
 	const upstreamVersion = version.length > 2 ? version.slice(0, -2) : version
 	showOnboarding.value = !onboarded
@@ -541,22 +530,15 @@ async function setupApp() {
 		document.getElementsByTagName('html')[0].classList.add('windows')
 	}
 
-	await warning_listener((e) =>
-		addNotification({
-			title: 'Warning',
-			text: e.message,
-			type: 'warning',
-		}),
-	)
-
-	await info_listener((e) =>
+	unlistenInfo = await listen('info', (event) => {
+		const payload = event.payload
 		addNotification({
 			title: 'Info',
-			text: e.message,
+			text: payload.message,
 			type: 'info',
 			autoCloseMs: 8000,
-		}),
-	)
+		})
+	})
 
 	fetch(`https://api.modrinth.com/appCriticalAnnouncement.json?version=${upstreamVersion}`)
 		.then((response) => response.json())
@@ -607,7 +589,7 @@ async function setupApp() {
 }
 
 const stateFailed = ref(false)
-initialize_state()
+initialize_state(appEventChannel)
 	.then(() => {
 		setupApp().catch((err) => {
 			stateFailed.value = true
@@ -620,11 +602,6 @@ initialize_state()
 		console.error('Failed to initialize app', err)
 		error.showError(err, null, false, 'state_init')
 	})
-
-const handleClose = async () => {
-	await saveWindowState(StateFlags.ALL)
-	await getCurrentWindow().close()
-}
 
 const loading = setupLoadingStateProvider()
 loading.setEnabled(false)
@@ -737,7 +714,7 @@ const errorModal = ref()
 const minecraftAuthErrorModal = ref()
 const minecraftRequiredModal = ref()
 
-const contentInstall = createContentInstall({ router, handleError })
+const contentInstall = createContentInstall({ router, handleError, appEvents })
 provideContentInstall(contentInstall)
 const {
 	instances: contentInstallInstances,
@@ -770,7 +747,12 @@ const {
 	handleIncompatibilityWarningCancel: handleContentInstallIncompatibilityWarningCancel,
 } = contentInstall
 
-const serverInstall = createServerInstall({ router, handleError, popupNotificationManager })
+const serverInstall = createServerInstall({
+	router,
+	handleError,
+	popupNotificationManager,
+	appEvents,
+})
 provideServerInstall(serverInstall)
 const {
 	setInstallToPlayModal: setServerInstallToPlayModal,
@@ -930,8 +912,8 @@ onMounted(() => {
 const accounts = ref(null)
 provide('accountsCard', accounts)
 
-command_listener(handleCommand)
-notification_listener(handleLiveNotification)
+useAppEvent('command', handleCommand, appEvents)
+useAppEvent('notification', handleLiveNotification, appEvents)
 
 async function markLiveNotificationRead(notification) {
 	try {
@@ -1241,8 +1223,8 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<!-- BEGIN: This code block modified by AstralRinth -->
 			<template v-if="isUpdateAvailable">
 				<NavButton
-					class="neon-icon pulse"
 					v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+					class="neon-icon pulse"
 					:to="() => appSettingsModal?.show()"
 				>
 					<SettingsIcon />

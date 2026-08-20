@@ -2846,9 +2846,6 @@
   "layout.footer.social.discord": {
     "message": "Discord"
   },
-  "layout.footer.social.github": {
-    "message": "GitHub"
-  },
   "layout.footer.social.mastodon": {
     "message": "Mastodon"
   },
@@ -3929,8 +3926,26 @@
   "project.settings.tags.featured-tags": {
     "message": "精选标签"
   },
+  "project.settings.tags.featured-tags-required": {
+    "message": "您必须至少有一个精选标签。"
+  },
+  "project.settings.tags.featured-tags-select-description": {
+    "message": "选择您最相关的标签，这些标签将显示在您其余标签之前。"
+  },
   "project.settings.tags.features-description": {
     "message": "选择你的{type}作用于哪类特性。"
+  },
+  "project.settings.tags.group-title.categories": {
+    "message": "{showType, select, yes {{types} 类别} other {类别}}"
+  },
+  "project.settings.tags.group-title.features": {
+    "message": "{showType, select, yes {{types} 功能} other {功能}}"
+  },
+  "project.settings.tags.group-title.performance-impact": {
+    "message": "{showType, select, yes {{types} 性能影响} other {性能影响}}"
+  },
+  "project.settings.tags.group-title.resolutions": {
+    "message": "{showType, select, yes {{types} 功能} other {功能}}"
   },
   "project.settings.tags.multiple-resolution-tags-warning": {
     "message": "你选择了 {count} 个分辨率标签（{tags}）。资源包通常应仅保留一个标签。"
@@ -3955,18 +3970,6 @@
   },
   "project.settings.tags.too-many-tags-server-soft-warning": {
     "message": "你选择了 {count} 个标签。建议将数量减少到 12 个或更少，以确保你的服务器主题更明确，且更容易发现。"
-  },
-  "project.settings.tags.upload-version-first": {
-    "message": "请先上传一个版本再选择标签！"
-  },
-  "project.settings.title": {
-    "message": "设置"
-  },
-  "project.settings.visit-dashboard": {
-    "message": "访问项目的控制面板"
-  },
-  "project.status.archived.message": {
-    "message": "{title} 已归档。除非作者决定取消归档，否则 {title} 将不再更新。"
   },
   "project.versions.copy-id-option": {
     "message": "复制 ID"

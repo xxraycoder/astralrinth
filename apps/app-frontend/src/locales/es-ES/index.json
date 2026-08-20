@@ -32,6 +32,15 @@
   "app.action-bar.install.summary.bad-modpack-file": {
     "message": "No se pudo leer el modpack"
   },
+  "app.action-bar.install.summary.canceled": {
+    "message": "Cancelado"
+  },
+  "app.action-bar.install.summary.content-download-failed": {
+    "message": "No se pudieron descargar los archivos"
+  },
+  "app.action-bar.install.summary.corrupt-download": {
+    "message": "El archivo descargado está corrupto"
+  },
   "app.action-bar.install.summary.could-not-save-files": {
     "message": "No se pudieron guardar los archivos"
   },
@@ -40,6 +49,12 @@
   },
   "app.action-bar.install.summary.instance-not-found": {
     "message": "La instancia no se pudo encontrar"
+  },
+  "app.action-bar.install.summary.invalid-file-path": {
+    "message": "La ruta de archivo no es válida"
+  },
+  "app.action-bar.install.summary.invalid-modpack": {
+    "message": "Los datos del modpack no son válidos"
   },
   "app.action-bar.install.unknown-instance": {
     "message": "Instancia desconocida"
@@ -863,16 +878,7 @@
   "search.filter.locked.instance.sync": {
     "message": "Sincronizar con la instancia"
   },
-  "search.filter.locked.server": {
-    "message": "Proporcionado por el servidor"
-  },
   "search.filter.locked.server-environment.title": {
     "message": "Solo se pueden añadir a la instancia del servidor modificaciones del lado del cliente"
-  },
-  "search.filter.locked.server-game-version.title": {
-    "message": "La versión del juego es proporcionada por el servidor"
-  },
-  "search.filter.locked.server-loader.title": {
-    "message": "Loader proporcionado por el servidor"
   }
 }

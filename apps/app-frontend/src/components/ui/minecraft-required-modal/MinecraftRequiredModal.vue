@@ -33,7 +33,7 @@
 					@click="showAccountLoginModal"
 				>
 					<LogInIcon />
-						{{ formatMessage(messages.otherSignInMethods) }}
+					{{ formatMessage(messages.otherSignInMethods) }}
 				</Button>
 			</div>
 			<p class="m-0 text-center text-sm text-secondary">
@@ -50,15 +50,12 @@
 </template>
 
 <script setup lang="ts">
-import { LogInIcon, MessagesSquareIcon, SpinnerIcon } from '@modrinth/assets'
+import { LogInIcon, MessagesSquareIcon } from '@modrinth/assets'
 import { Button, ButtonLink, defineMessages, NewModal, useVIntl } from '@modrinth/ui'
 import { inject, type Ref, ref } from 'vue'
 
 import steveImage from '@/assets/steve-look-up-left.webp'
 import type AccountsCard from '@/components/ui/AccountsCard.vue'
-import { trackEvent } from '@/helpers/analytics'
-import { login as loginFlow, set_default_user } from '@/helpers/auth.js'
-import { handleSevereError } from '@/store/error.js'
 
 const { formatMessage } = useVIntl()
 const accountsCard = inject('accountsCard') as Ref<InstanceType<typeof AccountsCard> | null>
@@ -80,10 +77,6 @@ const messages = defineMessages({
 	getSupport: {
 		id: 'minecraft-required.get-support',
 		defaultMessage: 'Get support',
-	},
-	signIn: {
-		id: 'minecraft-required.sign-in',
-		defaultMessage: 'Sign in to Microsoft',
 	},
 	otherSignInMethods: {
 		id: 'minecraft-required.other-sign-in-methods',
@@ -109,24 +102,6 @@ function show() {
 function showAccountLoginModal() {
 	accountsCard.value?.showAccountLoginModal()
 	modal.value?.hide()
-}
-
-async function signIn() {
-	loadingSignIn.value = true
-
-	try {
-		const loggedIn = await loginFlow()
-		if (!loggedIn) return
-
-		await set_default_user(loggedIn.profile.id)
-		await accountsCard.value?.refreshValues()
-		await trackEvent('AccountLogIn', { source: 'MinecraftRequiredModal' })
-		modal.value?.hide()
-	} catch (error) {
-		handleSevereError(error)
-	} finally {
-		loadingSignIn.value = false
-	}
 }
 
 defineExpose({

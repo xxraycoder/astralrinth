@@ -377,23 +377,14 @@
   "app.instance.admonitions.shared-instance.review-header": {
     "message": "Revisiona modifiche"
   },
-  "app.instance.admonitions.shared-instance.review-update-button": {
-    "message": "Revisiona aggiornamento"
-  },
   "app.instance.admonitions.shared-instance.reviewing-button": {
     "message": "Revisione..."
-  },
-  "app.instance.admonitions.shared-instance.update-available-body": {
-    "message": "{name} richiede degli aggiornamenti. Installa l'ultima versione per poter giocare."
-  },
-  "app.instance.admonitions.shared-instance.update-available-header": {
-    "message": "Aggiornamento disponibile"
   },
   "app.instance.confirm-delete.admonition-body": {
     "message": "Tutti i dati della tua istanza verranno eliminati permanentemente, inclusi i tuoi mondi, configurazioni e tutti i contenuti installati."
   },
   "app.instance.confirm-delete.admonition-header": {
-    "message": "Questa azione non può essere annullata"
+    "message": "Questa azione è irreversibile"
   },
   "app.instance.confirm-delete.delete-button": {
     "message": "Elimina istanza"
@@ -564,7 +555,7 @@
     "message": "Eliminare il mondo"
   },
   "app.instance.worlds.delete-world-modal.warning-body": {
-    "message": "Questo mondo verrà eliminato permanentemente dall'istanza. Questa azione non può essere annullata."
+    "message": "Il mondo sarà eliminato dall'istanza per sempre. Questa azione è irreversibile."
   },
   "app.instance.worlds.delete-world-modal.warning-header": {
     "message": "Eliminare {name}"
@@ -700,15 +691,6 @@
   },
   "app.modal.install-to-play.report-reason": {
     "message": "Quale regola è violata da quest'istanza?"
-  },
-  "app.modal.install-to-play.report-reason.inappropriate": {
-    "message": "Inappropriato"
-  },
-  "app.modal.install-to-play.report-reason.malicious": {
-    "message": "Dannoso"
-  },
-  "app.modal.install-to-play.report-reason.spam": {
-    "message": "Spam"
   },
   "app.modal.install-to-play.report-shared-instance-header": {
     "message": "Segnala istanza condivisa"
@@ -1035,7 +1017,7 @@
     "message": "Elimina"
   },
   "app.skins.delete-modal.description": {
-    "message": "Questa skin sarà rimossa per sempre. Quest'azione non può essere annullata."
+    "message": "La skin selezionata sarà eliminata per sempre. Questa azione è irreversibile."
   },
   "app.skins.delete-modal.title": {
     "message": "Vuoi davvero eliminare questa skin?"
@@ -1225,6 +1207,9 @@
   },
   "app.update.complete-toast.title": {
     "message": "La versione {version} è stata installata con successo!"
+  },
+  "app.user.project.install-to-instance": {
+    "message": "Installa nell'istanza"
   },
   "app.world.server-modal.placeholder-address": {
     "message": "example.modrinth.gg"
@@ -1503,7 +1488,7 @@
     "message": "L'invito <monospace>{code}</monospace> smetterà di funzionare immediatamente. Le persone già entrate manterranno l'accesso."
   },
   "instance.settings.sharing.revoke-invite.admonition-header": {
-    "message": "Questa azione non può essere annullata"
+    "message": "Questa azione è irreversibile"
   },
   "instance.settings.sharing.revoke-invite.confirm": {
     "message": "Revoca invito"
@@ -1618,6 +1603,27 @@
   },
   "instance.settings.tabs.hooks.title": {
     "message": "Hook all'avvio del gioco"
+  },
+  "instance.settings.tabs.hooks.variables.description": {
+    "message": "Gli hook si eseguono nella cartella principale dell'istanza, con le seguenti variabili:"
+  },
+  "instance.settings.tabs.hooks.variables.inst-dir.description": {
+    "message": "$INST_DIR: Il percorso assoluto della cartella dell'istanza"
+  },
+  "instance.settings.tabs.hooks.variables.inst-id.description": {
+    "message": "$INST_ID: Il nome della cartella dell'istanza"
+  },
+  "instance.settings.tabs.hooks.variables.inst-java-args.description": {
+    "message": "$INST_JAVA_ARGS: Gli argomenti JVM forniti al gioco"
+  },
+  "instance.settings.tabs.hooks.variables.inst-java.description": {
+    "message": "$INST_JAVA: Il percorso assoluto dei binari di Java"
+  },
+  "instance.settings.tabs.hooks.variables.inst-mc-dir.description": {
+    "message": "$INST_MC_DIR: Alias di $INST_DIR"
+  },
+  "instance.settings.tabs.hooks.variables.inst-name.description": {
+    "message": "$INST_NAME: Il nome dell'istanza"
   },
   "instance.settings.tabs.hooks.wrapper": {
     "message": "Wrapper"
@@ -1895,17 +1901,8 @@
   "search.filter.locked.instance.sync": {
     "message": "Sincronizza con l'istanza"
   },
-  "search.filter.locked.server": {
-    "message": "Determinato dal server"
-  },
   "search.filter.locked.server-environment.title": {
     "message": "Solo mod lato client possono essere aggiunte all'istanza del server"
-  },
-  "search.filter.locked.server-game-version.title": {
-    "message": "La versione del gioco è determinata dal server"
-  },
-  "search.filter.locked.server-loader.title": {
-    "message": "Il loader è determinato dal server"
   },
   "settings.sidebar.label.account": {
     "message": "Account"

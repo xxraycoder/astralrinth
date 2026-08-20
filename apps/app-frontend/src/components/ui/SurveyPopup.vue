@@ -91,28 +91,23 @@ async function openSurvey() {
 		onOpen: () => console.info('Opened user survey'),
 		onClose: () => {
 			console.info('Closed user survey')
-			show_ads_window()
 		},
 		onSubmit: () => console.info('Active user survey submitted'),
 	}
 
 	try {
-		hide_ads_window()
 		if (tallyWindow.Tally?.openPopup) {
 			console.info(`Opening Tally popup for user survey (form ID: ${formId})`)
 			dismissSurvey()
 			tallyWindow.Tally.openPopup(formId, popupOptions)
 		} else {
 			console.warn('Tally script not yet loaded')
-			show_ads_window()
 		}
 	} catch (e) {
 		console.error('Error opening Tally popup:', e)
-		show_ads_window()
 	}
 
 	console.info(`Found user survey to show with tally_id: ${formId}`)
-	tallyWindow.Tally?.openPopup(formId, popupOptions)
 }
 
 function dismissSurvey() {

@@ -8,6 +8,18 @@
   "admin.billing.error.not-found": {
     "message": "Usuario no encontrado"
   },
+  "ads-consent.accept": {
+    "message": "Aceptar todos"
+  },
+  "ads-consent.body": {
+    "message": "Los anuncios hace Modrinth posible y financian pagos a creadores. Nuestros socios pueden almacenar o acceder cookies en el sitio para personalizar anuncios y medir el rendimiento."
+  },
+  "ads-consent.manage": {
+    "message": "Gestionar preferencias"
+  },
+  "ads-consent.reject": {
+    "message": "Rechazar todos"
+  },
   "ads-consent.title": {
     "message": "Tu privacidad y como anuncios soportan Modrinth"
   },
@@ -2576,9 +2588,6 @@
   "layout.footer.social.discord": {
     "message": "Discord"
   },
-  "layout.footer.social.github": {
-    "message": "GitHub"
-  },
   "layout.footer.social.mastodon": {
     "message": "Mastodon"
   },
@@ -3328,15 +3337,6 @@
   },
   "project.settings.permissions.sort.status": {
     "message": "Estado"
-  },
-  "project.settings.title": {
-    "message": "Ajustes"
-  },
-  "project.settings.visit-dashboard": {
-    "message": "Visita el panel de proyectos"
-  },
-  "project.status.archived.message": {
-    "message": "{title} ha sido archivado. {title} no recibirá ninguna futura actualización excepto que el autor decida desarchivar el proyecto."
   },
   "project.versions.title": {
     "message": "Versiones"

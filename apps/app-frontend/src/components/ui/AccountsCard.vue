@@ -123,29 +123,6 @@
 </template>
 
 <script setup lang="ts">
-import AccountsErrorModals from '@/components/ui/astralrinth/accounts/error/AccountsErrorModals.vue'
-import AccountsInputModals from '@/components/ui/astralrinth/accounts/input/AccountsInputModals.vue'
-import { trackEvent } from '@/helpers/analytics'
-import {
-	get_default_user,
-	login as login_flow,
-	offline_login,
-	remove_user,
-	set_default_user,
-	users,
-} from '@/helpers/auth'
-import {
-	externalAuthProviders,
-	getExternalAuthProvider,
-	loadExternalAuthProviders,
-	type MinecraftCredential,
-	useExternalAuthentication,
-} from '@/models/astralrinth/authentication'
-import { process_listener } from '@/helpers/events'
-import { getPlayerHeadUrl } from '@/helpers/rendering/batch-skin-renderer.ts'
-import type { Skin } from '@/helpers/skins'
-import { get_available_skins } from '@/helpers/skins'
-import { handleSevereError } from '@/store/error.js'
 import {
 	MicrosoftIcon,
 	OfflineIcon,
@@ -164,7 +141,31 @@ import {
 	useVIntl,
 } from '@modrinth/ui'
 import type { Ref } from 'vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+
+import AccountsErrorModals from '@/components/ui/astralrinth/accounts/error/AccountsErrorModals.vue'
+import AccountsInputModals from '@/components/ui/astralrinth/accounts/input/AccountsInputModals.vue'
+import { useAppEvent } from '@/composables/use-app-event'
+import { trackEvent } from '@/helpers/analytics'
+import {
+	get_default_user,
+	login as login_flow,
+	offline_login,
+	remove_user,
+	set_default_user,
+	users,
+} from '@/helpers/auth'
+import { getPlayerHeadUrl } from '@/helpers/rendering/batch-skin-renderer.ts'
+import type { Skin } from '@/helpers/skins'
+import { get_available_skins } from '@/helpers/skins'
+import {
+	externalAuthProviders,
+	getExternalAuthProvider,
+	loadExternalAuthProviders,
+	type MinecraftCredential,
+	useExternalAuthentication,
+} from '@/models/astralrinth/authentication'
+import { handleSevereError } from '@/store/error.js'
 
 const { formatMessage } = useVIntl()
 const { handleError } = injectNotificationManager()
@@ -406,7 +407,7 @@ async function logout(id: string) {
 	trackEvent('AccountLogOut')
 }
 
-const unlisten = await process_listener(async (e) => {
+useAppEvent('process', async (e) => {
 	if (e.event === 'launched') {
 		await refreshValues()
 	}
@@ -415,11 +416,6 @@ const unlisten = await process_listener(async (e) => {
 onMounted(() => {
 	void loadExternalAuthProviders().catch(handleError)
 })
-
-onUnmounted(() => {
-	unlisten()
-})
-
 const messages = defineMessages({
 	notSignedIn: {
 		id: 'minecraft-account.not-signed-in',

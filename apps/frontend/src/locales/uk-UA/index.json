@@ -2843,9 +2843,6 @@
   "layout.footer.social.discord": {
     "message": "Discord"
   },
-  "layout.footer.social.github": {
-    "message": "GitHub"
-  },
   "layout.footer.social.mastodon": {
     "message": "Mastodon"
   },
@@ -3926,8 +3923,14 @@
   "project.settings.tags.featured-tags": {
     "message": "Основні теґи"
   },
+  "project.settings.tags.featured-tags-select-description": {
+    "message": "Оберіть найдоречніші теґи. Вони показуватимуться першими."
+  },
   "project.settings.tags.features-description": {
     "message": "Оберіть увесь функціонал, який присутній у {type}."
+  },
+  "project.settings.tags.group-title.categories": {
+    "message": "{showType, select, yes {{types} категорії} other {Категорії}}"
   },
   "project.settings.tags.multiple-resolution-tags-warning": {
     "message": "Ви обрали {count} теґів роздільної здатності ({tags}). Пакети ресурсів зазвичай повинні містити тільки один теґ роздільної здатності."
@@ -3952,18 +3955,6 @@
   },
   "project.settings.tags.too-many-tags-server-soft-warning": {
     "message": "Ви вибрали {count} теґів. Ми рекомендуємо зменшити їхню кількість до 12, щоб ваш сервер можна було легше знайти."
-  },
-  "project.settings.tags.upload-version-first": {
-    "message": "Спершу завантажте версію, щоб обирати теґи!"
-  },
-  "project.settings.title": {
-    "message": "Налаштування"
-  },
-  "project.settings.visit-dashboard": {
-    "message": "Панель керування проєктами"
-  },
-  "project.status.archived.message": {
-    "message": "«{title}» було архівовано. «{title}» не отримуватиме подальших оновлень допоки автор не вирішить розархівувати проєкт."
   },
   "project.versions.copy-id-option": {
     "message": "Копіювати ID"

@@ -2,6 +2,9 @@
   "app.action-bar.downloading-java": {
     "message": "Sedang memuat turun Java {version}"
   },
+  "app.action-bar.downloading-update": {
+    "message": "Sedang memuat turun kemas kini"
+  },
   "app.action-bar.downloads": {
     "message": "Muat Turun"
   },
@@ -10,6 +13,9 @@
   },
   "app.action-bar.install.copied-details": {
     "message": "Disalin"
+  },
+  "app.action-bar.install.copy-details": {
+    "message": "Salin butiran"
   },
   "app.action-bar.install.dismiss": {
     "message": "Ketepikan"
@@ -238,9 +244,6 @@
   },
   "app.modal.install-to-play.mod-count": {
     "message": "{count, plural, other {# mod}}"
-  },
-  "app.modal.install-to-play.report-reason.spam": {
-    "message": "Spam"
   },
   "app.modal.install-to-play.shared-instance": {
     "message": "Pemasangan yang dikongsi"
@@ -812,16 +815,7 @@
   "search.filter.locked.instance.sync": {
     "message": "Selaraskan dengan pemasangan"
   },
-  "search.filter.locked.server": {
-    "message": "Disediakan oleh pelayan"
-  },
   "search.filter.locked.server-environment.title": {
     "message": "Hanya mod bahagian pelanggan sahaja yang boleh ditambah pada pemasangan pelayan"
-  },
-  "search.filter.locked.server-game-version.title": {
-    "message": "Versi permainan adalah disediakan oleh pelayan"
-  },
-  "search.filter.locked.server-loader.title": {
-    "message": "Pemuat adalah disediakan oleh pelayan"
   }
 }

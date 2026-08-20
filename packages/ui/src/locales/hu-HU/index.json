@@ -494,9 +494,6 @@
   "content.inline-backup.world-label": {
     "defaultMessage": "világ"
   },
-  "content.modpack-card.installation-settings": {
-    "defaultMessage": "Telepítési beállítások"
-  },
   "content.page-layout.additional-content": {
     "defaultMessage": "További tartalom"
   },
@@ -547,18 +544,6 @@
   },
   "content.page-layout.share.project-names": {
     "defaultMessage": "Projektnevek"
-  },
-  "content.page-layout.sort.alphabetical": {
-    "defaultMessage": "Ábécé sorrendben"
-  },
-  "content.page-layout.sort.date-added-newest": {
-    "defaultMessage": "Legújabbak elöl"
-  },
-  "content.page-layout.sort.date-added-oldest": {
-    "defaultMessage": "Legrégebbiek elöl"
-  },
-  "content.page-layout.sort.label": {
-    "defaultMessage": "Rendezés {mode} szerint"
   },
   "content.page-layout.update-all": {
     "defaultMessage": "Összes frissítése"
@@ -1662,7 +1647,7 @@
     "defaultMessage": "{type} javítása"
   },
   "instance.confirm-repair.instance-label": {
-    "defaultMessage": "Játékprofil"
+    "defaultMessage": "Példány"
   },
   "instance.confirm-repair.repair-button": {
     "defaultMessage": "Javítás"
@@ -1732,33 +1717,6 @@
   },
   "instances.content-install.select-icon": {
     "defaultMessage": "Ikon feltöltése"
-  },
-  "instances.modpack-content-modal.empty-description": {
-    "defaultMessage": "Ez a modcsomag nem tartalmaz további tartalmakat."
-  },
-  "instances.modpack-content-modal.empty-title": {
-    "defaultMessage": "Nincsen tartalom"
-  },
-  "instances.modpack-content-modal.external-content": {
-    "defaultMessage": "Külső"
-  },
-  "instances.modpack-content-modal.external-content-description": {
-    "defaultMessage": "Ez a fájl nem szerepel a Modrinthon."
-  },
-  "instances.modpack-content-modal.header": {
-    "defaultMessage": "Modcsomag tartalma"
-  },
-  "instances.modpack-content-modal.loading": {
-    "defaultMessage": "Tartalmak betöltése..."
-  },
-  "instances.modpack-content-modal.no-results": {
-    "defaultMessage": "Nincsen olyan projekt ami keresnél."
-  },
-  "instances.modpack-content-modal.open-in-slicer": {
-    "defaultMessage": "Megnyitás a Slicer-ben"
-  },
-  "instances.modpack-content-modal.search-placeholder": {
-    "defaultMessage": "Keresés {count, number} projekt között"
   },
   "instances.updater-modal.badge.current": {
     "defaultMessage": "Jelenlegi"
@@ -3935,38 +3893,8 @@
   "servers.installing-banner.error.header": {
     "defaultMessage": "A telepítés nem sikerült"
   },
-  "servers.installing-banner.error.internal-platform": {
-    "defaultMessage": "Egy internal hiba történt a telepítés közben. Kérlek probáld újra."
-  },
-  "servers.installing-banner.error.no-primary-file": {
-    "defaultMessage": "Ez a modcsomag-verzió nem tartalmaz letölthető fájlt. Lehet, hogy hibásan lett összeállítva."
-  },
-  "servers.installing-banner.phase.installing-addons": {
-    "defaultMessage": "Kiegészítők telepítése..."
-  },
-  "servers.installing-banner.phase.installing-modpack": {
-    "defaultMessage": "A modcsomag telepítése..."
-  },
-  "servers.installing-banner.phase.installing-platform": {
-    "defaultMessage": "A platform telepítése..."
-  },
   "servers.installing-banner.preparing.header": {
     "defaultMessage": "Előkészítjük a szervered"
-  },
-  "servers.installing-banner.ticker.adding-java": {
-    "defaultMessage": "Java hozzáadása..."
-  },
-  "servers.installing-banner.ticker.configuring-server": {
-    "defaultMessage": "A szerver beállítása..."
-  },
-  "servers.installing-banner.ticker.downloading-mods": {
-    "defaultMessage": "Modok letöltése..."
-  },
-  "servers.installing-banner.ticker.organizing-files": {
-    "defaultMessage": "Fájlok rendezése..."
-  },
-  "servers.installing-banner.ticker.setting-up-environment": {
-    "defaultMessage": "Környezet beállítása..."
   },
   "servers.list-empty.already-have-server-label": {
     "defaultMessage": "Már van egy szervered?"

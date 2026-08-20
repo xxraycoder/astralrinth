@@ -179,6 +179,9 @@
   "app.auth-servers.unreachable.header": {
     "message": "Kan ikke nå autentificeringsservere"
   },
+  "app.behavior-settings.content.title": {
+    "message": "Hjem og indhold"
+  },
   "app.browse.add-servers-to-instance": {
     "message": "Tilføjet server til instance"
   },
@@ -200,11 +203,17 @@
   "app.browse.back-to-instance": {
     "message": "Tilbage til instance"
   },
+  "app.browse.discover-project-type": {
+    "message": "Udforsk {projectType}"
+  },
   "app.browse.discover-servers": {
     "message": "Opdag servere"
   },
   "app.browse.hide-added-servers": {
     "message": "Gem servere som allerede er tilføjet"
+  },
+  "app.browse.hide-installed-modpacks": {
+    "message": "Skjul allerede installeret"
   },
   "app.browse.project-type.modpacks": {
     "message": "Modpacks"
@@ -245,14 +254,29 @@
   "app.install.phase.downloading_minecraft": {
     "message": "Downloader Minecraft"
   },
+  "app.install.phase.finalizing": {
+    "message": "Færdiggører"
+  },
+  "app.install.phase.preparing_instance": {
+    "message": "I kø til at intallere"
+  },
+  "app.install.phase.preparing_java": {
+    "message": "Forbereder Java"
+  },
   "app.install.phase.preparing_java.downloading": {
     "message": "Downloader Java {version}"
+  },
+  "app.install.phase.preparing_java.extracting": {
+    "message": "Udpakker Java {version}"
   },
   "app.install.phase.preparing_java.fetching-metadata": {
     "message": "Henter Java {version}"
   },
   "app.install.phase.preparing_java.resolving": {
     "message": "Forbereder Java {version}"
+  },
+  "app.install.phase.preparing_java.validating": {
+    "message": "Validerer Java {version}"
   },
   "app.instance.admonitions.shared-instance.added-label": {
     "message": "Tilføjet"
@@ -272,17 +296,8 @@
   "app.instance.admonitions.shared-instance.review-header": {
     "message": "Gennemså ændringer"
   },
-  "app.instance.admonitions.shared-instance.review-update-button": {
-    "message": "Gennemgå opdatering"
-  },
   "app.instance.admonitions.shared-instance.reviewing-button": {
     "message": "Gennemgår..."
-  },
-  "app.instance.admonitions.shared-instance.update-available-body": {
-    "message": "En opdatering er krævet for at spille {name}. Venligst opdater til den seneste version for at køre spillet."
-  },
-  "app.instance.admonitions.shared-instance.update-available-header": {
-    "message": "En opdatering er tilgængelig"
   },
   "app.instance.confirm-delete.admonition-body": {
     "message": "Al' data for din instance vil blive permanent slettet, dette inkludere dine verdener, konfigurationer, og alt installeret indhold."
@@ -358,6 +373,12 @@
   },
   "app.instance.share.remove-user-modal.effects-label": {
     "message": "Hvad vil der ske?"
+  },
+  "app.instance.share.remove-user-modal.header": {
+    "message": "Fjern adgang"
+  },
+  "app.instance.share.remove-user-modal.remove-button": {
+    "message": "Fjern adgang"
   },
   "app.instance.share.remove-user-modal.user-avatar-alt": {
     "message": "{username}'s avatar"
@@ -439,9 +460,6 @@
   },
   "app.modal.install-to-play.report-image-too-large": {
     "message": "Filen overskrider 1MiB størrelse begrænsning"
-  },
-  "app.modal.install-to-play.report-reason.spam": {
-    "message": "Spam"
   },
   "app.modal.install-to-play.shared-instance": {
     "message": "Delt instance"
@@ -1151,16 +1169,7 @@
   "search.filter.locked.instance.sync": {
     "message": "Synkroniser med instance"
   },
-  "search.filter.locked.server": {
-    "message": "Givet af serveren"
-  },
   "search.filter.locked.server-environment.title": {
     "message": "Kun klient-sided mods kan blive tilføjet til denne server instance"
-  },
-  "search.filter.locked.server-game-version.title": {
-    "message": "Spille version er givet af serveren"
-  },
-  "search.filter.locked.server-loader.title": {
-    "message": "Loader er givet af serveren"
   }
 }

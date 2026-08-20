@@ -23,6 +23,7 @@ import { useQueryClient } from '@tanstack/vue-query'
 
 import CollectionCreateModal from '~/components/ui/create/CollectionCreateModal.vue'
 import ProjectCreateModal from '~/components/ui/create/ProjectCreateModal.vue'
+import { warmProjectCheckCaches } from '~/composables/queries/project'
 
 const route = useNativeRoute()
 const client = injectModrinthClient()
@@ -61,7 +62,7 @@ try {
 	// Let the mounted layout's useQuery surface errors; do not fail route setup.
 }
 
-await Promise.allSettled([
+const [projectsResult] = await Promise.allSettled([
 	queryClient.ensureQueryData({
 		queryKey: ['user', userId.value, 'projects'],
 		queryFn: () => userProfile.getProjects(userId.value),
@@ -79,6 +80,9 @@ await Promise.allSettled([
 	}),
 ])
 
+if (projectsResult.status === 'fulfilled') {
+	warmProjectCheckCaches(queryClient, projectsResult.value)
+}
 const title = computed(() =>
 	prefetchedUser ? `${prefetchedUser.username} - Modrinth` : 'Modrinth',
 )
