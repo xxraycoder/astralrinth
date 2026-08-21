@@ -33,6 +33,7 @@ import type AccountsCard from '@/components/ui/AccountsCard.vue'
 import EditSkinModal from '@/components/ui/skin/EditSkinModal.vue'
 import UnsupportedSkinAccount from '@/components/ui/astralrinth/skin/UnsupportedSkinAccount.vue'
 import VirtualSkinSectionList from '@/components/ui/skin/VirtualSkinSectionList.vue'
+import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { check_reachable, get_default_user, users } from '@/helpers/auth'
 import { loadExternalAuthProviders } from '@/models/astralrinth/authentication'
 import type { RenderResult } from '@/helpers/rendering/batch-skin-renderer.ts'
@@ -59,7 +60,6 @@ import {
 } from '@/helpers/skins.ts'
 import { hasPride26Badge } from '@/helpers/user-campaigns.ts'
 import { useRootBreadcrumb } from '@/providers/breadcrumbs'
-import { useTheming } from '@/store/state'
 import { appMessages } from '@/utils/app-messages'
 
 useRootBreadcrumb({
@@ -217,7 +217,7 @@ const { addNotification, handleError } = notifications
 const auth = injectAuth()
 const client = injectModrinthClient()
 
-const themeStore = useTheming()
+const appSettings = useAppSettings()
 const skins = ref<Skin[]>([])
 const capes = ref<Cape[]>([])
 const offline = ref(!navigator.onLine)
@@ -340,7 +340,7 @@ const skinTexture = computedAsync(async () => {
 })
 const capeTexture = computed(() => currentCape.value?.texture)
 const skinVariant = computed(() => selectedSkin.value?.variant)
-const skinNametag = computed(() => (themeStore.hideNametagSkinsPage ? undefined : username.value))
+const skinNametag = computed(() => (appSettings.hideNametagSkinsPage ? undefined : username.value))
 const isSkinManagementReadOnly = computed(
 	() =>
 		!isMicrosoftAccount.value ||
