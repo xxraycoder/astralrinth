@@ -72,6 +72,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AccountsCard from '@/components/ui/AccountsCard.vue'
 import AppActionBar from '@/components/ui/AppActionBar.vue'
+import LauncherUpdateModal from '@/components/ui/astralrinth/LauncherUpdateModal.vue'
 import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
 import ErrorModal from '@/components/ui/ErrorModal.vue'
 import FriendsList from '@/components/ui/friends/FriendsList.vue'
@@ -88,7 +89,6 @@ import UpdateToPlayModal from '@/components/ui/modal/UpdateToPlayModal.vue'
 import NavButton from '@/components/ui/NavButton.vue'
 import NewIconEditorNotification from '@/components/ui/new-icon-editor-notification/index.vue'
 import { shouldShowNewIconEditorNotification } from '@/components/ui/new-icon-editor-notification/show-notification'
-import OnboardingChecklist from '@/components/ui/onboarding-checklist/index.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
 import SharedInstanceInviteHandler from '@/components/ui/shared-instances/shared-instance-invite-handler/index.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
@@ -335,8 +335,6 @@ const {
 	(iconPath) =>
 		creationGeneratedIcon.value?.path === iconPath ? creationGeneratedIcon.value.config : null,
 )
-const { hasLoggedIntoMinecraft, hasLoggedIntoModrinth, showChecklist } = onboardingChecklist
-const showFriendsList = computed(() => !showChecklist.value || hasLoggedIntoModrinth.value)
 
 async function randomizeCreationIcon() {
 	const generated = await creationIconEditorModal.value?.randomizeAndSave()
@@ -458,7 +456,7 @@ onMounted(async () => {
 			buttons: [
 				{
 					label: formatMessage(messages.launcherUpdateAvailableAction),
-					action: () => appSettingsModal.value?.showUpdateModal(),
+					action: showLauncherUpdateModal,
 					color: 'brand',
 				},
 			],
@@ -604,7 +602,7 @@ async function setupApp() {
 	})
 	await onboardingChecklist.initialize()
 
-	if (shouldShowNewIconEditorNotification(showChecklist.value)) {
+	if (shouldShowNewIconEditorNotification(false)) {
 		addPopupNotification({
 			contentType: 'custom',
 			component: NewIconEditorNotification,
@@ -934,6 +932,15 @@ const updateToPlayModal = ref()
 
 const modrinthLoginModal = ref()
 const appSettingsModal = ref()
+const launcherUpdateModal = ref()
+const launcherVersion = ref('')
+
+async function showLauncherUpdateModal() {
+	launcherVersion.value = await getVersion()
+	await nextTick()
+	await launcherUpdateModal.value.show()
+}
+
 provide(appSettingsModalOpenProfileKey, () => appSettingsModal.value?.showProfile())
 provide(appSettingsModalOpenSyncedOptionsKey, () => appSettingsModal.value?.showSyncedOptions())
 
@@ -1590,6 +1597,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	<SplashScreen v-if="!stateFailed" ref="splashScreen" data-tauri-drag-region />
 	<div id="teleports"></div>
 	<AccountSwitchOverlay :show="isSwitchingAccount" />
+	<LauncherUpdateModal ref="launcherUpdateModal" :version="launcherVersion" />
 	<div
 		v-if="stateInitialized"
 		class="app-grid-layout relative"
@@ -1871,15 +1879,9 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				:class="{ 'pb-12': !hasPlus }"
 				data-overlayscrollbars-initialize
 			>
-				<OnboardingChecklist
-					@create-instance="installationModal?.show()"
-					@login-minecraft="accounts?.login()"
-					@login-modrinth="signIn"
-				/>
 				<div id="sidebar-teleport-target" class="sidebar-teleport-content"></div>
 				<div class="sidebar-default-content" :class="{ 'sidebar-enabled': sidebarVisible }">
 					<div
-						v-show="hasLoggedIntoMinecraft"
 						class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid"
 					>
 						<h3 class="text-base text-primary font-medium m-0">
@@ -1890,7 +1892,6 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 						</suspense>
 					</div>
 					<div
-						v-show="showFriendsList"
 						class="p-4 border-0 border-b-[1px] border-[--brand-gradient-border] border-solid"
 					>
 						<suspense>
