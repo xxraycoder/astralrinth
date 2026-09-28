@@ -203,8 +203,8 @@ Treat `.github/` as configuration for this repository, not as a place to preserv
 ### Keep while they are in use
 
 - `.github/workflows/astralrinth-build.yml`: AstralRinth's desktop build pipeline and its platform artifacts/checksums. Keep and evolve this workflow as the fork's own CI/CD contract.
-- `.github/ISSUE_TEMPLATE/astralrinth-bug.yml`: AstralRinth-specific issue form. Keep if GitHub Issues are enabled and this form is still used.
-- `.github/ISSUE_TEMPLATE/config.yml`: GitHub issue-form configuration and support links. Keep if the issue form is used; ensure its links point to AstralRinth support channels rather than upstream Modrinth support unless that is intentional.
+- `.github/ISSUE_TEMPLATE/astralrinth-bug.yml`: the sole bug-report form in the patch, scoped to AstralRinth-specific issues and collecting affected area, OS, launcher version, install source, account type, reproduction steps, logs, and system details. The upstream app, website, hosting, API bug forms, and generic feature-request form are removed; do not restore them without a product decision.
+- `.github/ISSUE_TEMPLATE/config.yml`: disables blank issues and directs users to AstralRinth Telegram support, while retaining the Modrinth Support Portal link. Keep these links consistent with the actual support policy rather than assuming every link must point to AstralRinth.
 - `.github/instructions/i18n-convert.instructions.md`: editor/AI instruction for Vue localization. Keep only if the team still uses this instruction; it is not required by GitHub Actions or the application build.
 
 ### Assets and upstream automation

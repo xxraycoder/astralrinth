@@ -22,20 +22,16 @@ Avoid releases whose version begins with `dev`, `nightly`, or `dirty`: they are 
 
 ## What AstralRinth offers
 
-- A complete AstralRinth identity: name, icons, splash screen, window titles, and a neon-styled interface.
-- A focused experience without advertising, promo content, surveys, Pride media, or Modrinth components unavailable in Russia.
-- Russian and English interfaces for AstralRinth screens and messages.
-- Account support for:
-  - Microsoft accounts;
-  - Ely.by accounts, including skin management through Ely.by;
-  - external Minecraft accounts through OAuth Device Authorization;
-  - offline accounts for local play and testing.
-- Safer account controls: skin management is available only for account types that support it.
-- `authlib-injector` library management: browse installed versions, install one, select it, or let AstralRinth install a suitable current version when needed.
-- Reliable offline-account launches, including Minecraft 1.16.4 and 1.16.5, and clearer recovery after account validation errors.
-- A dedicated AstralRinth settings section.
-- Updates from Xorison services: AstralRinth checks for releases, selects the appropriate installer for Windows, macOS, or Linux, then downloads and starts it. The update diagnostics page shows the current update status and details.
-- Discord Rich Presence with AstralRinth phrases and a link to download the launcher.
+- AstralRinth branding throughout the launcher, with custom icons, splash screen, window titles, and a neon-styled interface.
+- A focused desktop experience without ads, promotional blocks, or surveys; telemetry is disabled by the fork.
+- Russian and English translations for AstralRinth-specific screens and messages.
+- Minecraft account sign-in with Microsoft, Ely.by, or an offline account. Ely.by sign-in uses OAuth device authorization.
+- Account-aware skin controls: Mojang skin editing is available for Microsoft accounts, while unsupported account types are directed to their provider when one is available.
+- `authlib-injector` management for external authentication: browse local JARs, install and select a version, or let AstralRinth install a compatible version when needed.
+- Offline account support, including a compatibility workaround for Minecraft 1.16.4 and 1.16.5.
+- A dedicated AstralRinth settings section and a one-time notification offering to add randomized custom icons to instances that do not have one.
+- Launcher updates through Xorison: check for releases, choose the installer for Windows, macOS, or Linux, and view update diagnostics in settings.
+- Discord Rich Presence with AstralRinth-specific status messages and a launcher download link.
 
 ## Getting started
 
