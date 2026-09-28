@@ -85,12 +85,12 @@ impl EventState {
         Ok(value.loading_bars.clone())
     }
 
+
     #[cfg(feature = "tauri")]
-    pub async fn get_main_window() -> crate::Result<Option<tauri::WebviewWindow>>
-    {
+    pub async fn get_main_window() -> crate::Result<Option<tauri::Window>> {
         use tauri::Manager;
         let value = Self::get();
-        Ok(value.app.get_webview_window("main"))
+        Ok(value.app.get_window("main"))
     }
 }
 
@@ -125,7 +125,6 @@ pub enum AppEvent {
         #[cfg_attr(feature = "export-ts", ts(type = "unknown"))] String,
     ),
     Log(LogPayload),
-    AdsConsentRequired(bool),
 }
 
 #[cfg(feature = "export-ts")]

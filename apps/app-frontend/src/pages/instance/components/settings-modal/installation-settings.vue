@@ -52,9 +52,7 @@ const appSettings = useAppSettings()
 
 const { instance, offline, isMinecraftServer, onUnlinked, closeModal } = injectInstanceSettings()
 const managedContentPolicy = useManagedContentPolicy(instance)
-const skipNonEssentialWarnings = computed(() =>
-	appSettings.getFeatureFlag('skip_non_essential_warnings'),
-)
+const skipNonEssentialWarnings = computed(() => appSettings.skipNonEssentialWarnings)
 
 debug('metadata load: start', {
 	instanceId: instance.value.id,
@@ -466,7 +464,7 @@ provideInstallationSettings({
 
 	updaterModalProps: computed(() => ({
 		isApp: true,
-		currentVersionId: modpackInfo.value?.update_version_id ?? instance.value.link?.version_id ?? '',
+		currentVersionId: instance.value.link?.version_id ?? '',
 		projectIconUrl: modpackInfo.value?.project?.icon_url,
 		projectName: modpackInfo.value?.project?.title ?? 'Modpack',
 		currentGameVersion: instance.value.game_version,

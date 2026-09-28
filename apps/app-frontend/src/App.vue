@@ -14,12 +14,13 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	CompassIcon,
-	ImagesIcon,
+	ImageIcon,
 	LogInIcon,
 	LogOutIcon,
 	NewspaperIcon,
 	PlayIcon,
 	PlusIcon,
+	RefreshCwIcon,
 	RightArrowIcon,
 	ServerStackIcon,
 	SettingsIcon,
@@ -53,13 +54,14 @@ import {
 	providePageContext,
 	providePopupNotificationManager,
 	TeleportOverflowMenu,
+	TooltipDirective,
 	useDebugLogger,
 	useHostingIntercom,
 	UserRoleIcon,
 	useVIntl,
 } from '@modrinth/ui'
-import { renderString } from '@modrinth/utils'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { renderString } from '@modrinth/utils/parse'
+import { useQueries, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getVersion } from '@tauri-apps/api/app'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -67,6 +69,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
+import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
@@ -93,12 +96,18 @@ import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
 import SharedInstanceInviteHandler from '@/components/ui/shared-instances/shared-instance-invite-handler/index.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
 import SurveyPopup from '@/components/ui/SurveyPopup.vue'
+import SyncInstancesUpdateModal from '@/components/ui/sync-instances-update-modal/index.vue'
+import {
+	markSyncInstancesUpdateNotificationShown,
+	shouldShowSyncInstancesUpdateNotification,
+} from '@/components/ui/sync-instances-update-modal/show-notification'
 import WindowControls from '@/components/ui/WindowControls.vue'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
 import { useAppEvent } from '@/composables/use-app-event'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { useError } from '@/composables/use-error.js'
 import { useInstanceMetadataRefresh } from '@/composables/use-instance-metadata-refresh'
+import { useQuickInstanceLimit } from '@/composables/use-quick-instance-limit.ts'
 import { isDarkTheme, useTheme } from '@/composables/use-theme.ts'
 import { config } from '@/config'
 import { getAccountAppearance, rememberAccountAppearance } from '@/helpers/account-appearance.ts'
@@ -106,14 +115,15 @@ import { trackEvent } from '@/helpers/analytics'
 import { fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user, get_user_many, get_version } from '@/helpers/cache.js'
+import { gameSettingsQueryOptions } from '@/helpers/game-options'
 import { install_create_modpack_instance, install_get_modpack_preview } from '@/helpers/install'
 import {
 	can_current_user_use_shared_instances,
 	get as getInstance,
-	get_global_synced_options,
 	run,
 	set_global_synced_option,
 } from '@/helpers/instance'
+import { maxMemoryQueryOptions } from '@/helpers/jre.js'
 import {
 	get as getCreds,
 	getAll as getAllCreds,
@@ -123,16 +133,35 @@ import {
 	setActive,
 } from '@/helpers/mr_auth.ts'
 import { mergeUrlQuery, parseModrinthLink } from '@/helpers/project-links.ts'
-import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
+import {
+	appSettingsKeys,
+	appSettingsQueryOptions,
+	get as getSettings,
+	set as setSettings,
+} from '@/helpers/settings.ts'
+import { debugStartup, traceStartupStep } from '@/helpers/startup-debug'
 import { get_opening_command, initialize_state } from '@/helpers/state'
+import {
+	gameOptionsSyncSourcesQueryOptions,
+	globalSyncedOptionsQueryOptions,
+	initializedSyncedOptionsQueryOptions,
+	syncedOptionsKeys,
+	syncedServersQueryOptions,
+} from '@/helpers/synced-options'
+import { syncedPackQueryOptions } from '@/helpers/synced-packs'
 import { get_user_preferences } from '@/helpers/user-preferences.ts'
 import { parse_modrinth_user_link } from '@/helpers/users'
-import {
-	getOS,
-} from '@/helpers/utils.js'
+import { getOS, isDev } from '@/helpers/utils.js'
 import { start_join_server, start_join_singleplayer_world } from '@/helpers/worlds.ts'
-import i18n from '@/i18n.config'
-import { instanceKeys, screenshotKeys } from '@/pages/instance/query-options'
+import i18n, { setLocale } from '@/i18n.config'
+import {
+	instanceKeys,
+	instanceListQueryOptions,
+	screenshotKeys,
+} from '@/pages/instance/query-options'
+import {
+	appUpdateState,
+} from '@/providers/app-update.ts'
 import { createBreadcrumbManager, provideBreadcrumbManager } from '@/providers/breadcrumbs'
 import { createContentInstall, provideContentInstall } from '@/providers/content-install'
 import { provideAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
@@ -144,8 +173,6 @@ import { setupLoadingStateProvider } from '@/providers/setup/loading-state'
 import { setupAppUserPreferencesProvider } from '@/providers/setup/user-preferences.ts'
 import { appMessages } from '@/utils/app-messages'
 
-import { generateSkinPreviews } from './helpers/rendering/batch-skin-renderer'
-import { get_available_capes, get_available_skins } from './helpers/skins'
 import { AppNotificationManager } from './providers/app-notifications'
 import { AppPopupNotificationManager } from './providers/app-popup-notifications'
 import {
@@ -153,8 +180,12 @@ import {
 	appSettingsModalOpenSyncedOptionsKey,
 } from './providers/app-settings-modal'
 
+const { restarting } = appUpdateState
+
+debugStartup('App setup entered')
 const appSettings = useAppSettings()
 const appTheme = useTheme()
+const quickInstances = useQuickInstanceLimit()
 const router = useRouter()
 const route = useRoute()
 const { channel: appEventChannel, events: appEvents } = setupAppEventsProvider()
@@ -327,6 +358,7 @@ const {
 	handleModpackDuplicateCreateAnyway,
 	handleModpackDuplicateGoToInstance,
 	onboardingChecklist,
+	tags,
 } = setupProviders(
 	tauriApiClient,
 	notificationManager,
@@ -387,14 +419,30 @@ window.addEventListener('online', () => {
 })
 
 const nativeDecorations = ref(false)
-
 const os = ref('')
 
 const stateInitialized = ref(false)
 const globalSyncedOptionsQuery = useQuery({
-	queryKey: ['global-synced-options'],
-	queryFn: get_global_synced_options,
+	...globalSyncedOptionsQueryOptions(),
 	enabled: computed(() => stateInitialized.value),
+})
+useQueries({
+	queries: computed(() =>
+		[
+			appSettingsQueryOptions(),
+			instanceListQueryOptions(),
+			maxMemoryQueryOptions(),
+			gameSettingsQueryOptions(),
+			initializedSyncedOptionsQueryOptions(),
+			gameOptionsSyncSourcesQueryOptions(),
+			syncedServersQueryOptions(),
+			syncedPackQueryOptions('resourcepack'),
+			syncedPackQueryOptions('datapack'),
+		].map((options) => ({
+			...options,
+			enabled: stateInitialized.value && options.enabled !== false,
+		})),
+	),
 })
 
 const criticalErrorMessage = ref()
@@ -479,6 +527,23 @@ onUnmounted(() => {
 const { formatMessage } = useVIntl()
 
 const messages = defineMessages({
+	syncUpdateTitle: {
+		id: 'app.sync-instances-update.notification.title',
+		defaultMessage: 'Sync your instances',
+	},
+	syncUpdateDescription: {
+		id: 'app.sync-instances-update.notification.description',
+		defaultMessage:
+			'Keep game settings, servers, resource packs, and more in sync across your instances.',
+	},
+	syncUpdateView: {
+		id: 'app.sync-instances-update.notification.view-update',
+		defaultMessage: 'View update',
+	},
+	syncUpdateDismiss: {
+		id: 'app.sync-instances-update.notification.dismiss',
+		defaultMessage: 'Dismiss',
+	},
 	warning: { id: 'app.notification.warning', defaultMessage: 'Warning' },
 	goBack: { id: 'app.navigation.go-back', defaultMessage: 'Go back' },
 	goForward: { id: 'app.navigation.go-forward', defaultMessage: 'Go forward' },
@@ -590,17 +655,12 @@ function shouldHideNewsArticle(article) {
 }
 
 async function setupApp() {
-	// This code line modified by AstralRinth
 	const settings = await getSettings()
-	// This code line modified by AstralRinth
 	settings.telemetry = false
-	// This code line modified by AstralRinth
 	await setSettings(settings)
-	// This code line modified by AstralRinth
-	console.info('[AR] Privacy hard-patch applied', {
-		telemetry: settings.telemetry,
-	})
-	await onboardingChecklist.initialize()
+	console.info('[AR] Privacy hard-patch applied', { telemetry: settings.telemetry })
+	tags.initialize()
+	await traceStartupStep('Initialize onboarding checklist', () => onboardingChecklist.initialize())
 
 	if (shouldShowNewIconEditorNotification(false)) {
 		addPopupNotification({
@@ -609,6 +669,7 @@ async function setupApp() {
 			autoCloseMs: null,
 		})
 	}
+
 
 	const {
 		native_decorations,
@@ -620,40 +681,111 @@ async function setupApp() {
 		toggle_sidebar,
 		sync_theme_across_devices,
 		sync_behavior_across_devices,
+		sync_features_across_devices,
+		show_files_tab_in_instances,
+		show_worlds_tab_in_instances,
+		show_screenshots_tab_in_instances,
+		show_skin_selector_in_sidebar,
+		refocus_on_game_close,
+		compact_instance_cards,
+		show_play_time,
+		warn_on_unknown_modpacks,
+		skip_non_essential_warnings,
+		show_jump_in,
+		always_show_copy_details,
+		hide_installed_modpacks,
+		advanced_filters_collapsed,
+		dismissed_photosensitivity_filter_warning,
+		friends_active_collapsed,
+		friends_online_collapsed,
+		friends_offline_collapsed,
+		friends_pending_collapsed,
 		developer_mode,
+		telemetry,
 		feature_flags,
 		pending_update_toast_for_version,
-	} = await getSettings()
+	} = await traceStartupStep('Read startup settings', getSettings)
 
 	// Initialize locale from saved settings
 	if (locale) {
-		i18n.global.locale.value = locale
+		await traceStartupStep('Apply startup locale', () => setLocale(locale))
 	}
 
 	Object.assign(appSettings.featureFlags, feature_flags)
-	isMaximized.value = await getCurrentWindow().isMaximized()
-	isFullscreen.value = await getCurrentWindow().isFullscreen()
-	os.value = await getOS()
-	const version = await getVersion()
+	isMaximized.value = await traceStartupStep('Read window maximized state', () =>
+		getCurrentWindow().isMaximized(),
+	)
+	isFullscreen.value = await traceStartupStep('Read window fullscreen state', () =>
+		getCurrentWindow().isFullscreen(),
+	)
+	os.value = await traceStartupStep('Read operating system', getOS)
+	const dev = await traceStartupStep('Read development mode', isDev)
+	const version = await traceStartupStep('Read app version', getVersion)
 	const upstreamVersion = version.length > 2 ? version.slice(0, -2) : version
 	nativeDecorations.value = native_decorations
-	if (os.value !== 'MacOS') await getCurrentWindow().setDecorations(native_decorations)
+	appSettings.nativeDecorations = native_decorations
+	if (os.value !== 'MacOS') {
+		await traceStartupStep('Apply window decorations', () =>
+			getCurrentWindow().setDecorations(native_decorations),
+		)
+	}
 
 	appTheme.preferred = theme
 	appTheme.advancedRendering = advanced_rendering
 	appTheme.syncAcrossDevices = sync_theme_across_devices
 	appSettings.syncBehaviorAcrossDevices = sync_behavior_across_devices
+	appSettings.syncFeaturesAcrossDevices = sync_features_across_devices
 	appSettings.hideNametagSkinsPage = hide_nametag_skins_page
 	appSettings.toggleSidebar = toggle_sidebar
+	appSettings.showFilesTabInInstances = show_files_tab_in_instances
+	appSettings.showWorldsTabInInstances = show_worlds_tab_in_instances
+	appSettings.showScreenshotsTabInInstances = show_screenshots_tab_in_instances
+	appSettings.showSkinSelectorInSidebar = show_skin_selector_in_sidebar
+	appSettings.refocusOnGameClose = refocus_on_game_close
+	appSettings.compactInstanceCards = compact_instance_cards
+	appSettings.showPlayTime = show_play_time
+	appSettings.warnOnUnknownModpacks = warn_on_unknown_modpacks
+	appSettings.skipNonEssentialWarnings = skip_non_essential_warnings
+	appSettings.showJumpIn = show_jump_in
+	appSettings.alwaysShowCopyDetails = always_show_copy_details
+	appSettings.hideInstalledModpacks = hide_installed_modpacks
+	appSettings.advancedFiltersCollapsed = advanced_filters_collapsed
+	appSettings.dismissedPhotosensitivityFilterWarning = dismissed_photosensitivity_filter_warning
+	appSettings.friendsActiveCollapsed = friends_active_collapsed
+	appSettings.friendsOnlineCollapsed = friends_online_collapsed
+	appSettings.friendsOfflineCollapsed = friends_offline_collapsed
+	appSettings.friendsPendingCollapsed = friends_pending_collapsed
 	appSettings.devMode = developer_mode
 	stateInitialized.value = true
+	debugStartup('App state initialized')
+	await traceStartupStep('Render initialized app', nextTick)
+	const isSyncUpdateVersion = version.startsWith('0.20.')
+	if (isSyncUpdateVersion && pending_update_toast_for_version !== version) {
+		markSyncInstancesUpdateNotificationShown()
+	}
+	if (
+		appSettings.getFeatureFlag('show_sync_instances_update_modal') ||
+		(isSyncUpdateVersion &&
+			pending_update_toast_for_version === version &&
+			(
+				await traceStartupStep('Load instances for update notification', () =>
+					queryClient.fetchQuery(instanceListQueryOptions()),
+				)
+			).length > 0)
+	) {
+		showSyncInstancesUpdateNotification()
+	}
 
-	await getCurrentWindow().onResized(async () => {
-		isMaximized.value = await getCurrentWindow().isMaximized()
-		isFullscreen.value = await getCurrentWindow().isFullscreen()
-	})
+	await traceStartupStep('Register window resize listener', () =>
+		getCurrentWindow().onResized(async () => {
+			isMaximized.value = await getCurrentWindow().isMaximized()
+			isFullscreen.value = await getCurrentWindow().isFullscreen()
+		}),
+	)
 
-	const osType = await type()
+
+
+	const osType = await traceStartupStep('Read operating system type', async () => type())
 	if (osType === 'macos') {
 		document.getElementsByTagName('html')[0].classList.add('mac')
 	} else {
@@ -700,28 +832,23 @@ async function setupApp() {
 			console.error('Failed to fetch news articles', error)
 		})
 
-	get_opening_command().then(handleCommand)
-	fetchCredentials()
-
-	try {
-		const skins = (await get_available_skins()) ?? []
-		const capes = (await get_available_capes()) ?? []
-		generateSkinPreviews(skins, capes)
-	} catch (error) {
-		console.warn('Failed to generate skin previews in app setup.', error)
-	}
+	traceStartupStep('Read opening command', get_opening_command).then(handleCommand)
+	traceStartupStep('Refresh startup credentials', fetchCredentials)
 
 	if (pending_update_toast_for_version !== null) {
-		const settings = await getSettings()
+		const settings = await traceStartupStep(
+			'Read settings to clear update notification',
+			getSettings,
+		)
 		settings.pending_update_toast_for_version = null
-		await setSettings(settings)
+		await traceStartupStep('Clear update notification', () => setSettings(settings))
 	}
 }
 
 const stateFailed = ref(false)
-initialize_state(appEventChannel)
+traceStartupStep('Initialize backend state', () => initialize_state(appEventChannel))
 	.then(() => {
-		setupApp().catch((err) => {
+		traceStartupStep('Initialize frontend state', setupApp).catch((err) => {
 			stateFailed.value = true
 			console.error(err)
 			error.showError(err, null, false, 'state_init')
@@ -733,9 +860,21 @@ initialize_state(appEventChannel)
 		error.showError(err, null, false, 'state_init')
 	})
 
-const loading = setupLoadingStateProvider()
+const handleClose = async () => {
+	await saveWindowState(StateFlags.ALL)
+	await getCurrentWindow().close()
+}
+
+const loading = setupLoadingStateProvider(() => ({
+	stateInitialized: stateInitialized.value,
+	stateFailed: stateFailed.value,
+	initialStatePending: !!initialLoadToken,
+	navigationPending: !!routerToken,
+	routeSuspensePending: !!suspenseToken,
+	route: route.path,
+}))
 loading.setEnabled(false)
-let initialLoadToken = loading.begin()
+let initialLoadToken = loading.begin('Initial app state')
 let routerToken = null
 let suspenseToken = null
 
@@ -748,19 +887,26 @@ const sidebarOverlayScrollbarsOptions = Object.freeze({
 	},
 })
 
-router.beforeEach(() => {
+router.beforeEach((to, from) => {
+	debugStartup('Route navigation started', { to: to.path, from: from.path })
 	suspensePending = false
 	if (routerToken) loading.end(routerToken)
-	routerToken = loading.begin()
+	routerToken = loading.begin(`Route navigation: ${to.path}`)
 })
 router.afterEach((to, from, failure) => {
+	debugStartup('Route navigation settled', { to: to.path, failed: !!failure })
 	updateHistoryNavigationState()
 	trackEvent('PageView', {
 		path: to.path,
 		fromPath: from.path,
-		failed: failure,
+		failed: !!failure,
 	})
 	setTimeout(() => {
+		debugStartup('Route loading release check', {
+			route: to.path,
+			suspensePending,
+			stateInitialized: stateInitialized.value,
+		})
 		if (!suspensePending && stateInitialized.value) {
 			if (initialLoadToken) {
 				loading.end(initialLoadToken)
@@ -775,12 +921,14 @@ router.afterEach((to, from, failure) => {
 })
 
 function onSuspensePending() {
+	debugStartup('Route Suspense pending', { route: route.path })
 	suspensePending = true
 	if (suspenseToken) loading.end(suspenseToken)
-	suspenseToken = loading.begin()
+	suspenseToken = loading.begin(`Route Suspense: ${route.path}`)
 }
 
 function onSuspenseResolve() {
+	debugStartup('Route Suspense resolved', { route: route.path })
 	if (suspenseToken) {
 		loading.end(suspenseToken)
 		suspenseToken = null
@@ -794,6 +942,7 @@ function onSuspenseResolve() {
 const queryClient = useQueryClient()
 
 watch(stateInitialized, (ready) => {
+	debugStartup('State readiness changed', { ready })
 	if (ready) {
 		if (initialLoadToken) {
 			loading.end(initialLoadToken)
@@ -934,6 +1083,8 @@ const modrinthLoginModal = ref()
 const appSettingsModal = ref()
 const launcherUpdateModal = ref()
 const launcherVersion = ref('')
+const syncInstancesUpdateModal = ref()
+let syncInstancesUpdateNotificationId = null
 
 async function showLauncherUpdateModal() {
 	launcherVersion.value = await getVersion()
@@ -941,8 +1092,51 @@ async function showLauncherUpdateModal() {
 	await launcherUpdateModal.value.show()
 }
 
+function showSyncInstancesUpdateNotification() {
+	if (
+		popupNotificationManager
+			.getNotifications()
+			.some((notification) => notification.id === syncInstancesUpdateNotificationId)
+	) {
+		return
+	}
+
+	if (!shouldShowSyncInstancesUpdateNotification()) return
+
+	const notification = addPopupNotification({
+		contentType: 'standard',
+		title: formatMessage(messages.syncUpdateTitle),
+		text: formatMessage(messages.syncUpdateDescription),
+		type: 'info',
+		hideIcon: true,
+		autoCloseMs: null,
+		buttons: [
+			{
+				label: formatMessage(messages.syncUpdateDismiss),
+				color: 'standard',
+				action: () => popupNotificationManager.removeNotification(notification.id),
+			},
+			{
+				label: formatMessage(messages.syncUpdateView),
+				color: 'brand',
+				action: () => syncInstancesUpdateModal.value?.show(),
+			},
+		],
+	})
+	syncInstancesUpdateNotificationId = notification.id
+}
+
 provide(appSettingsModalOpenProfileKey, () => appSettingsModal.value?.showProfile())
 provide(appSettingsModalOpenSyncedOptionsKey, () => appSettingsModal.value?.showSyncedOptions())
+
+watch(
+	() => appSettings.getFeatureFlag('show_sync_instances_update_modal'),
+	(enabled) => {
+		if (enabled && stateInitialized.value) {
+			showSyncInstancesUpdateNotification()
+		}
+	},
+)
 
 watch(incompatibilityWarningModal, (modal) => {
 	if (modal) {
@@ -985,7 +1179,7 @@ watch(
 					appTheme.preferred = selectedTheme
 				}
 				if (i18n.global.locale.value !== locale) {
-					i18n.global.locale.value = locale
+					await setLocale(locale)
 				}
 
 				if (appTheme.syncAcrossDevices && settings.theme !== selectedTheme) {
@@ -998,17 +1192,24 @@ watch(
 				}
 
 				if (behavior && appSettings.syncBehaviorAcrossDevices) {
-					const behaviorFeatureFlags = {
-						worlds_in_home: behavior.show_jump_in,
-						compact_instance_cards: behavior.compact_instance_cards,
-						show_instance_play_time: behavior.show_play_time,
-						skip_unknown_pack_warning: !behavior.warn_on_unknown_modpacks,
-						skip_non_essential_warnings: behavior.skip_non_essential_warnings,
+					const behaviorSettings = {
+						refocus_on_game_close: 'refocusOnGameClose',
+						compact_instance_cards: 'compactInstanceCards',
+						show_play_time: 'showPlayTime',
+						warn_on_unknown_modpacks: 'warnOnUnknownModpacks',
+						skip_non_essential_warnings: 'skipNonEssentialWarnings',
+					}
+					for (const [key, stateKey] of Object.entries(behaviorSettings)) {
+						const value = behavior[key] ?? settings[key]
+						appSettings[stateKey] = value
+						if (settings[key] !== value) {
+							settings[key] = value
+							settingsChanged = true
+						}
 					}
 
 					appSettings.toggleSidebar = behavior.hide_right_sidebar
 					appSettings.hideNametagSkinsPage = behavior.hide_nametag
-					Object.assign(appSettings.featureFlags, behaviorFeatureFlags)
 
 					if (settings.hide_on_process_start !== behavior.minimize_app) {
 						settings.hide_on_process_start = behavior.minimize_app
@@ -1022,35 +1223,47 @@ watch(
 						settings.hide_nametag_skins_page = behavior.hide_nametag
 						settingsChanged = true
 					}
+				}
+
+				if (behavior && appSettings.syncFeaturesAcrossDevices) {
+					const featureSettings = {
+						show_jump_in: 'showJumpIn',
+						show_files_tab_in_instances: 'showFilesTabInInstances',
+						show_worlds_tab_in_instances: 'showWorldsTabInInstances',
+						show_screenshots_tab_in_instances: 'showScreenshotsTabInInstances',
+						show_skin_selector_in_sidebar: 'showSkinSelectorInSidebar',
+					}
+					for (const [key, stateKey] of Object.entries(featureSettings)) {
+						const value = behavior[key] ?? settings[key]
+						appSettings[stateKey] = value
+						if (settings[key] !== value) {
+							settings[key] = value
+							settingsChanged = true
+						}
+					}
+					if (typeof behavior.quick_instance_count === 'number') {
+						quickInstances.setLimit(behavior.quick_instance_count)
+					}
 
 					const showAllScreenshots = behavior.show_all_screenshots
 					if (typeof showAllScreenshots === 'boolean') {
 						const globalSyncedOptions =
 							globalSyncedOptionsQuery.data.value ??
-							(await queryClient.fetchQuery({
-								queryKey: ['global-synced-options'],
-								queryFn: get_global_synced_options,
-							}))
+							(await queryClient.fetchQuery(globalSyncedOptionsQueryOptions()))
 						if (globalSyncedOptions.screenshots !== showAllScreenshots) {
 							const updatedGlobalSyncedOptions = await set_global_synced_option(
 								'screenshots',
 								showAllScreenshots,
 							)
-							queryClient.setQueryData(['global-synced-options'], updatedGlobalSyncedOptions)
+							queryClient.setQueryData(syncedOptionsKeys.global, updatedGlobalSyncedOptions)
 							await queryClient.invalidateQueries({ queryKey: screenshotKeys.all })
-						}
-					}
-
-					for (const [flag, value] of Object.entries(behaviorFeatureFlags)) {
-						if (settings.feature_flags[flag] !== value) {
-							settings.feature_flags[flag] = value
-							settingsChanged = true
 						}
 					}
 				}
 
 				if (settingsChanged) {
 					await setSettings(settings)
+					queryClient.setQueryData(appSettingsKeys.all, settings)
 				}
 			})
 			.catch(handleError)
@@ -1076,12 +1289,15 @@ async function fetchCredentials() {
 	const refreshId = ++credentialsRefreshId
 	credentials.value = undefined
 
-	const creds = await getCreds().catch(handleError)
+	const creds = await traceStartupStep('Read stored credentials', getCreds).catch(handleError)
 	if (refreshId !== credentialsRefreshId) return
 	if (!creds && hadSession) clearLiveNotifications()
 
 	if (creds && creds.user_id) {
-		if (creds.session && !(await validateSession(creds.session))) {
+		if (
+			creds.session &&
+			!(await traceStartupStep('Validate stored session', () => validateSession(creds.session)))
+		) {
 			if (refreshId !== credentialsRefreshId) return
 
 			clearLiveNotifications()
@@ -1093,12 +1309,14 @@ async function fetchCredentials() {
 			await fetchStoredModrinthAccounts()
 			return
 		}
-		creds.user = await get_user(creds.user_id, 'bypass').catch(handleError)
+		creds.user = await traceStartupStep('Fetch signed-in user', () =>
+			get_user(creds.user_id, 'bypass'),
+		).catch(handleError)
 		if (refreshId !== credentialsRefreshId) return
 	}
 	credentials.value = creds ?? null
 	liveNotificationsEnabled = !!creds?.session
-	await fetchStoredModrinthAccounts()
+	await traceStartupStep('Load stored account profiles', fetchStoredModrinthAccounts)
 }
 
 async function signIn(flow = 'sign-in', addAccount = false) {
@@ -1320,6 +1538,7 @@ async function fetchIntercomToken() {
 	}
 	return await response.json()
 }
+
 
 onMounted(() => {
 	invoke('show_window')
@@ -1594,6 +1813,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 </script>
 
 <template>
+	<TooltipDirective />
 	<SplashScreen v-if="!stateFailed" ref="splashScreen" data-tauri-drag-region />
 	<div id="teleports"></div>
 	<AccountSwitchOverlay :show="isSwitchingAccount" />
@@ -1603,9 +1823,25 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 		class="app-grid-layout relative"
 		:class="{ 'disable-advanced-rendering': !appTheme.advancedRendering }"
 	>
+		<Transition name="fade">
+			<div
+				v-if="restarting"
+				data-tauri-drag-region
+				class="inset-0 fixed bg-black/80 backdrop-blur z-[200] flex items-center justify-center"
+			>
+				<span
+					data-tauri-drag-region
+					class="flex items-center gap-4 text-contrast font-semibold text-xl select-none cursor-default"
+				>
+					<RefreshCwIcon data-tauri-drag-region class="animate-spin w-6 h-6" />
+					{{ formatMessage(messages.restarting) }}
+				</span>
+			</div>
+		</Transition>
 		<Suspense>
 			<AppSettingsModal ref="appSettingsModal" />
 		</Suspense>
+		<SyncInstancesUpdateModal ref="syncInstancesUpdateModal" />
 		<Suspense>
 			<ModrinthAccountRequiredModal ref="modrinthLoginModal" :request-auth="requestModrinthAuth" />
 		</Suspense>
@@ -1653,7 +1889,11 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			>
 				<CompassIcon />
 			</NavButton>
-			<NavButton v-tooltip.right="formatMessage(appMessages.skinSelectorLabel)" to="/skins">
+			<NavButton
+				v-if="appSettings.showSkinSelectorInSidebar"
+				v-tooltip.right="formatMessage(appMessages.skinSelectorLabel)"
+				to="/skins"
+			>
 				<ShirtIcon />
 			</NavButton>
 			<NavButton
@@ -1661,7 +1901,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				v-tooltip.right="formatMessage(messages.screenshots)"
 				to="/screenshots"
 			>
-				<ImagesIcon />
+				<ImageIcon />
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(messages.modrinthHosting)"
@@ -1676,86 +1916,87 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				<ServerStackIcon />
 			</NavButton>
 			<suspense>
-				<QuickInstanceSwitcher />
+				<QuickInstanceSwitcher>
+					<NavButton
+						v-tooltip.right="formatMessage(messages.createNewInstance)"
+						:to="() => installationModal?.show()"
+						:disabled="offline"
+					>
+						<PlusIcon />
+					</NavButton>
+				</QuickInstanceSwitcher>
 			</suspense>
 			<NavButton
-				v-tooltip.right="formatMessage(messages.createNewInstance)"
-				:to="() => installationModal?.show()"
-				:disabled="offline"
-			>
-				<PlusIcon />
-			</NavButton>
-			<div class="flex flex-grow"></div>
-	<NavButton
-		v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-		:class="{ 'neon-icon pulse': isUpdateAvailable }"
-		:to="() => appSettingsModal?.show()"
+				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+				:class="{ 'neon-icon pulse': isUpdateAvailable }"
+				:to="() => appSettingsModal?.show()"
 			>
 				<SettingsIcon />
 			</NavButton>
-			<span v-tooltip.right="profileButtonTooltip" class="inline-flex">
-				<IconButton
-					v-if="credentials === undefined"
-					type="quiet"
-					size="xl"
-					disabled
-					class="pointer-events-none"
-					:label="formatMessage(messages.loadingProfile)"
+			<IconButton
+				v-if="credentials === undefined"
+				v-tooltip.right="profileButtonTooltip"
+				type="quiet"
+				size="xl"
+				disabled
+				class="pointer-events-none"
+				:label="formatMessage(messages.loadingProfile)"
+			>
+				<SpinnerIcon class="animate-spin" />
+			</IconButton>
+			<TeleportOverflowMenu
+				v-else-if="credentials?.user"
+				v-tooltip.right="profileButtonTooltip"
+				type="quiet"
+				size="xl"
+				:label="formatMessage(messages.modrinthAccount)"
+				:options="modrinthAccountMenuOptions"
+				placement="right-end"
+				:distance="4"
+				class="brightness-100 hover:!brightness-100 focus-visible:!brightness-100"
+			>
+				<Avatar
+					:src="credentials?.user?.avatar_url"
+					alt=""
+					size="32px"
+					circle
+					no-shadow
+					class="pointer-events-none !size-8"
+				/>
+				<template
+					v-for="account in accountSwitcherAccounts"
+					:key="account.user_id"
+					#[account.optionId]
 				>
-					<SpinnerIcon class="animate-spin" />
-				</IconButton>
-				<TeleportOverflowMenu
-					v-else-if="credentials?.user"
-					type="quiet"
-					size="xl"
-					:label="formatMessage(messages.modrinthAccount)"
-					:options="modrinthAccountMenuOptions"
-					placement="right-end"
-					:distance="4"
-					class="brightness-100 hover:!brightness-100 focus-visible:!brightness-100"
+					<Avatar :src="account.user.avatar_url" size="1.25rem" aria-hidden="true" circle />
+					{{ account.user.username }}
+					<UserRoleIcon :role="account.user.role" />
+				</template>
+			</TeleportOverflowMenu>
+			<TeleportOverflowMenu
+				v-else-if="accountSwitcherAccounts.length > 0"
+				v-tooltip.right="profileButtonTooltip"
+				type="quiet"
+				size="xl"
+				:label="formatMessage(messages.signInToModrinthAccount)"
+				:options="accountSwitcherOptions"
+				placement="right-end"
+				:distance="4"
+			>
+				<LogInIcon class="!text-brand" />
+				<template
+					v-for="account in accountSwitcherAccounts"
+					:key="account.user_id"
+					#[account.optionId]
 				>
-					<Avatar
-						:src="credentials?.user?.avatar_url"
-						alt=""
-						size="32px"
-						circle
-						no-shadow
-						class="pointer-events-none !size-8"
-					/>
-					<template
-						v-for="account in accountSwitcherAccounts"
-						:key="account.user_id"
-						#[account.optionId]
-					>
-						<Avatar :src="account.user.avatar_url" size="1.25rem" aria-hidden="true" circle />
-						{{ account.user.username }}
-						<UserRoleIcon :role="account.user.role" />
-					</template>
-				</TeleportOverflowMenu>
-				<TeleportOverflowMenu
-					v-else-if="accountSwitcherAccounts.length > 0"
-					type="quiet"
-					size="xl"
-					:label="formatMessage(messages.signInToModrinthAccount)"
-					:options="accountSwitcherOptions"
-					placement="right-end"
-					:distance="4"
-				>
-					<LogInIcon class="!text-brand" />
-					<template
-						v-for="account in accountSwitcherAccounts"
-						:key="account.user_id"
-						#[account.optionId]
-					>
-						<Avatar :src="account.user.avatar_url" size="1.25rem" aria-hidden="true" circle />
-						{{ account.user.username }}
-						<UserRoleIcon :role="account.user.role" />
-					</template>
-				</TeleportOverflowMenu>
-				<NavButton v-else :to="() => requestSignIn()">
-					<LogInIcon class="text-brand" />
-				</NavButton>
-	</span>
+					<Avatar :src="account.user.avatar_url" size="1.25rem" aria-hidden="true" circle />
+					{{ account.user.username }}
+					<UserRoleIcon :role="account.user.role" />
+				</template>
+			</TeleportOverflowMenu>
+			<NavButton v-else v-tooltip.right="profileButtonTooltip" :to="() => requestSignIn()">
+				<LogInIcon class="text-brand" />
+			</NavButton>
 		</div>
 		<div data-tauri-drag-region class="app-grid-statusbar bg-bg-raised h-[--top-bar-height] flex">
 			<div data-tauri-drag-region class="flex min-w-0 flex-1 items-center overflow-hidden p-2">
@@ -1862,9 +2103,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<RouterView v-slot="{ Component }">
 				<template v-if="Component">
 					<Suspense @pending="onSuspensePending" @resolve="onSuspenseResolve">
-						<KeepAlive include="LibraryPage">
-							<component :is="Component"></component>
-						</KeepAlive>
+						<component :is="Component"></component>
 					</Suspense>
 				</template>
 			</RouterView>
@@ -2001,7 +2240,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	display: grid;
 	grid-template: 'status status' 'nav dummy';
 	grid-template-columns: auto 1fr;
-	grid-template-rows: auto 1fr;
+	grid-template-rows: auto minmax(0, 1fr);
 	position: relative;
 	//z-index: 0;
 	background-color: var(--color-raised-bg);
@@ -2010,8 +2249,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 
 .app-grid-navbar {
 	grid-area: nav;
+	min-height: 0;
 	position: relative;
 	z-index: 2;
+
+	> :deep(*) {
+		flex-shrink: 0;
+	}
 }
 
 .app-grid-statusbar {
@@ -2204,6 +2448,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	--os-handle-bg: var(--color-scrollbar) !important;
 	--os-handle-bg-hover: var(--color-scrollbar) !important;
 	--os-handle-bg-active: var(--color-scrollbar) !important;
+}
+
+.app-grid-statusbar {
+	padding-left: 0.25rem;
 }
 
 .mac-traffic-lights {

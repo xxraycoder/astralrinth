@@ -38,7 +38,7 @@ export default defineNuxtConfig({
 				...preloadedFonts.map((font): object => {
 					return {
 						rel: 'preload',
-						href: `https://cdn-raw.modrinth.com/fonts/${font}?v=3.19`,
+						href: `https://cdn.modrinth.com/fonts/${font}?v=3.19`,
 						as: 'font',
 						type: 'font/woff2',
 						crossorigin: 'anonymous',
@@ -62,12 +62,8 @@ export default defineNuxtConfig({
 				},
 			},
 		},
-		ssr: {
-			// https://github.com/Akryum/floating-vue/issues/809#issuecomment-1002996240
-			noExternal: ['floating-vue', '@floating-ui/core', '@floating-ui/dom'],
-		},
 		optimizeDeps: {
-			include: ['vue-router', 'floating-vue', '@floating-ui/dom'],
+			include: ['vue-router'],
 		},
 		define: {
 			global: {},
@@ -236,7 +232,6 @@ export default defineNuxtConfig({
 		},
 	},
 	modules: [
-		'floating-vue/nuxt',
 		// Sentry causes rollup-plugin-inject errors in dev, only enable in production
 		...(isProduction() ? ['@sentry/nuxt/module'] : []),
 	],

@@ -33,6 +33,7 @@ use std::time::Instant;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio_util::compat::FuturesAsyncWriteCompatExt;
+use tracing::Instrument;
 use url::Url;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -290,6 +291,7 @@ async fn resolve_instance_identity(
     Ok((row.id, row.path))
 }
 
+#[tracing::instrument(name = "worlds_instance", skip_all, fields(instance_id))]
 async fn get_all_worlds_in_instance(
     instance_id: &str,
     instance_dir: &Path,
@@ -332,7 +334,7 @@ async fn get_singleplayer_worlds_in_instance(
         if !world_path.join("level.dat").exists() {
             continue;
         }
-        tasks.spawn(read_singleplayer_world(world_path));
+        tasks.spawn(read_singleplayer_world(world_path).in_current_span());
     }
     while let Some(result) = tasks.join_next().await {
         match result {
@@ -373,6 +375,11 @@ pub async fn get_singleplayer_world(
     Ok(world)
 }
 
+#[tracing::instrument(
+	name = "singleplayer_world",
+	skip_all,
+	fields(world = %world_path.file_name().unwrap_or_default().to_string_lossy())
+)]
 async fn read_singleplayer_world(world_path: PathBuf) -> Result<World> {
     if let Some(_lock) = try_get_world_session_lock(&world_path).await? {
         read_singleplayer_world_maybe_locked(world_path, false).await
@@ -825,6 +832,25 @@ pub async fn add_server_to_instance(
     }
 
     Ok(insert_index)
+}
+
+pub async fn ensure_managed_server_in_instance(
+    instance_id: &str,
+    name: String,
+    address: String,
+) -> Result<()> {
+    let state = State::get().await?;
+    let (instance_id, _) =
+        resolve_instance_identity(instance_id, &state).await?;
+    let metadata = crate::state::get_instance(&instance_id, &state.pool)
+        .await?
+        .ok_or_else(|| ErrorKind::InputError("Unknown instance".to_string()))?;
+    let data =
+        crate::api::instance::synced_servers::server_data(name, address, None);
+    crate::api::instance::synced_servers::ensure_managed_server(
+        &metadata, data, &state,
+    )
+    .await
 }
 
 pub async fn edit_server_in_instance(

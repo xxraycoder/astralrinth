@@ -72,7 +72,7 @@
 						<FileInput
 							id="collection-icon-input"
 							ref="iconInputRef"
-							:max-size="262144"
+							:max-size="524288"
 							:show-icon="false"
 							accept="image/png,image/jpeg,image/gif,image/webp"
 							class="hidden"
@@ -736,7 +736,7 @@ watch(
 				}),
 				ogTitle: formatMessage(messages.collectionTitle, { name: col.name }),
 				ogDescription: col.description,
-				ogImage: col.icon_url ?? 'https://cdn-raw.modrinth.com/placeholder-square.png',
+				ogImage: col.icon_url ?? 'https://cdn.modrinth.com/placeholder-square.png',
 				ogUrl: canonicalUrl,
 				robots: col.status === 'listed' && hasPublicProjects ? 'all' : 'noindex',
 			})

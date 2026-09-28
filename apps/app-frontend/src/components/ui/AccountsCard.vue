@@ -141,7 +141,7 @@ import {
 	useVIntl,
 } from '@modrinth/ui'
 import type { Ref } from 'vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 import AccountsErrorModals from '@/components/ui/astralrinth/accounts/error/AccountsErrorModals.vue'
 import AccountsInputModals from '@/components/ui/astralrinth/accounts/input/AccountsInputModals.vue'
@@ -156,7 +156,7 @@ import {
 	set_default_user,
 	users,
 } from '@/helpers/auth'
-import { getPlayerHeadUrl } from '@/helpers/rendering/batch-skin-renderer.ts'
+import { getPlayerHeadUrl } from '@/helpers/rendering/player-head'
 import type { Skin } from '@/helpers/skins'
 import { get_available_skins } from '@/helpers/skins'
 import {
@@ -198,7 +198,23 @@ const loginDisabled = ref(false)
 const offlineLoginDisabled = ref(false)
 const defaultUser = ref<string | undefined>()
 const equippedSkin = ref<Skin | null>(null)
-const headUrlCache = ref(new Map<string, string>())
+const equippedHeadUrl = ref<string>()
+let headRequest = 0
+
+async function updateHeadUrl(skin: Skin | null) {
+	const request = ++headRequest
+	if (equippedHeadUrl.value) URL.revokeObjectURL(equippedHeadUrl.value)
+	equippedHeadUrl.value = undefined
+	if (!skin) return
+	const url = await getPlayerHeadUrl(skin)
+	if (request !== headRequest) URL.revokeObjectURL(url)
+	else equippedHeadUrl.value = url
+}
+
+onUnmounted(() => {
+	headRequest++
+	if (equippedHeadUrl.value) URL.revokeObjectURL(equippedHeadUrl.value)
+})
 
 const accountsInputModals = ref<AccountsInputModalsHandle | null>(null)
 const accountsErrorModals = ref<AccountsErrorModalsHandle | null>(null)
@@ -298,19 +314,10 @@ async function refreshValues() {
 		const skins = await get_available_skins()
 		equippedSkin.value = skins.find((skin) => skin.is_equipped) ?? null
 
-		if (equippedSkin.value) {
-			try {
-				const headUrl = await getPlayerHeadUrl(equippedSkin.value)
-				headUrlCache.value = new Map(headUrlCache.value).set(
-					equippedSkin.value.texture_key,
-					headUrl,
-				)
-			} catch (error) {
-				console.warn('Failed to get head render for equipped skin:', error)
-			}
-		}
+		await updateHeadUrl(equippedSkin.value)
 	} catch {
 		equippedSkin.value = null
+		void updateHeadUrl(null)
 	}
 }
 
@@ -318,8 +325,7 @@ async function setEquippedSkin(skin: Skin) {
 	equippedSkin.value = skin
 
 	try {
-		const headUrl = await getPlayerHeadUrl(skin)
-		headUrlCache.value = new Map(headUrlCache.value).set(skin.texture_key, headUrl)
+		await updateHeadUrl(skin)
 	} catch (error) {
 		console.warn('Failed to get head render for equipped skin:', error)
 	}
@@ -346,7 +352,7 @@ const selectedAccount = computed(() =>
 
 const avatarUrl = computed(() => {
 	if (equippedSkin.value?.texture_key) {
-		const cachedUrl = headUrlCache.value.get(equippedSkin.value.texture_key)
+		const cachedUrl = equippedHeadUrl.value
 		if (cachedUrl) {
 			return cachedUrl
 		}
@@ -366,7 +372,7 @@ function getAccountAvatarUrl(account: MinecraftCredential) {
 		account.profile.id === selectedAccount.value?.profile?.id &&
 		equippedSkin.value?.texture_key
 	) {
-		const cachedUrl = headUrlCache.value.get(equippedSkin.value.texture_key)
+		const cachedUrl = equippedHeadUrl.value
 		if (cachedUrl) {
 			return cachedUrl
 		}

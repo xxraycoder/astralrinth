@@ -67,13 +67,22 @@ export { default as FilterPills } from './FilterPills.vue'
 export { default as FloatingActionBar } from './FloatingActionBar.vue'
 export { default as FloatingPanel } from './FloatingPanel.vue'
 export { default as FormattedTag } from './FormattedTag.vue'
+export { default as FullImage } from './FullImage.vue'
 export { default as HeadingLink } from './HeadingLink.vue'
 export { default as HorizontalRule } from './HorizontalRule.vue'
 export { default as I18nDebugPanel } from './I18nDebugPanel.vue'
 export { default as IconSelect } from './IconSelect.vue'
 export { default as InlineEditableText } from './InlineEditableText.vue'
 export type { InputAppearance, InputSize } from './inputs'
-export { DateInput, DatePicker, Input, InputClearButton, InputFrame, Textarea } from './inputs'
+export {
+	ColorPicker,
+	DateInput,
+	DatePicker,
+	Input,
+	InputClearButton,
+	InputFrame,
+	Textarea,
+} from './inputs'
 export { default as IntlFormatted } from './IntlFormatted.vue'
 export { default as LoadingBar } from './LoadingBar.vue'
 export { default as LoadingIndicator } from './LoadingIndicator.vue'
@@ -108,7 +117,6 @@ export type {
 	PageHeaderTarget,
 } from './page-header/types'
 export { default as Pagination } from './Pagination.vue'
-export { default as PopoutMenu } from './PopoutMenu.vue'
 export { default as PreviewSelectButton } from './PreviewSelectButton.vue'
 export { default as ProgressBar } from './ProgressBar.vue'
 export { default as ProgressSpinner } from './ProgressSpinner.vue'

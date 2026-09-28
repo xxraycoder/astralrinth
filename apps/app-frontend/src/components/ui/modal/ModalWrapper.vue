@@ -1,4 +1,4 @@
-<!-- @deprecated Use NewModal from @modrinth/ui directly. Ads/noblur now handled by injectModalBehavior. -->
+<!-- @deprecated Use NewModal from @modrinth/ui directly. Modal behavior is provided by injectModalBehavior. -->
 <script setup lang="ts">
 import { NewModal as Modal } from '@modrinth/ui'
 import { useTemplateRef } from 'vue'
@@ -22,11 +22,7 @@ const props = defineProps({
 			return () => {}
 		},
 	},
-	/** @deprecated No longer used — ads are handled by provideModalBehavior */
-	showAdOnClose: {
-		type: Boolean,
-		default: true,
-	},
+
 })
 const modal = useTemplateRef('modal')
 

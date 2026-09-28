@@ -15,13 +15,14 @@ import {
 	useSavable,
 	useVIntl,
 } from '@modrinth/ui'
-import { isStaff, TeamMemberPermission } from '@modrinth/utils'
+import { isAdmin, isStaff, TeamMemberPermission } from '@modrinth/utils'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, watch } from 'vue'
 
 import {
 	AdvertisingDisclosureCard,
 	AiDisclosureCard,
+	AiFunctionalityDisclosureCard,
 	ArchivedDisclosureCard,
 	DerivativeDisclosureCard,
 	type DisclosureFormIssue,
@@ -38,13 +39,21 @@ import {
 	TelemetryDisclosureCard,
 	toModifyRequests,
 } from '~/components/ui/project-settings/disclosures'
+import ValidationMessage from '~/components/ValidationMessage.vue'
 import { useAuth } from '~/composables/auth'
+import { useProjectNagMessages } from '~/composables/project-nag-validation'
+import { useProjectSaveValidation } from '~/composables/project-save-validation'
 
 const DISCLOSURE_QUERY_STALE_TIME = 1000 * 60 * 5
 
 const { formatMessage } = useVIntl()
 const { labrinth } = injectModrinthClient()
-const { projectV2: project, projectV3, currentMember } = injectProjectPageContext()
+const {
+	projectV2: project,
+	projectV3,
+	currentMember,
+	refreshProjectValidation,
+} = injectProjectPageContext()
 const queryClient = useQueryClient()
 const flags = useFeatureFlags()
 const auth = await useAuth()
@@ -73,6 +82,10 @@ const messages = defineMessages({
 	description: {
 		id: 'project.settings.disclosures.description',
 		defaultMessage: `You must add any applicable content disclosures to your project in compliance with <rules>Modrinth's Content Rules</rules>.`,
+	},
+	description2: {
+		id: 'project.settings.disclosures.description.2',
+		defaultMessage: `Unsure how to apply content disclosure to your project? Check out our <faq-link>Content Disclosures FAQ</faq-link>.`,
 	},
 	noPermission: {
 		id: 'project.settings.disclosures.save-blocked.no-permission',
@@ -172,15 +185,18 @@ function resolveUpdatedBy(userId: string | null | undefined): DisclosureUpdatedB
 	)
 }
 
+const isAdminUser = computed(() => isAdmin(currentMember.value?.user))
 const hasPermission = computed(
-	() => !!((currentMember.value?.permissions ?? 0) & TeamMemberPermission.EDIT_DETAILS),
+	() =>
+		isAdminUser.value ||
+		!!((currentMember.value?.permissions ?? 0) & TeamMemberPermission.EDIT_DETAILS),
 )
 
 const {
 	saved,
 	current,
 	saving,
-	reset,
+	reset: resetForm,
 	save: saveForm,
 } = useSavable(
 	() => disclosuresToForm(disclosuresResponse.value?.disclosures ?? []),
@@ -206,9 +222,23 @@ const hasChanges = computed(
 	() => JSON.stringify(savedSnapshot.value) !== JSON.stringify(currentSnapshot.value),
 )
 
+const saveValidation = useProjectSaveValidation(() => currentSnapshot.value)
+
 async function save() {
-	if (!hasChanges.value) return
-	await saveForm()
+	if (!hasChanges.value || !canSave.value || saving.value) return
+	const submittedState = saveValidation.snapshot()
+	try {
+		await saveForm()
+		saveValidation.clear()
+		await refreshProjectValidation()
+	} catch (error) {
+		if (!saveValidation.capture(error, submittedState)) throw error
+	}
+}
+
+function reset() {
+	resetForm()
+	saveValidation.clear()
 }
 
 function disclosureUpdateProps(type: DisclosureType) {
@@ -248,15 +278,22 @@ watch(
 )
 
 const issues = computed(() => getDisclosureFormIssues(current.value, projectTypes.value))
+const disclosureTextValidation = useProjectNagMessages('disclosure-text')
+const disclosureValidation = useProjectNagMessages('disclosures')
 
-const canSave = computed(() => hasPermission.value && issues.value.length === 0)
+const canSave = computed(
+	() =>
+		!saveValidation.hasErrors.value &&
+		hasPermission.value &&
+		(isAdminUser.value || issues.value.length === 0),
+)
 
 const saveDisabledReason = computed(() => {
 	if (!hasPermission.value) {
 		// should never come up but y'never know
 		return formatMessage(messages.noPermission)
 	}
-	return issues.value.map((issue) => formatMessage(issueMessages[issue]))
+	return [...issues.value.map((issue) => formatMessage(issueMessages[issue]))]
 })
 
 const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
@@ -268,7 +305,7 @@ const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 		<h2 class="m-0 text-2xl font-semibold">
 			{{ formatMessage(messages.title) }}
 		</h2>
-		<p class="mb-4 mt-2">
+		<p class="mb-0 mt-2">
 			<IntlFormatted :message-id="messages.description">
 				<template #rules="{ children }">
 					<nuxt-link to="/legal/rules" target="_blank" class="underline hover:text-contrast">
@@ -277,6 +314,25 @@ const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 				</template>
 			</IntlFormatted>
 		</p>
+		<p class="mb-4 mt-2">
+			<IntlFormatted :message-id="messages.description2">
+				<template #faq-link="{ children }">
+					<a
+						href="https://support.modrinth.com/en/articles/16567675#h_29503820b1"
+						target="_blank"
+						class="underline hover:text-contrast"
+					>
+						<component :is="() => normalizeChildren(children)" />
+					</a>
+				</template>
+			</IntlFormatted>
+		</p>
+		<ValidationMessage
+			:check="[...disclosureValidation, ...disclosureTextValidation]"
+			:project-field="JSON.stringify(savedSnapshot)"
+			:current-field="JSON.stringify(currentSnapshot)"
+			class="mb-4"
+		/>
 		<EmptyState
 			v-if="!canEditDisclosures"
 			type="no-documents"
@@ -291,6 +347,14 @@ const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 					v-bind="disclosureUpdateProps('ai_content')"
 					@set-lock-status="
 						(status: DisclosureLockStatus) => setDisclosureLockStatus('ai_content', status)
+					"
+				/>
+				<AiFunctionalityDisclosureCard
+					v-if="isDisclosureVisible('ai_functionality')"
+					v-model="current.aiFunctionality"
+					v-bind="disclosureUpdateProps('ai_functionality')"
+					@set-lock-status="
+						(status: DisclosureLockStatus) => setDisclosureLockStatus('ai_functionality', status)
 					"
 				/>
 				<AdvertisingDisclosureCard
@@ -351,6 +415,7 @@ const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 					"
 				/>
 			</div>
+			<ValidationMessage :check="saveValidation.messages.value" class="my-4" />
 			<UnsavedChangesPopup
 				:original="savedSnapshot"
 				:modified="currentSnapshot"

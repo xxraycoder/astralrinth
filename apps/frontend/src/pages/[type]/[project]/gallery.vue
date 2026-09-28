@@ -44,6 +44,11 @@
 					:maxlength="64"
 					placeholder="Enter title..."
 				/>
+				<ValidationMessage
+					:check="galleryTitleValidation"
+					:project-field="filteredGallery[editIndex]?.title ?? ''"
+					:current-field="editTitle"
+				/>
 				<label for="gallery-image-desc">
 					<span class="label__title">Description</span>
 				</label>
@@ -52,6 +57,11 @@
 					v-model="editDescription"
 					:maxlength="255"
 					placeholder="Enter description..."
+				/>
+				<ValidationMessage
+					:check="galleryDescriptionValidation"
+					:project-field="filteredGallery[editIndex]?.description ?? ''"
+					:current-field="editDescription"
 				/>
 				<label for="gallery-image-ordering">
 					<span class="label__title">Order Index</span>
@@ -90,7 +100,7 @@
 						v-if="editIndex === -1"
 						type="colored"
 						color="brand"
-						:disabled="shouldPreventActions"
+						:disabled="shouldPreventActions || !canSaveGalleryFields"
 						@click="createGalleryItem"
 					>
 						<PlusIcon aria-hidden="true" />
@@ -100,7 +110,7 @@
 						v-else
 						type="colored"
 						color="brand"
-						:disabled="shouldPreventActions"
+						:disabled="shouldPreventActions || !canSaveGalleryFields"
 						@click="editGalleryItem"
 					>
 						<SaveIcon aria-hidden="true" />
@@ -157,10 +167,10 @@
 		<div v-if="filteredGallery.length" class="items">
 			<div v-for="(item, index) in filteredGallery" :key="index" class="card gallery-item">
 				<a class="gallery-thumbnail" @click="expandImage(index)">
-					<img
+					<FullImage
 						:src="item.url ? item.url : 'https://cdn.modrinth.com/placeholder-banner.svg'"
+						:raw-src="item.raw_url"
 						:alt="item.title ? item.title : 'gallery-image'"
-						@contextmenu="onFullImageContextMenu($event, item.raw_url)"
 					/>
 				</a>
 				<div class="gallery-body">
@@ -242,16 +252,18 @@ import {
 	ConfirmModal,
 	DropArea,
 	FileButton,
+	FullImage,
 	ImageViewerEditor,
 	injectProjectPageContext,
 	Input,
 	NewModal as Modal,
 	Textarea,
 	useFormatDateTime,
-	useFullImageContextMenu,
 } from '@modrinth/ui'
 
 import AiImageWarningModal from '~/components/ui/AiImageWarningModal.vue'
+import ValidationMessage from '~/components/ValidationMessage.vue'
+import { useProjectNagMessages } from '~/composables/project-nag-validation'
 import { fileDeclaresAi } from '~/helpers/c2pa'
 import { isPermission } from '~/utils/permissions.ts'
 
@@ -260,8 +272,6 @@ const formatDate = useFormatDateTime({
 	month: 'long',
 	day: 'numeric',
 })
-const onFullImageContextMenu = useFullImageContextMenu()
-
 // Single DI injection
 const {
 	projectV2: project,
@@ -304,7 +314,6 @@ const previewImage = ref<string | null>(null)
 
 // UI state
 const shouldPreventActions = ref(false)
-
 // Constant for accepted file types
 const MC_SERVER_BANNER_NAME = '__mc_server_banner__'
 const acceptFileTypes = 'image/png,image/jpeg,image/gif,image/webp,.png,.jpeg,.gif,.webp'
@@ -312,6 +321,21 @@ const acceptFileTypes = 'image/png,image/jpeg,image/gif,image/webp,.png,.jpeg,.g
 const filteredGallery = computed(
 	() => project.value.gallery?.filter((img) => img.title !== MC_SERVER_BANNER_NAME) ?? [],
 )
+const selectedGalleryIndex = computed(() => {
+	const selectedItem = filteredGallery.value[editIndex.value]
+	return selectedItem ? (project.value.gallery ?? []).indexOf(selectedItem) : -1
+})
+const galleryTitleValidation = useProjectNagMessages(
+	'gallery-text',
+	'name',
+	() => selectedGalleryIndex.value,
+)
+const galleryDescriptionValidation = useProjectNagMessages(
+	'gallery-text',
+	'description',
+	() => selectedGalleryIndex.value,
+)
+const canSaveGalleryFields = computed(() => true)
 
 const galleryViewerItems = computed(() =>
 	filteredGallery.value.map((image) => ({
@@ -383,6 +407,7 @@ function showPreviewImage() {
 
 // CRUD operations
 async function createGalleryItem() {
+	if (!canSaveGalleryFields.value) return
 	shouldPreventActions.value = true
 	startLoading()
 
@@ -403,6 +428,7 @@ async function createGalleryItem() {
 }
 
 async function editGalleryItem() {
+	if (!canSaveGalleryFields.value) return
 	shouldPreventActions.value = true
 	startLoading()
 

@@ -1,7 +1,8 @@
 <template>
 	<ReadyTransition :pending="loading">
-		<ContentPageLayout>
+		<ContentPageLayout :highlighted-item-id="highlightedItemId">
 			<template #modals>
+				<SyncedContentModal ref="syncedContentModal" />
 				<UnknownFileWarningModal
 					ref="unknownFileWarningModal"
 					mode="mod"
@@ -121,13 +122,15 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { open } from '@tauri-apps/plugin-dialog'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import ExportModal from '@/components/ui/ExportModal.vue'
+import SyncedContentModal from '@/components/ui/instance/SyncedContentModal.vue'
 import ShareModalWrapper from '@/components/ui/modal/ShareModalWrapper.vue'
 import { useManagedContentPolicy } from '@/composables/instances/use-managed-content-policy'
+import { useSyncedPackActions } from '@/composables/instances/use-synced-pack-actions'
 import { useAppEvent } from '@/composables/use-app-event'
-import { type FeatureFlag, useAppSettings } from '@/composables/use-app-settings.ts'
+import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { trackEvent } from '@/helpers/analytics'
 import { get_project_versions, get_version, get_version_many } from '@/helpers/cache.js'
 import {
@@ -146,6 +149,7 @@ import {
 } from '@/helpers/instance'
 import { type InstanceContentData, loadInstanceContentData } from '@/helpers/instance-content'
 import { get as getSettings, set as setSettings } from '@/helpers/settings'
+import { set_synced_pack_enabled, syncedPackKeys } from '@/helpers/synced-packs'
 import type { CacheBehaviour } from '@/helpers/types'
 import { highlightModInInstance } from '@/helpers/utils.js'
 import { type AppEventPayload, injectAppEvents } from '@/providers/app-events'
@@ -231,13 +235,11 @@ const appEvents = injectAppEvents()
 const { installingItems, installRevisionByInstance, installFailureRevisionByInstance } =
 	injectContentInstall()
 const router = useRouter()
+const route = useRoute()
 const queryClient = useQueryClient()
 const debug = useDebugLogger('Mods:ContentUpdate')
 const appSettings = useAppSettings()
-const skipUnknownFileWarningFeatureFlag = 'skip_unknown_pack_warning' as FeatureFlag
-const skipNonEssentialWarnings = computed(() =>
-	appSettings.getFeatureFlag('skip_non_essential_warnings'),
-)
+const skipNonEssentialWarnings = computed(() => appSettings.skipNonEssentialWarnings)
 
 const instancePage = injectInstancePage()
 const sharedInstanceState = injectSharedInstance()
@@ -296,6 +298,19 @@ const mergedProjects = computed<ContentItem[]>(() => {
 	const placeholders = pending.filter((item) => !realProjectIds.has(item.project?.id))
 	return placeholders.length > 0 ? [...displayProjects, ...placeholders] : displayProjects
 })
+
+const highlightedItemId = computed(() => {
+	const path = route.query.highlight
+	if (typeof path !== 'string') return undefined
+	return mergedProjects.value.find(matchesHighlightedFile)?.file_path ?? path
+})
+
+function matchesHighlightedFile(item: ContentItem) {
+	const path = route.query.highlight
+	return (
+		typeof path === 'string' && (item.file_path === path || item.file_path === `${path}.disabled`)
+	)
+}
 
 watch(
 	() => installFailureRevisionByInstance.value.get(instance.value.id) ?? 0,
@@ -359,6 +374,7 @@ let resolveUnknownFileConfirmation: ((confirmed: boolean) => void) | null = null
 const modpackContentQueryKey = computed(() => instanceKeys.linkedContent(instance.value.id))
 const modpackContentQuery = useQuery({
 	queryKey: modpackContentQueryKey,
+	networkMode: 'always',
 	queryFn: () => get_linked_modpack_content(instance.value.id),
 	enabled: computed(
 		() =>
@@ -390,6 +406,20 @@ const managedContentItems = computed(() => {
 	return dedupeManagedContentItems([...linkedContent, ...sourcedContent])
 })
 
+const highlightedManagedItemId = computed(() =>
+	mergedProjects.value.some(matchesHighlightedFile)
+		? undefined
+		: managedContentItems.value.find(matchesHighlightedFile)?.id,
+)
+
+watch(
+	[highlightedManagedItemId, managedContentModal],
+	([id, modal]) => {
+		if (id && modal) modal.show(managedContentItems.value, id)
+	},
+	{ flush: 'post' },
+)
+
 const managedContentSummary = computed(() =>
 	modpackContentQuery.isLoading.value && modpackContentQuery.data.value === undefined
 		? undefined
@@ -402,6 +432,13 @@ const managedContent = computed<ManagedContentData | null>(() => {
 	const linkedProject = instancePage.linkedProject.value
 	const linkType = instance.value.link?.type
 	const isSharedOwner = attachment?.role === 'owner'
+
+	if (
+		(linkType === 'server_project' || linkType === 'server_project_modpack') &&
+		managedContentItems.value.length === 0
+	) {
+		return null
+	}
 
 	if (
 		!isSharedOwner &&
@@ -424,8 +461,7 @@ const managedContent = computed<ManagedContentData | null>(() => {
 				attachment?.server_manager_icon_url ??
 				linkedProject?.icon_url ??
 				undefined)
-			: (sharedManager?.avatarUrl ??
-				(instance.value.icon_path ? convertFileSrc(instance.value.icon_path) : undefined))
+			: (sharedManager?.avatarUrl ?? getInstanceIconUrl(instance.value.icon_path) ?? undefined)
 		const managerLink = serverManaged
 			? linkedProject
 				? {
@@ -758,7 +794,7 @@ async function handleUploadFiles() {
 }
 
 function confirmUnknownFileInstallation(fileName: string) {
-	if (appSettings.getFeatureFlag(skipUnknownFileWarningFeatureFlag)) {
+	if (!appSettings.warnOnUnknownModpacks) {
 		return Promise.resolve(true)
 	}
 
@@ -778,10 +814,10 @@ function resolveUnknownFileWarning(confirmed: boolean) {
 
 async function handleUnknownFileContinue(dontShowAgain: boolean) {
 	if (dontShowAgain) {
-		appSettings.featureFlags[skipUnknownFileWarningFeatureFlag] = true
+		appSettings.warnOnUnknownModpacks = false
 		try {
 			const settings = await getSettings()
-			settings.feature_flags[skipUnknownFileWarningFeatureFlag] = true
+			settings.warn_on_unknown_modpacks = false
 			await setSettings(settings)
 		} catch (error) {
 			handleError(error as Error)
@@ -801,9 +837,17 @@ async function toggleDisableMod(
 	const originalFilePath = mod.file_path
 
 	try {
+		const packSyncOption = mod.project_type === 'resourcepack' ? 'resource_packs' : 'data_packs'
+		if (mod.synced_pack && instance.value.synced_options[packSyncOption]) {
+			await set_synced_pack_enabled(mod.synced_pack.id, desiredEnabled ?? !mod.enabled)
+			await refreshContentState('must_revalidate')
+			await queryClient.invalidateQueries({ queryKey: syncedPackKeys.all })
+			if (reconcileSharedState) await reconcileSharedInstancePublishState()
+			return
+		}
 		const newPath = await toggle_disable_project(instance.value.id, mod.file_path, desiredEnabled)
 		const newFileName = fileNameFromPath(newPath)
-		const enabled = !newPath.endsWith('.disabled')
+		const enabled = desiredEnabled ?? !mod.enabled
 		mod.file_path = newPath
 		mod.file_name = newFileName
 		mod.enabled = enabled
@@ -846,8 +890,15 @@ async function removeMod(mod: ContentItem) {
 
 	try {
 		const removedPath = mod.file_path
-		await remove_project(instance.value.id, removedPath)
-		projects.value = projects.value.filter((x) => removedPath !== x.file_path)
+		if (!(await packActions.deleteSyncedItem(mod))) {
+			await remove_project(instance.value.id, removedPath)
+		}
+		if (mod.synced_pack) {
+			await refreshContentState('must_revalidate')
+			await queryClient.invalidateQueries({ queryKey: syncedPackKeys.all })
+		} else {
+			projects.value = projects.value.filter((x) => removedPath !== x.file_path)
+		}
 
 		trackEvent('InstanceProjectRemove', {
 			loader: instance.value.loader,
@@ -1473,8 +1524,13 @@ async function handleShareItems(
 	await shareModal.value?.show(text)
 }
 
+const syncedContentModal = ref<InstanceType<typeof SyncedContentModal>>()
+const packActions = useSyncedPackActions(instance, syncedContentModal, canMutateContent, () =>
+	refreshContentState('must_revalidate'),
+)
+
 function getOverflowOptions(item: ContentItem): ButtonMenuOption[] {
-	const options: ButtonMenuOption[] = []
+	const options: ButtonMenuOption[] = packActions.overflowOptions(item)
 
 	options.push({
 		id: 'show-file',
@@ -1582,7 +1638,7 @@ provideContentManager({
 	error: ref(null),
 	managedContent,
 	isPackLocked,
-	isBusy: isInstanceBusy,
+	isBusy: computed(() => isInstanceBusy.value || packActions.isPending.value),
 	disableAddContent: isQuarantined,
 	disableAddContentTooltip: formatMessage(messages.lockedContent),
 	isBulkOperating,
@@ -1612,6 +1668,8 @@ provideContentManager({
 	canToggleItem: canToggleContent,
 	getDeleteWarning: managedContentPolicy.deleteWarning,
 	getDisableWarning: managedContentPolicy.disableWarning,
+	confirmAction: packActions.confirmAction,
+	confirmDeleteItems: packActions.confirmDeleteItems,
 	getDeleteDependencyWarning,
 	refresh: () => initProjects('must_revalidate'),
 	browse: handleBrowseContent,
@@ -1664,6 +1722,8 @@ provideContentManager({
 			: undefined,
 		external: item.external ?? !item.project,
 		enabled: canMutateContent(item) ? item.enabled : undefined,
+		synced: !!item.synced_pack,
+		syncUpdatePending: item.synced_pack?.update_pending,
 		locked: item.locked,
 		installing: item.installing,
 		hideDelete: !canDeleteContent(item),

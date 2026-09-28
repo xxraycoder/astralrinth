@@ -42,27 +42,35 @@ jobs:
       matrix:
         include:
           - runner: ubuntu-latest
-            label: 🐧 Linux x86_64 Build
+            label: Linux x86_64 Build
             target: x86_64-unknown-linux-gnu
             rust_targets: x86_64-unknown-linux-gnu
             artifact_name: astralrinth-bundle-linux-x86_64
+          - runner: ubuntu-24.04-arm
+            label: Linux aarch64 Build
+            target: aarch64-unknown-linux-gnu
+            rust_targets: aarch64-unknown-linux-gnu
+            artifact_name: astralrinth-bundle-linux-aarch64
+            nightly_experimental: true
           - runner: windows-latest
-            label: 🪟 Windows x86_64 Build
+            label: Windows x86_64 Build
             target: x86_64-pc-windows-msvc
             rust_targets: x86_64-pc-windows-msvc
             artifact_name: astralrinth-bundle-windows-x86_64
           - runner: windows-latest
-            label: 🪟 Windows aarch64 Build
+            label: Windows aarch64 Build
             target: aarch64-pc-windows-msvc
             rust_targets: aarch64-pc-windows-msvc
             artifact_name: astralrinth-bundle-windows-aarch64
+            nightly_experimental: true
           - runner: macos-latest
-            label: 🍎 macOS x86_64 Build
+            label: macOS x86_64 Build
             target: x86_64-apple-darwin
             rust_targets: x86_64-apple-darwin
             artifact_name: astralrinth-bundle-macos-x86_64
+            nightly_experimental: true
           - runner: macos-latest
-            label: 🍎 macOS aarch64 Build
+            label: macOS aarch64 Build
             target: aarch64-apple-darwin
             rust_targets: aarch64-apple-darwin
             artifact_name: astralrinth-bundle-macos-aarch64
@@ -112,11 +120,11 @@ jobs:
         with:
           target: ${{ matrix.rust_targets }}
 
-      - name: ☕ Setup Java 17
+      - name: ☕ Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: 🧰 Setup pnpm
         uses: pnpm/action-setup@v4
@@ -144,7 +152,7 @@ jobs:
         uses: rharkor/caching-for-turbo@v1.8
 
       - name: 🐧 Install Linux build dependencies
-        if: matrix.runner == 'ubuntu-latest'
+        if: contains(matrix.runner, 'ubuntu-')
         shell: bash
         run: |
           sudo apt-get update
@@ -177,6 +185,54 @@ jobs:
       - name: 🔨 Build app
         shell: bash
         run: mise exec -- pnpm --filter @modrinth/app exec tauri build --target ${{ matrix.target }}
+
+      - name: 🏷️ Mark experimental packages
+        if: matrix.nightly_experimental == true
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readdir, rename } from 'node:fs/promises'
+          import { join } from 'node:path'
+
+          const packageExtensions = new Set(['.exe', '.msi', '.dmg', '.rpm', '.AppImage', '.deb'])
+
+          async function markPackages(directory) {
+            for (const entry of await readdir(directory, { withFileTypes: true })) {
+              const filePath = join(directory, entry.name)
+              if (entry.isDirectory()) {
+                await markPackages(filePath)
+              } else if (entry.isFile() && [...packageExtensions].some((extension) => entry.name.endsWith(extension))) {
+                await rename(filePath, join(directory, `nightly_expiremental_${entry.name}`))
+              }
+            }
+          }
+
+          await markPackages('target/${{ matrix.target }}/release/bundle')
+          NODE
+
+      - name: 🔐 Generate SHA-256 checksums
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto'
+          import { readdir, readFile, writeFile } from 'node:fs/promises'
+          import { join } from 'node:path'
+
+          async function addChecksums(directory) {
+            for (const entry of await readdir(directory, { withFileTypes: true })) {
+              const filePath = join(directory, entry.name)
+              if (entry.isDirectory()) {
+                await addChecksums(filePath)
+              } else if (entry.isFile() && !entry.name.endsWith('.sha256.txt')) {
+                const contents = await readFile(filePath)
+                const checksum = createHash('sha256').update(contents).digest('hex')
+                await writeFile(`${filePath}.sha256.txt`, `${checksum}  ${entry.name}\n`)
+              }
+            }
+          }
+
+          await addChecksums('target/${{ matrix.target }}/release/bundle')
+          NODE
 
       - name: 📤 Upload app bundles
         uses: actions/upload-artifact@v4

@@ -344,10 +344,15 @@ const screenshotOptionsInstance = computed(() =>
 	),
 )
 const screenshotsError = computed(() => {
-	const error =
+	const error: unknown =
 		screenshotsQuery.error.value ||
 		(groupBy.value === 'custom' ? screenshotGroupsQuery.error.value : null)
-	return error instanceof Error ? error : error ? new Error(String(error)) : null
+	if (!error) return null
+	if (error instanceof Error) return error
+	if (typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+		return new Error(error.message)
+	}
+	return new Error(String(error))
 })
 const selectionActive = computed(() => selectedKeys.value.size > 0)
 const selectedScreenshots = computed(() =>
@@ -1650,7 +1655,6 @@ onBeforeUnmount(() => {
 			<Button
 				v-tooltip="formatMessage(commonMessages.clearButton)"
 				type="quiet"
-				:aria-label="formatMessage(commonMessages.clearButton)"
 				:disabled="bulkBusy"
 				@click="clearSelection"
 			>
@@ -1662,7 +1666,6 @@ onBeforeUnmount(() => {
 			<Button
 				v-tooltip="formatMessage(messages.newGroup)"
 				type="quiet"
-				:aria-label="formatMessage(messages.newGroup)"
 				:disabled="bulkBusy"
 				@click="createCustomGroup"
 			>
@@ -1673,7 +1676,6 @@ onBeforeUnmount(() => {
 				v-if="selectedGroupedScreenshots.length > 0"
 				v-tooltip="formatMessage(messages.removeFromGroup)"
 				type="quiet"
-				:aria-label="formatMessage(messages.removeFromGroup)"
 				:disabled="bulkBusy"
 				@click="removeSelectedScreenshotsFromGroups"
 			>
@@ -1683,7 +1685,6 @@ onBeforeUnmount(() => {
 			<Button
 				v-tooltip="formatMessage(messages.exportZip)"
 				type="quiet"
-				:aria-label="formatMessage(messages.exportZip)"
 				:disabled="bulkBusy"
 				@click="exportSelected"
 			>
@@ -1696,7 +1697,6 @@ onBeforeUnmount(() => {
 				type="quiet"
 				color="red"
 				interaction="filled"
-				:aria-label="formatMessage(commonMessages.deleteLabel)"
 				:disabled="bulkBusy"
 				@click="bulkDeleteModal?.show()"
 			>

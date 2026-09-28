@@ -176,6 +176,8 @@ fn main() {
                         "install_job_list",
                         "install_job_get",
                         "install_job_retry",
+                        "install_job_pause",
+                        "install_job_resume",
                         "install_job_cancel",
                         "install_job_dismiss",
                         "install_job_support_details",
@@ -217,6 +219,7 @@ fn main() {
                         "instance_get_install_candidates",
                         "instance_content",
                         "instance_get_content_items",
+                        "instance_sync_content_files",
                         "instance_refresh_content_updates",
                         "instance_get_dependencies_as_content_items",
                         "instance_get_linked_modpack_info",
@@ -242,13 +245,29 @@ fn main() {
                         "instance_get_synced_option_join_preview",
                         "instance_get_synced_options_overview",
                         "instance_get_global_synced_options",
+                        "instance_get_initialized_synced_options",
                         "instance_set_global_synced_option",
+                        "instance_list_game_options_sync_sources",
+                        "instance_get_synced_game_options_config",
+                        "instance_get_game_setting_locale_labels",
+                        "instance_preview_synced_game_option_changes",
+                        "instance_save_synced_game_option_changes",
+                        "instance_get_local_game_options_config",
+                        "instance_preview_local_game_option_changes",
+                        "instance_save_local_game_option_changes",
                         "instance_get_command_history",
                         "instance_set_command_history",
                         "instance_open_synced_options_folder",
                         "instance_list_synced_servers",
                         "instance_update_synced_server",
                         "instance_remove_synced_server",
+                        "instance_get_pack_sync_preview",
+                        "instance_sync_pack",
+                        "instance_desync_pack",
+                        "instance_list_synced_packs",
+                        "instance_upload_synced_pack",
+                        "instance_set_synced_pack_enabled",
+                        "instance_remove_synced_pack",
                         "instance_rebuild_synced_options",
                         "instance_list",
                         "instance_list_groups",
@@ -301,6 +320,10 @@ fn main() {
                     .commands(&[
                         "settings_get",
                         "settings_set",
+                        "store_usage",
+                        "store_cleanup",
+                        "store_set_cache_limit",
+                        "store_verify",
                         "cancel_directory_change",
                     ])
                     .default_permission(
@@ -365,27 +388,7 @@ fn main() {
                         "show_app_db_backups_folder",
                         "progress_bars_list",
                         "get_opening_command",
-                    ])
-                    .default_permission(
-                        DefaultPermissionRule::AllowAllCommands,
-                    ),
-            )
-            .plugin(
-                "ads",
-                InlinedPlugin::new()
-                    .commands(&[
-                        "init_ads_window",
-                        "hide_ads_window",
-                        "update_ads_window_hold",
-                        "show_ads_consent_ui",
-                        "expand_ads_consent_webview",
-                        "open_ads_consent_preferences",
-                        "finish_ads_consent_flow",
-                        "should_show_ads_consent_popup",
-                        "perform_ads_consent_action",
-                        "record_ads_click",
-                        "open_link",
-                        "get_ads_personalization",
+                        "get_image_thumbnail",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,
@@ -396,6 +399,12 @@ fn main() {
                 InlinedPlugin::new()
                     .commands(&[
                         "file_extract_zip",
+                        "file_list",
+                        "file_read",
+                        "file_write",
+                        "file_create_directory",
+                        "file_rename",
+                        "file_delete",
                         "file_save_as",
                         "file_read_dragged_file",
                     ])
@@ -429,6 +438,7 @@ fn main() {
                         "backup_world",
                         "delete_world",
                         "add_server_to_instance",
+                        "ensure_managed_server_in_instance",
                         "edit_server_in_instance",
                         "remove_server_from_instance",
                         "desync_server",

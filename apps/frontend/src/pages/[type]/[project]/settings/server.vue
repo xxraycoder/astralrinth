@@ -9,7 +9,7 @@
 
 				<!-- Region -->
 				<div class="max-w-[600px]">
-					<label for="server-region">
+					<label for="server-region" class="w-fit">
 						<span class="label__title">{{ formatMessage(messages.regionLabel) }}</span>
 					</label>
 					<Combobox
@@ -20,11 +20,18 @@
 						:placeholder="formatMessage(messages.selectRegionPlaceholder)"
 						:disabled="!hasPermission"
 					/>
+					<ValidationMessage
+						:check="regionValidation"
+						:project-field="projectV3?.minecraft_server?.region ?? ''"
+						:current-field="region"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('server-region')" class="mt-2" />
 				</div>
 
 				<!-- Language -->
 				<div class="max-w-[600px]">
-					<label for="server-language">
+					<label for="server-language" class="block w-fit">
 						<span class="label__title"
 							>{{ formatMessage(messages.languagesLabel) }}
 							<span class="font-normal text-secondary"
@@ -42,12 +49,21 @@
 						:placeholder="formatMessage(messages.selectLanguagesPlaceholder)"
 						:disabled="!hasPermission"
 					/>
+					<ValidationMessage
+						:check="languageValidation"
+						:project-field="
+							JSON.stringify([...(projectV3?.minecraft_server?.languages ?? [])].sort())
+						"
+						:current-field="JSON.stringify([...languages].sort())"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('server-languages')" class="mt-2" />
 				</div>
 
 				<!-- Java Address -->
 				<div class="max-w-[600px]">
 					<div class="flex items-center justify-between">
-						<label for="java-address">
+						<label for="java-address" class="block w-fit">
 							<span class="label__title !m-0 !text-contrast">{{
 								formatMessage(messages.javaAddressLabel)
 							}}</span>
@@ -99,7 +115,11 @@
 						>
 							{{ formatMessage(messages.serverOnline) }}
 							<template v-if="javaPingResult.latency">
-								{{ formatMessage(messages.latencyLabel, { latency: javaPingResult.latency }) }}
+								{{
+									formatMessage(messages.latencyLabel, {
+										latency: javaPingResult.latency,
+									})
+								}}
 							</template>
 						</div>
 						<div v-else-if="javaPingResult !== null && !javaPingLoading" class="mt-0.5 text-orange">
@@ -127,11 +147,18 @@
 							/></template>
 						</IntlFormatted>
 					</div>
+					<ValidationMessage
+						:check="javaAddressValidation"
+						:project-field="projectV3?.minecraft_java_server?.address ?? ''"
+						:current-field="javaAddress.trim()"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('java-address')" class="mt-2" />
 				</div>
 
 				<!-- Bedrock Address -->
 				<div class="max-w-[600px]">
-					<label for="bedrock-address">
+					<label for="bedrock-address" class="block w-fit">
 						<span class="label__title !text-contrast"
 							>{{ formatMessage(messages.bedrockAddressLabel) }}
 							<span class="font-normal text-secondary"
@@ -151,14 +178,33 @@
 					</div>
 				</div>
 
-				<CompatibilityCard />
+				<div>
+					<CompatibilityCard />
+					<ValidationMessage :check="compatibilityValidation" class="mt-2" />
+					<ValidationMessage
+						:check="saveValidation.forField('server-compatibility')"
+						class="mt-2"
+					/>
+				</div>
 			</div>
 		</section>
 
+		<ValidationMessage
+			:check="
+				saveValidation.withoutFields([
+					'server-region',
+					'server-languages',
+					'java-address',
+					'server-compatibility',
+				])
+			"
+			class="my-4"
+		/>
 		<UnsavedChangesPopup
 			:original="original"
 			:modified="modified"
 			:saving="saving"
+			:can-save="!saveValidation.hasErrors.value"
 			@reset="resetChanges"
 			@save="handleSave"
 		/>
@@ -186,8 +232,12 @@ import {
 	usePageLeaveSafety,
 	useVIntl,
 } from '@modrinth/ui'
+import { isAdmin } from '@modrinth/utils'
 
 import CompatibilityCard from '~/components/ui/project-settings/CompatibilityCard.vue'
+import ValidationMessage from '~/components/ValidationMessage.vue'
+import { useProjectNagMessages } from '~/composables/project-nag-validation'
+import { useProjectSaveValidation } from '~/composables/project-save-validation'
 
 const PING_TIMEOUT_MS = 5000
 
@@ -272,6 +322,11 @@ const client = injectModrinthClient()
 const { addNotification } = injectNotificationManager()
 const { projectV3, currentMember, patchProjectV3 } = injectProjectPageContext()
 
+const regionValidation = useProjectNagMessages('server-region')
+const languageValidation = useProjectNagMessages('server-languages')
+const javaAddressValidation = useProjectNagMessages('java-address')
+const compatibilityValidation = useProjectNagMessages('server-compatibility')
+
 useProjectSettingsHeadTitle(commonProjectSettingsMessages.server)
 
 const javaAddress = ref('')
@@ -298,9 +353,12 @@ watch(javaAddress, () => {
 	}, 500)
 })
 
+const isAdminUser = computed(() => isAdmin(currentMember.value?.user))
 const hasPermission = computed(() => {
 	const EDIT_DETAILS = 1 << 2
-	return ((currentMember.value?.permissions ?? 0) & EDIT_DETAILS) === EDIT_DETAILS
+	return (
+		isAdminUser.value || ((currentMember.value?.permissions ?? 0) & EDIT_DETAILS) === EDIT_DETAILS
+	)
 })
 
 async function pingJavaServer() {
@@ -469,7 +527,10 @@ const hasChanges = computed(() =>
 
 const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 
+const saveValidation = useProjectSaveValidation(() => modified.value)
+
 function resetChanges() {
+	saveValidation.clear()
 	javaAddress.value = projectV3.value?.minecraft_java_server?.address ?? ''
 	bedrockAddress.value = projectV3.value?.minecraft_bedrock_server?.address ?? ''
 	bedrockPort.value = projectV3.value?.minecraft_bedrock_server?.port ?? 19132
@@ -478,7 +539,9 @@ function resetChanges() {
 }
 
 async function handleSave() {
-	if (javaAddress.value.trim() && !javaPingResult.value?.online) {
+	if (saving.value || saveValidation.hasErrors.value) return
+	const submittedState = saveValidation.snapshot()
+	if (!isAdminUser.value && javaAddress.value.trim() && !javaPingResult.value?.online) {
 		addNotification({
 			title: formatMessage(messages.cannotSaveTitle),
 			text: formatMessage(messages.cannotSaveText),
@@ -491,8 +554,11 @@ async function handleSave() {
 	try {
 		const hasV3Changes = Object.keys(v3PatchData.value).length > 0
 		if (hasV3Changes) {
-			await patchProjectV3(v3PatchData.value)
+			await patchProjectV3(v3PatchData.value, false, true)
+			saveValidation.clear()
 		}
+	} catch (error) {
+		if (!saveValidation.capture(error, submittedState)) throw error
 	} finally {
 		saving.value = false
 	}

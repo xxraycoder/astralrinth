@@ -76,6 +76,7 @@ import {
 	ClipboardCopyIcon,
 	DownloadIcon,
 	EditIcon,
+	FolderArchiveIcon,
 	FolderCogIcon,
 	FolderOpenIcon,
 	GlassesIcon,
@@ -119,6 +120,10 @@ const messages = defineMessages({
 		id: 'files.row.item-count',
 		defaultMessage: '{count, plural, one {# item} other {# items}}',
 	},
+	createZip: {
+		id: 'files.row.create-zip',
+		defaultMessage: 'Create ZIP',
+	},
 })
 
 const props = defineProps<
@@ -133,7 +138,16 @@ const props = defineProps<
 
 const emit = defineEmits<{
 	(
-		e: 'rename' | 'move' | 'download' | 'delete' | 'edit' | 'extract' | 'hover' | 'navigate',
+		e:
+			| 'rename'
+			| 'move'
+			| 'download'
+			| 'zip'
+			| 'delete'
+			| 'edit'
+			| 'extract'
+			| 'hover'
+			| 'navigate',
 		item: Pick<FileItem, 'name' | 'type' | 'path'>,
 	): void
 	(
@@ -228,6 +242,16 @@ const menuOptions = computed<ButtonMenuOption[]>(() => {
 		},
 		{ type: 'divider', shown: canExtract.value },
 		{
+			id: 'zip',
+			label: formatMessage(messages.createZip),
+			icon: FolderArchiveIcon,
+			shown: props.type === 'directory' && !!ctx.zipFolder,
+			disabled: wd,
+			tooltip: wd ? wdTooltip : undefined,
+			action: () => emit('zip', item),
+		},
+		{ type: 'divider', shown: props.type === 'directory' && !!ctx.zipFolder },
+		{
 			id: 'rename',
 			label: formatMessage(commonMessages.renameButton),
 			icon: EditIcon,
@@ -298,7 +322,7 @@ const formattedSize = computed(() => {
 		return formatMessage(messages.itemCount, { count: props.count ?? 0 })
 	}
 
-	if (props.size === undefined) return ''
+	if (props.size == null) return ''
 	return formatBytes(props.size)
 })
 

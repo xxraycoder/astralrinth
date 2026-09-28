@@ -39,12 +39,18 @@ pub struct AppearancePreferences {
 #[derive(Debug, Serialize, Deserialize, ToSchema, PartialEq, Component)]
 pub struct BehaviorPreferences {
     pub minimize_app: bool,
+    pub refocus_on_game_close: bool,
     pub hide_right_sidebar: bool,
     pub show_jump_in: bool,
     pub compact_instance_cards: bool,
     pub show_play_time: bool,
     pub hide_nametag: bool,
     pub show_all_screenshots: bool,
+    pub show_files_tab_in_instances: bool,
+    pub show_worlds_tab_in_instances: bool,
+    pub show_screenshots_tab_in_instances: bool,
+    pub show_skin_selector_in_sidebar: bool,
+    pub quick_instance_count: u8,
     pub warn_on_unknown_modpacks: bool,
     pub skip_non_essential_warnings: bool,
 }
@@ -53,12 +59,18 @@ impl Default for BehaviorPreferences {
     fn default() -> Self {
         Self {
             minimize_app: false,
+            refocus_on_game_close: false,
             hide_right_sidebar: false,
             show_jump_in: true,
             compact_instance_cards: false,
             show_play_time: true,
             hide_nametag: false,
             show_all_screenshots: true,
+            show_files_tab_in_instances: true,
+            show_worlds_tab_in_instances: true,
+            show_screenshots_tab_in_instances: false,
+            show_skin_selector_in_sidebar: true,
+            quick_instance_count: 20,
             warn_on_unknown_modpacks: true,
             skip_non_essential_warnings: false,
         }

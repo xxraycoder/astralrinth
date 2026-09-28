@@ -581,14 +581,8 @@
   "app-marketing.download.windows": {
     "message": "Windows"
   },
-  "app-marketing.features.follow.description": {
-    "message": "Save content you love and receive updates with one click."
-  },
-  "app-marketing.features.follow.title": {
-    "message": "Follow projects"
-  },
   "app-marketing.features.importing.description": {
-    "message": "Import all your favorite profiles from the launcher you were using before, and get started with Modrinth App in seconds!"
+    "message": "Import all your existing game instances from the launcher you were using before, and get started with Modrinth App in seconds!"
   },
   "app-marketing.features.importing.gdlauncher-alt": {
     "message": "GDLauncher"
@@ -597,7 +591,13 @@
     "message": "MultiMC"
   },
   "app-marketing.features.importing.title": {
-    "message": "Profile importing"
+    "message": "Instance importing"
+  },
+  "app-marketing.features.manage-skins.description": {
+    "message": "Switch between all of your Minecraft skins right from the app."
+  },
+  "app-marketing.features.manage-skins.title": {
+    "message": "Skin selector"
   },
   "app-marketing.features.mod-management.actions": {
     "message": "Actions"
@@ -623,14 +623,8 @@
   "app-marketing.features.mod-management.version": {
     "message": "Version"
   },
-  "app-marketing.features.offline.description": {
-    "message": "Play your mods, whether you are connected to the internet, or not."
-  },
-  "app-marketing.features.offline.title": {
-    "message": "Offline mode"
-  },
   "app-marketing.features.open-source.description": {
-    "message": "Modrinth's launcher is fully open source. You can view the source code on our <github-link>GitHub</github-link>!"
+    "message": "Modrinth App is fully open source. You can view the source code on our <github-link>GitHub</github-link>!"
   },
   "app-marketing.features.open-source.title": {
     "message": "Open source"
@@ -642,7 +636,7 @@
     "message": "% CPU"
   },
   "app-marketing.features.performance.description": {
-    "message": "Modrinth App performs better than many of the leading mod managers, using just 150 MB of RAM!"
+    "message": "Modrinth App performs better than many of the leading mod managers!"
   },
   "app-marketing.features.performance.discord": {
     "message": "Discord"
@@ -652,15 +646,6 @@
   },
   "app-marketing.features.performance.google-chrome": {
     "message": "Google Chrome"
-  },
-  "app-marketing.features.performance.infinite-mb": {
-    "message": "∞ MB"
-  },
-  "app-marketing.features.performance.infinite-times-infinite-mb": {
-    "message": "∞ × ∞ MB"
-  },
-  "app-marketing.features.performance.less-than-150mb": {
-    "message": "< 150 MB"
   },
   "app-marketing.features.performance.modrinth-app": {
     "message": "Modrinth App"
@@ -685,6 +670,12 @@
   },
   "app-marketing.features.play.title": {
     "message": "Play with your favorite mods"
+  },
+  "app-marketing.features.settings-sync.description": {
+    "message": "Use the same options, resource packs, and more across all your instances."
+  },
+  "app-marketing.features.settings-sync.title": {
+    "message": "Sync your settings"
   },
   "app-marketing.features.sharing.description": {
     "message": "Build, share, and play modpacks with any of the thousands of mods and modpacks hosted here on Modrinth."
@@ -827,9 +818,6 @@
   "auth.reauthenticate.2fa.label": {
     "message": "Two-factor authentication"
   },
-  "auth.reauthenticate.2fa.placeholder": {
-    "message": "Enter code..."
-  },
   "auth.reauthenticate.continue-with-passkey": {
     "message": "Continue with passkey"
   },
@@ -887,9 +875,6 @@
   "auth.sign-in.2fa.label": {
     "message": "Two-factor authentication"
   },
-  "auth.sign-in.2fa.placeholder": {
-    "message": "Enter code..."
-  },
   "auth.sign-in.add-account": {
     "message": "Add account"
   },
@@ -911,6 +896,9 @@
   "auth.sign-in.last-sign-in": {
     "message": "Last used"
   },
+  "auth.sign-in.launcher.callback.title": {
+    "message": "Modrinth App sign-in callback"
+  },
   "auth.sign-in.launcher.complete.description": {
     "message": "We’re returning you to the Modrinth App. If nothing happens, use the button below."
   },
@@ -922,6 +910,12 @@
   },
   "auth.sign-in.launcher.complete.title": {
     "message": "You’re signed in"
+  },
+  "auth.sign-in.launcher.opening.description": {
+    "message": "If the app doesn’t open, use the button below to finish signing in."
+  },
+  "auth.sign-in.launcher.opening.title": {
+    "message": "Opening Modrinth App..."
   },
   "auth.sign-in.no-account": {
     "message": "Don't have an account?"
@@ -955,6 +949,9 @@
   },
   "auth.sign-up.title.sign-up-with": {
     "message": "Create an Account"
+  },
+  "auth.two-factor.incorrect-code": {
+    "message": "The two-factor code is incorrect. Try again or use a backup code."
   },
   "auth.verify-email.action.account-settings": {
     "message": "Account settings"
@@ -2358,7 +2355,7 @@
     "message": "What kind of CPUs do Modrinth Hosting servers run on?"
   },
   "hosting-marketing.faq.cpu-kind.answer": {
-    "message": "Modrinth Hosting servers are powered by AMD Ryzen 7900 and 7950X3D equivalent CPUs at 5+ GHz, paired with DDR5 memory."
+    "message": "Modrinth Hosting servers are powered by AMD Ryzen 7950X or 9950X equivalent, paired with DDR5 memory."
   },
   "hosting-marketing.faq.currency": {
     "message": "What currency are the prices in?"
@@ -3020,6 +3017,9 @@
   "moderation.moderate": {
     "message": "Moderate"
   },
+  "moderation.page.delphi-rules": {
+    "message": "Delphi rules"
+  },
   "moderation.page.external-projects": {
     "message": "External projects"
   },
@@ -3421,6 +3421,9 @@
   },
   "project-member-header.success-join": {
     "message": "You have joined the project team"
+  },
+  "project-moderation-nags.project-submitted-for-review": {
+    "message": "Your project has been submitted for review!"
   },
   "project-moderation-nags.publishing-checklist": {
     "message": "Publishing checklist"
@@ -3839,6 +3842,12 @@
   "project.notification.icon-updated.title": {
     "message": "Project icon updated"
   },
+  "project.notification.review-save-failed.description": {
+    "message": "You cannot save edits to your project which result in failing validation."
+  },
+  "project.notification.review-save-failed.title": {
+    "message": "Failed to save project in review"
+  },
   "project.notification.updated.message": {
     "message": "Your project has been updated."
   },
@@ -3875,11 +3884,23 @@
   "project.settings.delete-project.title": {
     "message": "Delete project"
   },
+  "project.settings.description.intro": {
+    "message": "You can type an extended description of your project here. The description must clearly and honestly describe the purpose and function of the project. See section 2.1 of the <rules>Content Rules</rules> for the full requirements."
+  },
+  "project.settings.description.title": {
+    "message": "Description"
+  },
+  "project.settings.description.updated": {
+    "message": "Description updated"
+  },
+  "project.settings.description.updated-text": {
+    "message": "Your description has been updated."
+  },
   "project.settings.disclosures.advertising.description.1": {
-    "message": "You must enable this if your project contains advertisements, sponsorships, or promotions of other works."
+    "message": "Must be enabled if this project contains advertisements, sponsorships, or promotions of other works."
   },
   "project.settings.disclosures.advertising.description.2": {
-    "message": "If the promotion has no direct monetary value <emphasis>and</emphasis> it is for something that the average person would consider <italic>relevant</italic> and <italic>unobtrusive</italic> (such as a link to your Modrinth profile in the corner of the settings page for your own mod), we would not consider that an advertisement."
+    "message": "This does not pertain to unobtrusive promotion of relevant content with no direct monetary value (such as a link to a Modrinth profile in your own configuration menu), and does not pertain to advertisements in the project page such as sponsored banners in the description."
   },
   "project.settings.disclosures.advertising.note-placeholder": {
     "message": "e.g. Adds the Modrinth SMP server to your server list automatically."
@@ -3887,20 +3908,32 @@
   "project.settings.disclosures.advertising.title": {
     "message": "Contains advertisements"
   },
-  "project.settings.disclosures.ai.content-rules": {
-    "message": "Please refer to Section 6 of <rules>Modrinth's Content Rules</rules> for more information."
+  "project.settings.disclosures.ai-functionality.description": {
+    "message": "Must be enabled if the project has functionality that makes use of generative AI, such as an in-game chatbot or dynamically generated textures."
+  },
+  "project.settings.disclosures.ai-functionality.note-placeholder": {
+    "message": "e.g. The NPCs uses generative AI for dialogue options."
+  },
+  "project.settings.disclosures.ai-functionality.title": {
+    "message": "Contains generative AI functionality"
   },
   "project.settings.disclosures.ai.description": {
-    "message": "You must enable this if this project contains a substantial amount of AI-generated code, any\n\t\t\t\tassets that are substantially AI-generated, the project's functionality relies on the use of\n\t\t\t\tgenerative AI, or if any element of your project's page such as description or publishing\n\t\t\t\trelies on generative AI."
+    "message": "Must be enabled if this project contains any AI-generated assets or text, or if it contains a substantial amount of AI-generated code."
+  },
+  "project.settings.disclosures.ai.description.2": {
+    "message": "It is important to be honest if generative AI has played a significant role in the production or publishing of this content. An easy way to think about this is if you would consider AI a co-author of the project, you should disclose it here."
   },
   "project.settings.disclosures.ai.note-placeholder": {
     "message": "e.g. The Chinese and Arabic translations are AI-generated."
+  },
+  "project.settings.disclosures.ai.still-unsure": {
+    "message": "Still unsure? Refer to our guide to <faq-link>Disclosure and Usage of AI</faq-link> and section 6 of <rules>Modrinth's Content Rules</rules> for more information."
   },
   "project.settings.disclosures.ai.title": {
     "message": "Contains AI-generated content"
   },
   "project.settings.disclosures.ai.types-description": {
-    "message": "What is generative AI being used for?"
+    "message": "What types of content have been generated with AI?"
   },
   "project.settings.disclosures.archived.banner-preview": {
     "message": "Banner preview"
@@ -3938,11 +3971,20 @@
   "project.settings.disclosures.derivative.note-label": {
     "message": "Explain how your project is based on the original work"
   },
+  "project.settings.disclosures.derivative.note-placeholder": {
+    "message": "This is a fork that adds a few new biomes and ports it to newer Minecraft versions."
+  },
   "project.settings.disclosures.derivative.title": {
     "message": "Contains derivative content"
   },
   "project.settings.disclosures.description": {
     "message": "You must add any applicable content disclosures to your project in compliance with <rules>Modrinth's Content Rules</rules>."
+  },
+  "project.settings.disclosures.description.2": {
+    "message": "Unsure how to apply content disclosure to your project? Check out our <faq-link>Content Disclosures FAQ</faq-link>."
+  },
+  "project.settings.disclosures.info-tooltip": {
+    "message": "Click to learn more about when to use this disclosure."
   },
   "project.settings.disclosures.last-updated": {
     "message": "Last updated on {date} by {user}"
@@ -3960,7 +4002,7 @@
     "message": "Please <contact-support-link>contact support</contact-support-link> if this disclosure needs to be edited or removed."
   },
   "project.settings.disclosures.paid-features.description": {
-    "message": "You must enable this if your project contains features that can be obtained by spending real-world money."
+    "message": "Must be enabled if this project contains features that can be unlocked by spending real-world money."
   },
   "project.settings.disclosures.paid-features.feature-placeholder": {
     "message": "e.g. Cosmetics available as Patreon reward"
@@ -4084,6 +4126,171 @@
   },
   "project.settings.general.url.title": {
     "message": "URL"
+  },
+  "project.settings.license.all-rights": {
+    "message": "All Rights Reserved/No License"
+  },
+  "project.settings.license.allow-later": {
+    "message": "Allow later editions"
+  },
+  "project.settings.license.custom": {
+    "message": "Custom"
+  },
+  "project.settings.license.custom-url-description": {
+    "message": "The web location of the full license text. You have to provide a link since this is a custom license."
+  },
+  "project.settings.license.has-spdx": {
+    "message": "Use SPDX identifier"
+  },
+  "project.settings.license.intro": {
+    "message": "It is important to choose a proper license for your {type}. You may choose one from our list or provide a custom license. You may also provide a custom URL to your chosen license; otherwise, the license text will be displayed. See our <guide>licensing guide</guide> for more information."
+  },
+  "project.settings.license.later": {
+    "message": "Later editions"
+  },
+  "project.settings.license.later-description": {
+    "message": "The license you selected has an \"or later\" clause. If you check this box, users may use your project under later editions of the license."
+  },
+  "project.settings.license.missing-name": {
+    "message": "Enter a name or SPDX identifier for your custom license."
+  },
+  "project.settings.license.missing-url": {
+    "message": "Enter a URL to the full text of your custom license."
+  },
+  "project.settings.license.name": {
+    "message": "License name"
+  },
+  "project.settings.license.name-description": {
+    "message": "The full name of the license. If the license has a SPDX identifier, please check the checkbox and use the identifier instead."
+  },
+  "project.settings.license.name-placeholder": {
+    "message": "License name"
+  },
+  "project.settings.license.optional-url": {
+    "message": "License URL (optional)"
+  },
+  "project.settings.license.select": {
+    "message": "Select a license"
+  },
+  "project.settings.license.select-description": {
+    "message": "How users are and aren't allowed to use your project."
+  },
+  "project.settings.license.select-placeholder": {
+    "message": "Select license..."
+  },
+  "project.settings.license.spdx": {
+    "message": "SPDX identifier"
+  },
+  "project.settings.license.spdx-description": {
+    "message": "If your license does not have an official <spdx>SPDX license identifier</spdx>, uncheck the box and enter the name of the license instead."
+  },
+  "project.settings.license.spdx-placeholder": {
+    "message": "SPDX identifier"
+  },
+  "project.settings.license.title": {
+    "message": "License"
+  },
+  "project.settings.license.updated": {
+    "message": "License updated"
+  },
+  "project.settings.license.updated-text": {
+    "message": "Your license has been updated."
+  },
+  "project.settings.license.url": {
+    "message": "License URL"
+  },
+  "project.settings.license.url-description": {
+    "message": "The web location of the full license text. If you don't provide a link, the license text will be displayed instead."
+  },
+  "project.settings.links.add-link": {
+    "message": "Add link"
+  },
+  "project.settings.links.discord": {
+    "message": "Discord invite"
+  },
+  "project.settings.links.discord-description": {
+    "message": "An invitation link to your Discord server."
+  },
+  "project.settings.links.donation-link": {
+    "message": "Link"
+  },
+  "project.settings.links.donation-platform": {
+    "message": "Platform"
+  },
+  "project.settings.links.donation-url": {
+    "message": "URL"
+  },
+  "project.settings.links.donation-username": {
+    "message": "Username"
+  },
+  "project.settings.links.donation-username-placeholder": {
+    "message": "Enter your {platform} username"
+  },
+  "project.settings.links.donations": {
+    "message": "Donation links"
+  },
+  "project.settings.links.donations-description": {
+    "message": "Add donation links for users to support you directly."
+  },
+  "project.settings.links.issues": {
+    "message": "Issue tracker"
+  },
+  "project.settings.links.issues-description": {
+    "message": "A place for users to report bugs, issues, and concerns about your project."
+  },
+  "project.settings.links.link-type": {
+    "message": "Link type"
+  },
+  "project.settings.links.remove-donation-link": {
+    "message": "Remove donation link"
+  },
+  "project.settings.links.server-discord": {
+    "message": "Discord"
+  },
+  "project.settings.links.server-updated": {
+    "message": "Your server links have been updated."
+  },
+  "project.settings.links.server-wiki-description": {
+    "message": "A page containing information, documentation, and help for the server."
+  },
+  "project.settings.links.site": {
+    "message": "Website"
+  },
+  "project.settings.links.site-description": {
+    "message": "Your server's official website."
+  },
+  "project.settings.links.source": {
+    "message": "Source code"
+  },
+  "project.settings.links.source-description": {
+    "message": "A page/repository containing the source code for your project"
+  },
+  "project.settings.links.store": {
+    "message": "Store"
+  },
+  "project.settings.links.store-description": {
+    "message": "A link to your server's store or shop."
+  },
+  "project.settings.links.title": {
+    "message": "Links"
+  },
+  "project.settings.links.updated": {
+    "message": "Your links have been updated."
+  },
+  "project.settings.links.updated-title": {
+    "message": "Links updated"
+  },
+  "project.settings.links.url-placeholder": {
+    "message": "Enter a valid URL"
+  },
+  "project.settings.links.visit-link": {
+    "message": "Visit {url}"
+  },
+  "project.settings.links.wiki": {
+    "message": "Wiki page"
+  },
+  "project.settings.links.wiki-description": {
+    "message": "A page containing information, documentation, and help for the project."
   },
   "project.settings.monetization.description": {
     "message": "Projects on Modrinth are automatically enrolled in the <rewards-program-link>Rewards Program</rewards-program-link>. If you don't want to (or can't for legal reasons) earn revenue from this project, you can turn it off here."
@@ -4288,6 +4495,9 @@
   },
   "project.settings.tags.upload-version-first.heading": {
     "message": "Upload versions before adding tags"
+  },
+  "project.slug-suggestions.label": {
+    "message": "Suggestions:"
   },
   "project.versions.copy-id-option": {
     "message": "Copy ID"
@@ -5001,13 +5211,10 @@
     "message": "The code entered is incorrect!"
   },
   "settings.account.two-factor.field.code.description": {
-    "message": "Please enter a two-factor code to proceed."
+    "message": "Enter a code from your authenticator app, or use one of your backup codes."
   },
   "settings.account.two-factor.field.code.label": {
     "message": "Enter two-factor code"
-  },
-  "settings.account.two-factor.field.code.placeholder": {
-    "message": "Enter code..."
   },
   "settings.account.two-factor.setup.intro": {
     "message": "Two-factor authentication keeps your account secure by requiring access to a second device in order to sign in."
@@ -5252,6 +5459,9 @@
   "settings.billing.plan.title": {
     "message": "{size} Plan"
   },
+  "settings.billing.price.includes-tax": {
+    "message": "Includes {amount} tax"
+  },
   "settings.billing.price.per-interval": {
     "message": "{price} / {interval}"
   },
@@ -5476,6 +5686,21 @@
   },
   "ui.newsletter-button.tooltip": {
     "message": "Subscribe to the Modrinth newsletter"
+  },
+  "ui.two-factor-code.authentication-code": {
+    "message": "Six-digit authentication code"
+  },
+  "ui.two-factor-code.backup-code": {
+    "message": "Backup code"
+  },
+  "ui.two-factor-code.backup-code.placeholder": {
+    "message": "Enter a backup code"
+  },
+  "ui.two-factor-code.use-authentication-code": {
+    "message": "Use an authenticator code"
+  },
+  "ui.two-factor-code.use-backup-code": {
+    "message": "Use a backup code"
   },
   "version.all-versions": {
     "message": "All versions"

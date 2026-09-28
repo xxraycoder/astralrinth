@@ -125,19 +125,13 @@ onMounted(() => {
 				<NewsletterButton />
 				<ButtonLink
 					v-tooltip="`RSS feed`"
-					aria-label="RSS feed"
 					href="/news/feed/rss.xml"
 					target="_blank"
 					class="!w-9 !rounded-full !px-0"
 				>
 					<RssIcon />
 				</ButtonLink>
-				<ButtonLink
-					v-tooltip="`Changelog`"
-					href="/news/changelog"
-					aria-label="Changelog"
-					class="!w-9 !rounded-full !px-0"
-				>
+				<ButtonLink v-tooltip="`Changelog`" href="/news/changelog" class="!w-9 !rounded-full !px-0">
 					<GitGraphIcon />
 				</ButtonLink>
 			</div>
@@ -166,7 +160,7 @@ onMounted(() => {
 						to="/organization/modrinth"
 						class="inline-flex items-center gap-1 font-semibold hover:underline hover:brightness-[--hover-brightness]"
 					>
-						<Avatar src="https://cdn-raw.modrinth.com/modrinth-icon-96.webp" size="24px" />
+						<Avatar src="https://cdn.modrinth.com/modrinth-icon-96.webp" size="24px" />
 						Modrinth Team
 					</nuxt-link>
 				</template>

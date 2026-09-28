@@ -1,6 +1,8 @@
 import type { Labrinth } from '@modrinth/api-client'
-import type { ContentInstallInstance, ContentInstallProjectInfo, ContentItem } from '@modrinth/ui'
 import {
+	type ContentInstallInstance,
+	type ContentInstallProjectInfo,
+	type ContentItem,
 	createContext,
 	defineMessage,
 	getLatestMatchingInstallVersion,
@@ -858,7 +860,7 @@ export function createContentInstall(opts: {
 			const packs = await list()
 			const existingPack = packs.find((pack) => pack.link?.project_id === project.id)
 
-			if (existingPack && !appSettings.getFeatureFlag('skip_non_essential_warnings')) {
+			if (existingPack && !appSettings.skipNonEssentialWarnings) {
 				pendingModpackInstall = { project, version, source, callback, createInstanceCallback }
 				modpackAlreadyInstalledModalRef?.show(existingPack.name, existingPack.id)
 				return
@@ -869,7 +871,7 @@ export function createContentInstall(opts: {
 				project_id: project.id,
 				version_id: version,
 				title: project.title,
-				icon_url: project.icon_url,
+				icon_url: project.raw_icon_url,
 			})
 			const instanceId = installJobInstanceId(job)
 			if (instanceId) {
@@ -985,7 +987,7 @@ export function createContentInstall(opts: {
 				project_id: project.id,
 				version_id: version,
 				title: project.title,
-				icon_url: project.icon_url,
+				icon_url: project.raw_icon_url,
 			})
 			const instanceId = installJobInstanceId(job)
 			if (instanceId) {

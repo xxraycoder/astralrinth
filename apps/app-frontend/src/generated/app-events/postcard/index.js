@@ -85,11 +85,6 @@ function deserialize_APP_EVENT(d) {
             tag: "log",
             value: deserialize_LOG_PAYLOAD(d)
         };
-    case 12:
-        return {
-            tag: "ads_consent_required",
-            value: d.deserialize_bool()
-        };
     default:
         throw "variant not implemented"
     }
@@ -496,6 +491,10 @@ function deserialize_INSTALL_JOB_SNAPSHOT(d) {
         instance_id: (d.deserialize_number(U32_BYTES, false) === 0) ? undefined : d.deserialize_string(),
         kind: deserialize_INSTALL_JOB_KIND(d),
         status: deserialize_INSTALL_JOB_STATUS(d),
+        paused: d.deserialize_bool(),
+        canceling: d.deserialize_bool(),
+        can_pause: d.deserialize_bool(),
+        can_cancel: d.deserialize_bool(),
         target: deserialize_INSTALL_TARGET(d),
         phase: deserialize_INSTALL_PHASE_ID(d),
         progress: (d.deserialize_number(U32_BYTES, false) === 0) ? undefined : deserialize_INSTALL_PROGRESS(d),

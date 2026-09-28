@@ -50,9 +50,6 @@
   "app.action-bar.install.summary.download-failed": {
     "message": "Preuzimanje nije završeno"
   },
-  "app.action-bar.install.summary.instance-not-found": {
-    "message": "Instanca nije pronađena"
-  },
   "app.action-bar.install.summary.invalid-file-path": {
     "message": "Put do datoteke nije ispravan"
   },
@@ -92,9 +89,6 @@
   "app.action-bar.install.updating-shared-content": {
     "message": "Ažuriranje deljenog sadržaja"
   },
-  "app.action-bar.installs": {
-    "message": "Instalacije"
-  },
   "app.action-bar.make-primary-instance": {
     "message": "Učini primarnom instancom"
   },
@@ -127,21 +121,6 @@
   },
   "app.action-bar.view-logs": {
     "message": "Pregledaj dnevnike"
-  },
-  "app.ads-consent.accept": {
-    "message": "Prihvati sve"
-  },
-  "app.ads-consent.body": {
-    "message": "Reklame omogućavaju da Modrinth radi i finansiraju isplate kreatorima. Naši partneri mogu da čuvaju i koriste kolačiće u aplikaciji da bi personalizovali reklame i merili performanse."
-  },
-  "app.ads-consent.manage": {
-    "message": "Upravljaj podešavanjima"
-  },
-  "app.ads-consent.reject": {
-    "message": "Odbij sve"
-  },
-  "app.ads-consent.title": {
-    "message": "Tvoja bezbednost i kako reklame pomažu Modrinth-u"
   },
   "app.appearance-settings.default-landing-page.home": {
     "message": "Početna stranica"
@@ -848,9 +827,6 @@
   "instance.settings.tabs.general.update-channel.select": {
     "message": "Izaberi kanal ažuiranja"
   },
-  "instance.settings.tabs.hooks.description": {
-    "message": "Hookovi omogućavaju naprednim korisnicima da pokreću određene sistemske komande pre i posle pokretanja igre."
-  },
   "instance.settings.tabs.hooks.post-exit": {
     "message": "Poslje izlaza"
   },
@@ -869,9 +845,6 @@
   "instance.settings.tabs.hooks.pre-launch.enter": {
     "message": "Unesi komandu pre lansiranja..."
   },
-  "instance.settings.tabs.hooks.title": {
-    "message": "Hookovi za pokretanje igre"
-  },
   "instance.settings.tabs.hooks.wrapper": {
     "message": "Omotač"
   },
@@ -887,47 +860,17 @@
   "instance.settings.tabs.installation.loader-version": {
     "message": "Verzija {loader}"
   },
-  "instance.settings.tabs.java.custom-environment-variables": {
-    "message": "Prilagođene promenljive okruženja"
-  },
-  "instance.settings.tabs.java.custom-java-arguments": {
-    "message": "Prilagođeni Java argumenti"
-  },
-  "instance.settings.tabs.java.custom-java-installation": {
-    "message": "Prilagođena Java instalacija"
-  },
-  "instance.settings.tabs.java.custom-memory-allocation": {
-    "message": "Prilagođena alokacija radne memorije"
-  },
   "instance.settings.tabs.java.enter-environment-variables": {
     "message": "Unesi promenljive sredine..."
   },
   "instance.settings.tabs.java.enter-java-arguments": {
     "message": "Prilagođeni Java argumenti..."
   },
-  "instance.settings.tabs.java.environment-variables": {
-    "message": "Promenljive okruženja"
-  },
   "instance.settings.tabs.java.hooks": {
     "message": "Hookovi"
   },
-  "instance.settings.tabs.java.java-arguments": {
-    "message": "Java argumenti"
-  },
-  "instance.settings.tabs.java.java-installation": {
-    "message": "Java instalacija"
-  },
-  "instance.settings.tabs.java.java-memory": {
-    "message": "Dodeljena radna memorija"
-  },
   "instance.settings.tabs.java.java-path-placeholder": {
     "message": "/put/do/jave"
-  },
-  "instance.settings.tabs.window": {
-    "message": "Prozor"
-  },
-  "instance.settings.tabs.window.custom-window-settings": {
-    "message": "Prilagođene postavke prozora"
   },
   "instance.settings.tabs.window.fullscreen": {
     "message": "Potpuni ekran"

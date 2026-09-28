@@ -19,14 +19,27 @@
 				</div>
 
 				<div>
-					<label for="project-name">
+					<label for="project-name" class="block w-fit">
 						<span class="label__title">Name</span>
 					</label>
-					<Input id="project-name" v-model="name" :maxlength="2048" :disabled="!hasPermission" />
+					<Input
+						id="project-name"
+						v-model="name"
+						:maxlength="2048"
+						wrapper-class="w-full max-w-72"
+						:disabled="!hasPermission"
+					/>
+					<ValidationMessage
+						:check="nameValidation"
+						:project-field="project.name"
+						:current-field="name"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('name')" class="mt-2" />
 				</div>
 
-				<div>
-					<label for="project-slug">
+				<div @focusin="onSlugSuggestionFocusIn" @focusout="onSlugSuggestionFocusOut">
+					<label for="project-slug" class="block w-fit">
 						<span class="label__title">URL</span>
 					</label>
 					<Input
@@ -43,10 +56,17 @@
 							</span>
 						</template>
 					</Input>
+					<ValidationMessage :check="saveValidation.forField('slug')" class="mt-2" />
+					<SlugSuggestions
+						:selected="slug"
+						:suggestions="slugSuggestions"
+						:visible="hasPermission && showSlugSuggestions"
+						@select="slug = $event"
+					/>
 				</div>
 
 				<div>
-					<label for="project-summary">
+					<label for="project-summary" class="block w-fit">
 						<span class="label__title">Summary</span>
 					</label>
 					<Textarea
@@ -56,15 +76,17 @@
 						:disabled="!hasPermission"
 						resize="vertical"
 					/>
-					<div v-if="summaryWarning" class="my-2">
-						<SettingsInlineWarning>
-							{{ summaryWarning }}
-						</SettingsInlineWarning>
-					</div>
+					<ValidationMessage
+						:check="summaryValidation"
+						:project-field="project.summary"
+						:current-field="summary"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('summary')" class="mt-2" />
 				</div>
 
 				<div>
-					<label for="project-icon">
+					<label for="project-icon" class="block w-fit">
 						<span class="label__title"
 							>Icon <span class="font-normal text-secondary">(optional)</span></span
 						>
@@ -100,13 +122,20 @@
 							</Button>
 						</div>
 					</div>
+					<ValidationMessage
+						:check="iconValidation"
+						:project-field="false"
+						:current-field="Boolean(icon || deletedIcon)"
+						class="mt-2"
+					/>
+					<ValidationMessage :check="saveValidation.forField('icon')" class="mt-2" />
 				</div>
 
 				<!-- Server Project Settings -->
 				<template v-if="isServerProject">
 					<!-- Banner -->
 					<div>
-						<label>
+						<label class="block w-fit">
 							<span class="label__title"
 								>Banner <span class="font-normal text-secondary">(optional)</span></span
 							>
@@ -179,7 +208,7 @@
 				</template>
 
 				<div id="visibility">
-					<label>
+					<label class="block w-fit">
 						<span class="label__title">Visibility</span>
 					</label>
 					<div class="flex flex-col gap-2.5">
@@ -281,10 +310,15 @@
 				</template>
 			</SettingsOptionCard>
 		</div>
+		<ValidationMessage
+			:check="saveValidation.withoutFields(['name', 'summary', 'icon', 'slug'])"
+			class="my-4"
+		/>
 		<UnsavedChangesPopup
 			:original="original"
 			:modified="modified"
 			:saving="saving"
+			:can-save="canSave"
 			@reset="resetChanges"
 			@save="handleSave"
 		/>
@@ -294,7 +328,6 @@
 
 <script setup>
 import { ImageIcon, ScaleIcon, TrashIcon, UploadIcon } from '@modrinth/assets'
-import { MIN_SUMMARY_CHARS } from '@modrinth/moderation'
 import {
 	Avatar,
 	Button,
@@ -319,10 +352,18 @@ import {
 	usePageLeaveSafety,
 	useVIntl,
 } from '@modrinth/ui'
-import { fileIsValid, formatProjectStatus } from '@modrinth/utils'
+import { fileIsValid, formatProjectStatus, isAdmin } from '@modrinth/utils'
 
 import AiImageWarningModal from '~/components/ui/AiImageWarningModal.vue'
+import SlugSuggestions from '~/components/ui/SlugSuggestions.vue'
+import ValidationMessage from '~/components/ValidationMessage.vue'
 import { useAuth } from '~/composables/auth.js'
+import { useProjectNagMessages } from '~/composables/project-nag-validation'
+import { useProjectSaveValidation } from '~/composables/project-save-validation'
+import {
+	useProjectSlugSuggestions,
+	useSlugSuggestionVisibility,
+} from '~/composables/project-slug-suggestions'
 import { fileDeclaresAi } from '~/helpers/c2pa'
 import { getProjectTypeForUrl } from '~/helpers/projects.js'
 
@@ -333,6 +374,7 @@ const { addNotification } = injectNotificationManager()
 const {
 	projectV3: project,
 	currentMember,
+	allMembers,
 	patchProjectV3,
 	patchIcon,
 	invalidate,
@@ -350,6 +392,20 @@ const formatBytes = useFormatBytes()
 const name = ref(project.value.name)
 const slug = ref(project.value.slug ?? '')
 const summary = ref(project.value.summary)
+const {
+	onFocusIn: onSlugSuggestionFocusIn,
+	onFocusOut: onSlugSuggestionFocusOut,
+	visible: showSlugSuggestions,
+} = useSlugSuggestionVisibility()
+const ownerUsername = computed(
+	() => (allMembers.value.find((member) => member.is_owner) ?? allMembers.value[0])?.user.username,
+)
+const { suggestions: slugSuggestions } = useProjectSlugSuggestions({
+	title: name,
+	username: ownerUsername,
+	currentProjectId: () => project.value.id,
+	enabled: showSlugSuggestions,
+})
 const icon = ref(null)
 const previewImage = ref(null)
 const deletedIcon = ref(false)
@@ -389,27 +445,24 @@ const bannerFile = ref(null)
 const bannerGalleryImage = computed(() =>
 	project.value.gallery?.find((img) => img.name === MC_SERVER_BANNER_NAME),
 )
+const isAdminUser = computed(() => isAdmin(currentMember.value?.user))
 const hasPermission = computed(() => {
 	const EDIT_DETAILS = 1 << 2
-	return ((currentMember.value?.permissions ?? 0) & EDIT_DETAILS) === EDIT_DETAILS
+	return (
+		isAdminUser.value || ((currentMember.value?.permissions ?? 0) & EDIT_DETAILS) === EDIT_DETAILS
+	)
 })
+
+const nameValidation = useProjectNagMessages('name')
+const summaryValidation = useProjectNagMessages('summary')
+const iconValidation = useProjectNagMessages('icon')
+const canSave = computed(() => hasPermission.value && !saveValidation.hasErrors.value)
 
 const monetizationToggleDisabled = computed(() => !hasPermission.value || isForceDemonetized.value)
 
 const hasDeletePermission = computed(() => {
 	const DELETE_PROJECT = 1 << 7
 	return ((currentMember.value?.permissions ?? 0) & DELETE_PROJECT) === DELETE_PROJECT
-})
-
-const summaryWarning = computed(() => {
-	const text = summary.value?.trim() || ''
-	const charCount = text.length
-
-	if (charCount < MIN_SUMMARY_CHARS) {
-		return `It's recommended to have a summary with at least ${MIN_SUMMARY_CHARS} characters. (${charCount}/${MIN_SUMMARY_CHARS})`
-	}
-
-	return null
 })
 
 const visibilityOptions = computed(() =>
@@ -501,6 +554,7 @@ const hasChanges = computed(() =>
 const { confirmLeaveModal } = usePageLeaveSafety(hasChanges)
 
 function resetChanges() {
+	saveValidation.clear()
 	name.value = project.value.name
 	slug.value = project.value.slug ?? ''
 	summary.value = project.value.summary
@@ -525,13 +579,18 @@ async function updateMonetizationStatus(status) {
 	}
 }
 
+const saveValidation = useProjectSaveValidation(() => modified.value)
+
 async function handleSave() {
+	if (!canSave.value || saving.value) return
+	summary.value = summary.value.trim()
+	const submittedState = saveValidation.snapshot()
 	saving.value = true
 	try {
 		const hasPatchChanges = Object.keys(basePatchData.value).length > 0
 
 		if (hasPatchChanges) {
-			await patchProjectV3(basePatchData.value)
+			await patchProjectV3(basePatchData.value, false, true)
 		}
 
 		if (deletedIcon.value) {
@@ -550,6 +609,9 @@ async function handleSave() {
 			bannerFile.value = null
 			bannerPreview.value = null
 		}
+		saveValidation.clear()
+	} catch (error) {
+		if (!saveValidation.capture(error, submittedState)) throw error
 	} finally {
 		saving.value = false
 	}

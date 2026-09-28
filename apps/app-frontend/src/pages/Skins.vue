@@ -34,14 +34,11 @@ import EditSkinModal from '@/components/ui/skin/EditSkinModal.vue'
 import UnsupportedSkinAccount from '@/components/ui/astralrinth/skin/UnsupportedSkinAccount.vue'
 import VirtualSkinSectionList from '@/components/ui/skin/VirtualSkinSectionList.vue'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
-import { check_reachable, get_default_user, users } from '@/helpers/auth'
+import { handleSevereError } from '@/composables/use-error.js'
+import { check_reachable, get_default_user, login as login_flow, users } from '@/helpers/auth'
+import { cleanupUnusedPreviews } from '@/helpers/rendering/skin-previews'
 import { loadExternalAuthProviders } from '@/models/astralrinth/authentication'
-import type { RenderResult } from '@/helpers/rendering/batch-skin-renderer.ts'
-import {
-	generateSkinPreviews,
-	getSkinPreviewKey,
-	skinBlobUrlMap,
-} from '@/helpers/rendering/batch-skin-renderer.ts'
+import { trackEvent } from '@/helpers/analytics'
 import type { Cape, Skin, SkinTextureUrl } from '@/helpers/skins.ts'
 import {
 	equip_skin,
@@ -414,7 +411,9 @@ async function loadSkins() {
 			shouldPreserveKnownEquippedSkin && locallyKnownEquippedSkin
 				? mergeEquippedSkin(loadedSkins, locallyKnownEquippedSkin)
 				: loadedSkins
-		generateSkinPreviews(skins.value, capes.value)
+		void cleanupUnusedPreviews(skins.value).catch((error) =>
+			console.warn('Could not clean skin previews', error),
+		)
 		selectedSkin.value = skins.value.find((s) => s.is_equipped) ?? null
 		originalSelectedSkin.value = selectedSkin.value
 	} catch (error) {
@@ -552,7 +551,9 @@ function removeLocalSkin(deletedSkin: Skin) {
 		originalSelectedSkin.value = nextSkins.find((skin) => skin.is_equipped) ?? null
 	}
 
-	generateSkinPreviews(skins.value, capes.value)
+	void cleanupUnusedPreviews(skins.value).catch((error) =>
+		console.warn('Could not clean skin previews', error),
+	)
 }
 
 function setLocallyEquippedSkin(skinToApply: Skin) {
@@ -633,7 +634,9 @@ function updateLocalSkin(savedSkin: Skin, applied: boolean, previousSkin?: Skin)
 		}
 	}
 
-	generateSkinPreviews(skins.value, capes.value)
+	void cleanupUnusedPreviews(skins.value).catch((error) =>
+		console.warn('Could not clean skin previews', error),
+	)
 }
 
 async function reorderSavedSkins(orderedSkins: Skin[]) {
@@ -649,14 +652,18 @@ async function reorderSavedSkins(orderedSkins: Skin[]) {
 	const nextSavedSkins = [...orderedSkins, ...remainingSavedSkins]
 
 	skins.value = [...nextSavedSkins, ...defaultSkins]
-	generateSkinPreviews(skins.value, capes.value)
+	void cleanupUnusedPreviews(skins.value).catch((error) =>
+		console.warn('Could not clean skin previews', error),
+	)
 
 	try {
 		const persistedSavedSkins = await preserveExternalSkins(nextSavedSkins)
 
 		if (persistedSavedSkins.some((skin, index) => skin !== nextSavedSkins[index])) {
 			skins.value = [...persistedSavedSkins, ...defaultSkins]
-			generateSkinPreviews(skins.value, capes.value)
+			void cleanupUnusedPreviews(skins.value).catch((error) =>
+				console.warn('Could not clean skin previews', error),
+			)
 		}
 
 		await set_custom_skin_order(
@@ -668,7 +675,9 @@ async function reorderSavedSkins(orderedSkins: Skin[]) {
 		skins.value = previousSkins
 		selectedSkin.value = previousSelectedSkin
 		originalSelectedSkin.value = previousOriginalSelectedSkin
-		generateSkinPreviews(skins.value, capes.value)
+		void cleanupUnusedPreviews(skins.value).catch((error) =>
+			console.warn('Could not clean skin previews', error),
+		)
 		addNotification({
 			type: 'error',
 			title: formatMessage(messages.reorderSkinErrorTitle),
@@ -806,12 +815,21 @@ async function loadCurrentUser() {
 	}
 }
 
-function getBakedSkinTextures(skin: Skin): RenderResult | undefined {
-	return skinBlobUrlMap.get(getSkinPreviewKey(skin))
-}
 
 function showAccountLoginModal() {
 	accountsCard.value?.showAccountLoginModal()
+}
+
+async function login() {
+	accountsCard.value.setLoginDisabled(true)
+	const loggedIn = await login_flow().catch(handleSevereError)
+
+	if (loggedIn && accountsCard) {
+		await accountsCard.value.refreshValues()
+	}
+
+	trackEvent('AccountLogIn')
+	accountsCard.value.setLoginDisabled(false)
 }
 
 function openAddSkinFileBrowser() {
@@ -1235,13 +1253,6 @@ if (isMicrosoftAccount.value) {
 									"
 									small
 									class="ears-feature-toggle-switch"
-									:aria-label="
-										formatMessage(
-											earsFeaturesEnabled
-												? messages.toggleEarsFeaturesOff
-												: messages.toggleEarsFeaturesOn,
-										)
-									"
 								/>
 							</div>
 						</div>
@@ -1255,7 +1266,7 @@ if (isMicrosoftAccount.value) {
 				ref="skinSectionList"
 				:saved-skins="savedSkins"
 				:default-skin-sections="defaultSkinSections"
-				:get-baked-skin-textures="getBakedSkinTextures"
+				:capes="capes"
 				:is-skin-selected="isSkinSelected"
 				:is-skin-active="isSkinActive"
 				:is-add-skin-button-drag-active="isAddSkinButtonDragActive"

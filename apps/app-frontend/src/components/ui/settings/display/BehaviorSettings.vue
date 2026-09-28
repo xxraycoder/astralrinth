@@ -2,40 +2,32 @@
 import {
 	defineMessages,
 	injectAuth,
+	injectNotificationManager,
 	injectUserPreferences,
 	Toggle,
 	useSavable,
 	useVIntl,
 } from '@modrinth/ui'
-import { useQueryClient } from '@tanstack/vue-query'
-import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { inject, onBeforeUnmount, onMounted } from 'vue'
 
+import { useAppSettings } from '@/composables/use-app-settings.ts'
 import {
-	DEFAULT_FEATURE_FLAGS,
-	type FeatureFlag,
-	useAppSettings,
-} from '@/composables/use-app-settings.ts'
-import {
-	get_global_synced_options,
-	type GlobalSyncedOptions,
-	set_global_synced_option,
-} from '@/helpers/instance.ts'
-import { type AppSettings, get, set } from '@/helpers/settings.ts'
-import { screenshotKeys } from '@/pages/instance/query-options.ts'
+	type AppSettings,
+	appSettingsKeys,
+	appSettingsQueryOptions,
+	get,
+	set,
+} from '@/helpers/settings.ts'
 import { appSettingsModalContextKey } from '@/providers/app-settings-modal'
 
 const appSettings = useAppSettings()
 const { formatMessage } = useVIntl()
 const auth = injectAuth()
+const { handleError } = injectNotificationManager()
 const { updatePreferences } = injectUserPreferences()
 const settingsModal = inject(appSettingsModalContextKey, null)
 const queryClient = useQueryClient()
-
-const worldsInHomeFlag: FeatureFlag = 'worlds_in_home'
-const compactInstanceCardsFlag: FeatureFlag = 'compact_instance_cards'
-const skipNonEssentialWarningsFlag: FeatureFlag = 'skip_non_essential_warnings'
-const skipUnknownPackWarningFlag: FeatureFlag = 'skip_unknown_pack_warning'
-const showPlayTimeFlag: FeatureFlag = 'show_instance_play_time'
 
 const messages = defineMessages({
 	syncAcrossDevicesTitle: {
@@ -59,14 +51,6 @@ const messages = defineMessages({
 		id: 'app.behavior-settings.content.title',
 		defaultMessage: 'Home and content',
 	},
-	showAllScreenshotsTitle: {
-		id: 'app.behavior-settings.show-all-screenshots.title',
-		defaultMessage: 'Show all screenshots together',
-	},
-	showAllScreenshotsDescription: {
-		id: 'app.behavior-settings.show-all-screenshots.description',
-		defaultMessage: 'View screenshots from all your instances on the Screenshots page.',
-	},
 	confirmationsTitle: {
 		id: 'app.behavior-settings.confirmations.title',
 		defaultMessage: 'Confirmations',
@@ -78,6 +62,14 @@ const messages = defineMessages({
 	minimizeLauncherDescription: {
 		id: 'app.appearance-settings.minimize-launcher.description',
 		defaultMessage: 'Minimize Modrinth App when Minecraft starts.',
+	},
+	refocusOnGameCloseTitle: {
+		id: 'app.behavior-settings.refocus-on-game-close.title',
+		defaultMessage: 'Refocus app when Minecraft closes',
+	},
+	refocusOnGameCloseDescription: {
+		id: 'app.behavior-settings.refocus-on-game-close.description',
+		defaultMessage: 'Bring Modrinth App to the foreground when Minecraft exits.',
 	},
 	defaultLandingPageHome: {
 		id: 'app.appearance-settings.default-landing-page.home',
@@ -94,15 +86,6 @@ const messages = defineMessages({
 	toggleSidebarDescription: {
 		id: 'app.appearance-settings.toggle-sidebar.description',
 		defaultMessage: 'Hide the right sidebar by default and add a button to show or hide it.',
-	},
-	jumpBackIntoWorldsTitle: {
-		id: 'app.appearance-settings.jump-back-into-worlds.title',
-		defaultMessage: 'Jump into worlds or instances',
-	},
-	jumpBackIntoWorldsDescription: {
-		id: 'app.appearance-settings.jump-back-into-worlds.description',
-		defaultMessage:
-			'Show recently played worlds or instances in the "Jump in" section on the Home page.',
 	},
 	compactModeTitle: {
 		id: 'app.appearance-settings.compact-mode.title',
@@ -151,9 +134,8 @@ const messages = defineMessages({
 type BehaviorSettingsState = {
 	syncBehaviorAcrossDevices: boolean
 	minimizeApp: boolean
+	refocusOnGameClose: boolean
 	hideRightSidebar: boolean
-	showJumpIn: boolean
-	showAllScreenshots: boolean
 	compactInstanceCards: boolean
 	showPlayTime: boolean
 	hideNametag: boolean
@@ -161,99 +143,75 @@ type BehaviorSettingsState = {
 	skipNonEssentialWarnings: boolean
 }
 
-const [initialSettings, initialGlobalSyncedOptions] = await Promise.all([
-	get(),
-	get_global_synced_options(),
-])
-const persistedSettings = ref(initialSettings)
-const persistedGlobalSyncedOptions = ref(initialGlobalSyncedOptions)
+const settingsQuery = useQuery(appSettingsQueryOptions())
+await settingsQuery.suspense()
 
-function getBehaviorSettingsState(
-	settings: AppSettings,
-	globalSyncedOptions: GlobalSyncedOptions,
-): BehaviorSettingsState {
+function getBehaviorSettingsState(settings: AppSettings): BehaviorSettingsState {
 	return {
 		syncBehaviorAcrossDevices: settings.sync_behavior_across_devices,
 		minimizeApp: settings.hide_on_process_start,
+		refocusOnGameClose: settings.refocus_on_game_close,
+		compactInstanceCards: settings.compact_instance_cards,
+		showPlayTime: settings.show_play_time,
+		warnOnUnknownModpacks: settings.warn_on_unknown_modpacks,
+		skipNonEssentialWarnings: settings.skip_non_essential_warnings,
 		hideRightSidebar: settings.toggle_sidebar,
-		showJumpIn: settings.feature_flags[worldsInHomeFlag] ?? DEFAULT_FEATURE_FLAGS[worldsInHomeFlag],
-		showAllScreenshots: globalSyncedOptions.screenshots,
-		compactInstanceCards:
-			settings.feature_flags[compactInstanceCardsFlag] ??
-			DEFAULT_FEATURE_FLAGS[compactInstanceCardsFlag],
-		showPlayTime:
-			settings.feature_flags[showPlayTimeFlag] ?? DEFAULT_FEATURE_FLAGS[showPlayTimeFlag],
 		hideNametag: settings.hide_nametag_skins_page,
-		warnOnUnknownModpacks: !(
-			settings.feature_flags[skipUnknownPackWarningFlag] ??
-			DEFAULT_FEATURE_FLAGS[skipUnknownPackWarningFlag]
-		),
-		skipNonEssentialWarnings:
-			settings.feature_flags[skipNonEssentialWarningsFlag] ??
-			DEFAULT_FEATURE_FLAGS[skipNonEssentialWarningsFlag],
 	}
 }
 
-const { saved, current, changes, saving, hasChanges, reset, save } = useSavable(
-	() => getBehaviorSettingsState(persistedSettings.value, persistedGlobalSyncedOptions.value),
-	async () => {
-		const value = current.value
-
+const settingsMutation = useMutation({
+	mutationKey: appSettingsKeys.update,
+	scope: { id: 'app-settings' },
+	mutationFn: async (value: BehaviorSettingsState) => {
 		if (value.syncBehaviorAcrossDevices && auth.user.value) {
 			await updatePreferences({
 				behavior: {
 					minimize_app: value.minimizeApp,
+					refocus_on_game_close: value.refocusOnGameClose,
 					hide_right_sidebar: value.hideRightSidebar,
-					show_jump_in: value.showJumpIn,
 					compact_instance_cards: value.compactInstanceCards,
 					show_play_time: value.showPlayTime,
 					hide_nametag: value.hideNametag,
-					show_all_screenshots: value.showAllScreenshots,
 					warn_on_unknown_modpacks: value.warnOnUnknownModpacks,
 					skip_non_essential_warnings: value.skipNonEssentialWarnings,
 				},
 			})
 		}
 
+		const latestSettings = await get()
 		const nextSettings: AppSettings = {
-			...persistedSettings.value,
+			...latestSettings,
 			sync_behavior_across_devices: value.syncBehaviorAcrossDevices,
 			hide_on_process_start: value.minimizeApp,
 			toggle_sidebar: value.hideRightSidebar,
 			hide_nametag_skins_page: value.hideNametag,
-			feature_flags: {
-				...persistedSettings.value.feature_flags,
-				[worldsInHomeFlag]: value.showJumpIn,
-				[compactInstanceCardsFlag]: value.compactInstanceCards,
-				[showPlayTimeFlag]: value.showPlayTime,
-				[skipUnknownPackWarningFlag]: !value.warnOnUnknownModpacks,
-				[skipNonEssentialWarningsFlag]: value.skipNonEssentialWarnings,
-			},
+			refocus_on_game_close: value.refocusOnGameClose,
+			compact_instance_cards: value.compactInstanceCards,
+			show_play_time: value.showPlayTime,
+			warn_on_unknown_modpacks: value.warnOnUnknownModpacks,
+			skip_non_essential_warnings: value.skipNonEssentialWarnings,
 		}
 
-		const screenshotsChanged =
-			value.showAllScreenshots !== persistedGlobalSyncedOptions.value.screenshots
-		const [, updatedGlobalSyncedOptions] = await Promise.all([
-			set(nextSettings),
-			screenshotsChanged
-				? set_global_synced_option('screenshots', value.showAllScreenshots)
-				: Promise.resolve(persistedGlobalSyncedOptions.value),
-		])
-		persistedSettings.value = nextSettings
-		persistedGlobalSyncedOptions.value = updatedGlobalSyncedOptions
-		queryClient.setQueryData(['global-synced-options'], updatedGlobalSyncedOptions)
-		if (screenshotsChanged) {
-			await queryClient.invalidateQueries({ queryKey: screenshotKeys.all })
-		}
+		await set(nextSettings)
+		queryClient.setQueryData(appSettingsKeys.all, nextSettings)
 		appSettings.setBehaviorSyncAcrossDevices(value.syncBehaviorAcrossDevices)
+		appSettings.refocusOnGameClose = value.refocusOnGameClose
+		appSettings.compactInstanceCards = value.compactInstanceCards
+		appSettings.showPlayTime = value.showPlayTime
+		appSettings.warnOnUnknownModpacks = value.warnOnUnknownModpacks
+		appSettings.skipNonEssentialWarnings = value.skipNonEssentialWarnings
 		appSettings.toggleSidebar = value.hideRightSidebar
 		appSettings.hideNametagSkinsPage = value.hideNametag
-		appSettings.featureFlags[worldsInHomeFlag] = value.showJumpIn
-		appSettings.featureFlags[compactInstanceCardsFlag] = value.compactInstanceCards
-		appSettings.featureFlags[showPlayTimeFlag] = value.showPlayTime
-		appSettings.featureFlags[skipUnknownPackWarningFlag] = !value.warnOnUnknownModpacks
-		appSettings.featureFlags[skipNonEssentialWarningsFlag] = value.skipNonEssentialWarnings
 	},
+	onMutate: () => queryClient.cancelQueries({ queryKey: appSettingsKeys.all }),
+	onError: handleError,
+	onSettled: () => queryClient.invalidateQueries({ queryKey: appSettingsKeys.all }),
+})
+
+const { saved, current, changes, saving, hasChanges, reset, save } = useSavable(
+	() => getBehaviorSettingsState(settingsQuery.data.value!),
+	() => settingsMutation.mutateAsync({ ...current.value }),
 )
 
 async function saveBehaviorSettings(): Promise<void> {
@@ -326,6 +284,23 @@ onBeforeUnmount(() => {
 
 			<div class="flex items-center justify-between gap-4">
 				<div>
+					<h3 id="refocus-on-game-close-label" class="m-0 text-lg font-semibold text-contrast">
+						{{ formatMessage(messages.refocusOnGameCloseTitle) }}
+					</h3>
+					<p id="refocus-on-game-close-description" class="m-0 mt-1">
+						{{ formatMessage(messages.refocusOnGameCloseDescription) }}
+					</p>
+				</div>
+				<Toggle
+					id="refocus-on-game-close"
+					v-model="current.refocusOnGameClose"
+					aria-labelledby="refocus-on-game-close-label"
+					aria-describedby="refocus-on-game-close-description"
+				/>
+			</div>
+
+			<div class="flex items-center justify-between gap-4">
+				<div>
 					<h3 class="m-0 text-lg font-semibold text-contrast">
 						{{ formatMessage(messages.toggleSidebarTitle) }}
 					</h3>
@@ -341,30 +316,6 @@ onBeforeUnmount(() => {
 			{{ formatMessage(messages.contentTitle) }}
 		</h2>
 		<div class="mt-4 flex flex-col gap-6">
-			<div class="flex items-center justify-between gap-4">
-				<div>
-					<h3 class="m-0 text-lg font-semibold text-contrast">
-						{{ formatMessage(messages.showAllScreenshotsTitle) }}
-					</h3>
-					<p class="m-0 mt-1">
-						{{ formatMessage(messages.showAllScreenshotsDescription) }}
-					</p>
-				</div>
-				<Toggle id="show-all-screenshots" v-model="current.showAllScreenshots" />
-			</div>
-
-			<div class="flex items-center justify-between gap-4">
-				<div>
-					<h3 class="m-0 text-lg font-semibold text-contrast">
-						{{ formatMessage(messages.jumpBackIntoWorldsTitle) }}
-					</h3>
-					<p class="m-0 mt-1">
-						{{ formatMessage(messages.jumpBackIntoWorldsDescription) }}
-					</p>
-				</div>
-				<Toggle id="jump-back-into-worlds" v-model="current.showJumpIn" />
-			</div>
-
 			<div class="flex items-center justify-between gap-4">
 				<div>
 					<h3 class="m-0 text-lg font-semibold text-contrast">

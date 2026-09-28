@@ -563,6 +563,9 @@
   "files.editor.find-previous-match": {
     "defaultMessage": "Tidligere match"
   },
+  "files.layout.unsaved-changes": {
+    "defaultMessage": "Du har ændringer, der ikke er gemt."
+  },
   "files.navbar.new-file": {
     "defaultMessage": "Ny fil"
   },
@@ -2003,9 +2006,6 @@
   "servers.purchase.step.payment.title": {
     "defaultMessage": "Betalingsmetode"
   },
-  "servers.purchase.step.plan.billing-subtitle": {
-    "defaultMessage": "Tilgængelig i Nord Amerika, Europa og Sydøst Asien."
-  },
   "servers.purchase.step.plan.custom.heading": {
     "defaultMessage": "Ved du lige hvad du har brug for?"
   },
@@ -2215,6 +2215,12 @@
   },
   "tag.loader.vanilla": {
     "defaultMessage": "Vanilla Shader"
+  },
+  "ui.component.unsaved-changes-popup.body": {
+    "defaultMessage": "Du har ændringer, der ikke er gemt."
+  },
+  "ui.confirm-leave-modal.header": {
+    "defaultMessage": "Du har ændringer, der ikke er gemt"
   }
 }
 

@@ -14,7 +14,6 @@
 								:to="settingsBackDestination.to"
 								size="lg"
 								class="!w-10 !rounded-full !px-0"
-								:aria-label="settingsBackDestination.label"
 							>
 								<LeftArrowIcon />
 							</ButtonLink>
@@ -144,7 +143,9 @@
 							v-if="
 								projectV3 &&
 								currentMember &&
-								(projectV3.status === 'draft' || tags.rejectedStatuses.includes(projectV3.status))
+								(projectV3.status === 'draft' ||
+									projectV3.status === 'processing' ||
+									tags.rejectedStatuses.includes(projectV3.status))
 							"
 							:project="project"
 							:project-v3="projectV3"
@@ -153,8 +154,11 @@
 							:collapsed="collapsedChecklist"
 							:route-name="route.name"
 							:tags="tags"
+							:validation-nags="projectValidation?.nags ?? []"
+							:validation-loading="reviewSubmissionLoading"
+							:validation-available="projectValidation !== null"
+							:submit-project="setProcessing"
 							@toggle-collapsed="() => (collapsedChecklist = !collapsedChecklist)"
-							@set-processing="setProcessing"
 						/>
 					</div>
 					<ProjectPageHeader
@@ -264,9 +268,7 @@
 								"
 								theme="dismissable-prompt"
 								class="inline-flex"
-								:triggers="[]"
-								:shown="flags.showProjectPageCreateServersTooltip"
-								:auto-hide="false"
+								open
 								placement="bottom-start"
 							>
 								<ButtonLink
@@ -353,7 +355,6 @@
 									v-tooltip="formatMessage(commonMessages.followButton)"
 									size="xl"
 									:to="signInRouteObj"
-									:aria-label="formatMessage(commonMessages.followButton)"
 									class="!w-12 !rounded-full !px-0"
 								>
 									<HeartIcon aria-hidden="true" />
@@ -363,7 +364,6 @@
 										v-tooltip="formatMessage(commonMessages.followButton)"
 										size="xl"
 										:to="signInRouteObj"
-										:aria-label="formatMessage(commonMessages.followButton)"
 										class="!w-12 !rounded-full !px-0"
 									>
 										<HeartIcon aria-hidden="true" />
@@ -615,6 +615,7 @@ import {
 	provideProjectPageContext,
 	SelectedProjectsFloatingBar,
 	TeleportOverflowMenu,
+	Tooltip,
 	useDebugLogger,
 	useFormatPrice,
 	useRelativeTime,
@@ -624,8 +625,7 @@ import {
 import { formatProjectType, isStaff } from '@modrinth/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'
-import { Tooltip } from 'floating-vue'
-import { onScopeDispose, readonly, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { nextTick, onScopeDispose, readonly, ref, useTemplateRef, watch, watchEffect } from 'vue'
 
 import { navigateTo } from '#app'
 // import AdPlaceholder from '~/components/ui/AdPlaceholder.vue'
@@ -638,6 +638,11 @@ import ProjectDownloadModal from '~/components/ui/ProjectDownloadModal/index.vue
 import ProjectMemberHeader from '~/components/ui/ProjectMemberHeader.vue'
 import { getSignInRouteObj } from '~/composables/auth.ts'
 import { saveFeatureFlags } from '~/composables/featureFlags.ts'
+import { useProjectLinkValidation } from '~/composables/link-network-validation'
+import {
+	canSubmitProjectForReview,
+	PROJECT_REVIEW_VALIDATION_ERROR,
+} from '~/composables/link-network-validation/submission'
 import { notifyCopied } from '~/composables/moderation.ts'
 import { STALE_TIME, STALE_TIME_LONG, warmProjectCheckCaches } from '~/composables/queries/project'
 import { versionQueryOptions } from '~/composables/queries/version'
@@ -718,14 +723,19 @@ const projectEnvironmentModal = useTemplateRef('projectEnvironmentModal')
 
 const baseId = useId()
 
-const serverProject = computed(() => ({
-	name: project.value.title,
-	slug: project.value.slug || project.value.id,
-	numPlayers: projectV3.value?.minecraft_java_server?.ping?.data?.players_online,
-	icon: project.value.icon_url,
-	statusOnline: !!projectV3.value?.minecraft_java_server?.ping?.data,
-	region: projectV3.value?.minecraft_server?.region,
-}))
+const serverProject = computed(() => {
+	if (!project.value) {
+		return undefined
+	}
+	return {
+		name: project.value.title,
+		slug: project.value.slug || project.value.id,
+		numPlayers: projectV3.value?.minecraft_java_server?.ping?.data?.players_online,
+		icon: project.value.icon_url,
+		statusOnline: !!projectV3.value?.minecraft_java_server?.ping?.data,
+		region: projectV3.value?.minecraft_server?.region,
+	}
+})
 
 function handlePlayServerProject() {
 	openInAppModal.value?.show({
@@ -835,6 +845,14 @@ const messages = defineMessages({
 	projectUpdatedMessage: {
 		id: 'project.notification.updated.message',
 		defaultMessage: 'Your project has been updated.',
+	},
+	projectReviewSaveFailed: {
+		id: 'project.notification.review-save-failed.title',
+		defaultMessage: 'Failed to save project in review',
+	},
+	projectReviewSaveFailedDescription: {
+		id: 'project.notification.review-save-failed.description',
+		defaultMessage: 'You cannot save edits to your project which result in failing validation.',
 	},
 	reviewEnvironmentSettings: {
 		id: 'project.environment.migration.review-button',
@@ -949,21 +967,25 @@ const { data: projectCheck, error: projectCheckError } = useQuery({
 
 const projectId = computed(() => projectCheck.value?.id)
 
+function showProjectLoadError(error) {
+	const status = error.statusCode ?? error.status ?? 500
+	showError({
+		fatal: true,
+		statusCode: status,
+		message:
+			status === 404
+				? formatMessage(messages.projectNotFound)
+				: formatMessage(messages.errorLoadingProject, {
+						message: error.message ? `: ${error.message}` : '',
+					}),
+	})
+}
+
 watch(
 	projectCheckError,
 	(error) => {
 		if (error) {
-			const status = error.statusCode ?? error.status ?? 500
-			showError({
-				fatal: true,
-				statusCode: status,
-				message:
-					status === 404
-						? formatMessage(messages.projectNotFound)
-						: formatMessage(messages.errorLoadingProject, {
-								message: error.message ? `: ${error.message}` : '',
-							}),
-			})
+			showProjectLoadError(error)
 		}
 	},
 	{ immediate: true },
@@ -977,23 +999,11 @@ const { data: projectRaw, error: projectV2Error } = useQuery({
 	enabled: computed(() => !!projectId.value),
 })
 
-// Handle project not found - use showError since watch runs outside Nuxt context
 watch(
 	projectV2Error,
 	(error) => {
 		if (error) {
-			// error.statusCode from ModrinthApiError, error.status as fallback
-			const status = error.statusCode ?? error.status ?? 500
-			showError({
-				fatal: true,
-				statusCode: status,
-				message:
-					status === 404
-						? formatMessage(messages.projectNotFound)
-						: formatMessage(messages.errorLoadingProject, {
-								message: error.message ? `: ${error.message}` : '',
-							}),
-			})
+			showProjectLoadError(error)
 		}
 	},
 	{ immediate: true },
@@ -1371,6 +1381,29 @@ function mergeV3ProjectPatch(old, data) {
 	return merged
 }
 
+function addProjectMutationErrorNotification(error) {
+	const description =
+		error?.v1Error?.description ??
+		error?.responseData?.description ??
+		error?.data?.description ??
+		error?.message
+	const response = error?.responseData ?? error?.data ?? error?.v1Error
+	const isProjectValidationError =
+		Array.isArray(response?.details?.nags) || description === PROJECT_REVIEW_VALIDATION_ERROR
+
+	addNotification({
+		title: formatMessage(
+			isProjectValidationError && project.value.status === 'processing'
+				? messages.projectReviewSaveFailed
+				: commonMessages.errorNotificationTitle,
+		),
+		text: isProjectValidationError
+			? formatMessage(messages.projectReviewSaveFailedDescription)
+			: description,
+		type: 'error',
+	})
+}
+
 // Mutation for patching project data
 const patchProjectMutation = useMutation({
 	mutationFn: async ({ projectId, data }) => {
@@ -1379,7 +1412,17 @@ const patchProjectMutation = useMutation({
 		return data
 	},
 
-	onMutate: async ({ projectId, data }) => {
+	onMutate: async ({ projectId, data, optimistic = true }) => {
+		await linkValidation.validateSave({
+			description: data.body,
+			license_url: data.license_url,
+			link_urls: Object.fromEntries(
+				['issues', 'source', 'wiki', 'discord']
+					.filter((field) => data[`${field}_url`] !== undefined)
+					.map((field) => [field, data[`${field}_url`]]),
+			),
+		})
+		if (!optimistic) return
 		await queryClient.cancelQueries({ queryKey: ['project', 'v2', projectId] })
 		await queryClient.cancelQueries({ queryKey: ['project', 'v3', projectId] })
 
@@ -1406,11 +1449,7 @@ const patchProjectMutation = useMutation({
 		if (context?.previousV3) {
 			queryClient.setQueryData(['project', 'v3', context.projectId], context.previousV3)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1420,8 +1459,8 @@ const patchProjectMutation = useMutation({
 
 // Mutation for changing project status (setProcessing)
 const patchStatusMutation = useMutation({
-	mutationFn: async ({ projectId, status }) => {
-		await client.labrinth.projects_v2.edit(projectId, { status })
+	mutationFn: async (variables) => {
+		await client.labrinth.projects_v2.edit(variables.projectId, { status: variables.status })
 	},
 
 	onMutate: async ({ projectId, status }) => {
@@ -1437,15 +1476,17 @@ const patchStatusMutation = useMutation({
 		return { previousProject, projectId }
 	},
 
+	onSuccess: async (_data, { threadId }) => {
+		if (threadId) {
+			await queryClient.invalidateQueries({ queryKey: ['thread', threadId] })
+		}
+	},
+
 	onError: (err, _variables, context) => {
 		if (context?.previousProject) {
 			queryClient.setQueryData(['project', 'v2', context.projectId], context.previousProject)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1461,7 +1502,9 @@ const patchProjectV3Mutation = useMutation({
 		return data
 	},
 
-	onMutate: async ({ projectId, data }) => {
+	onMutate: async ({ projectId, data, optimistic = true }) => {
+		await linkValidation.validateSave(data)
+		if (!optimistic) return
 		await queryClient.cancelQueries({ queryKey: ['project', 'v3', projectId] })
 		await queryClient.cancelQueries({ queryKey: ['project', 'v2', projectId] })
 
@@ -1485,11 +1528,7 @@ const patchProjectV3Mutation = useMutation({
 		if (context?.previousV2) {
 			queryClient.setQueryData(['project', 'v2', context.projectId], context.previousV2)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1513,11 +1552,7 @@ const patchIconMutation = useMutation({
 	},
 
 	onError: (err) => {
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1566,11 +1601,7 @@ const createGalleryItemMutation = useMutation({
 		if (context?.previousProject) {
 			queryClient.setQueryData(['project', 'v2', context.projectId], context.previousProject)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1619,11 +1650,7 @@ const editGalleryItemMutation = useMutation({
 		if (context?.previousProject) {
 			queryClient.setQueryData(['project', 'v2', context.projectId], context.previousProject)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1656,11 +1683,7 @@ const deleteGalleryItemMutation = useMutation({
 		if (context?.previousProject) {
 			queryClient.setQueryData(['project', 'v2', context.projectId], context.previousProject)
 		}
-		addNotification({
-			title: formatMessage(commonMessages.errorNotificationTitle),
-			text: err.data ? err.data.description : err.message,
-			type: 'error',
-		})
+		addProjectMutationErrorNotification(err)
 	},
 
 	onSettled: async () => {
@@ -1725,6 +1748,56 @@ const currentMember = computed(() => {
 
 	return val
 })
+
+const {
+	data: projectValidationResponse,
+	isFetching: projectValidationLoading,
+	isError: backendValidationError,
+	refetch: refetchProjectValidation,
+} = useQuery({
+	queryKey: computed(() => ['project', projectId.value, 'validation', 'v3']),
+	queryFn: () => client.labrinth.projects_v3.validate(projectId.value),
+	staleTime: 0,
+	enabled: computed(() => !!projectId.value && !!currentMember.value?.accepted),
+})
+
+const linkValidation = useProjectLinkValidation(
+	projectId,
+	projectV3,
+	() => !!currentMember.value?.accepted,
+)
+const projectLinksNetworkValidationLoading = linkValidation.isChecking
+const reviewSubmissionPending = ref(false)
+const reviewSubmissionLoading = computed(
+	() =>
+		projectValidationLoading.value ||
+		projectLinksNetworkValidationLoading.value ||
+		reviewSubmissionPending.value,
+)
+const projectValidation = computed(() => {
+	const validation = projectValidationResponse.value
+	if (!validation || backendValidationError.value || linkValidation.isError.value) return null
+	return { ...validation, nags: [...validation.nags, ...linkValidation.nags.value] }
+})
+
+async function refreshProjectValidation() {
+	const projectIdAtStart = projectId.value
+	const [result, network] = await Promise.all([
+		refetchProjectValidation({ cancelRefetch: false }),
+		linkValidation.refresh(),
+	])
+	await nextTick()
+	if (
+		!result.isSuccess ||
+		!network.isSuccess ||
+		projectId.value !== projectIdAtStart ||
+		projectValidationLoading.value ||
+		projectLinksNetworkValidationLoading.value
+	) {
+		return null
+	}
+	return projectValidation.value
+}
 
 const canAccessSettings = computed(() => !!currentMember.value?.accepted)
 
@@ -2073,8 +2146,8 @@ if (!route.name.startsWith('type-project-settings')) {
 		ogDescription: () => project.value?.description ?? PROJECT_NOT_FOUND_DESCRIPTION,
 		ogImage: () =>
 			project.value
-				? (project.value?.icon_url ?? 'https://cdn-raw.modrinth.com/placeholder-square.png')
-				: 'https://cdn-raw.modrinth.com/not-found.png',
+				? (project.value?.icon_url ?? 'https://cdn.modrinth.com/placeholder-square.png')
+				: 'https://cdn.modrinth.com/not-found.png',
 		ogUrl: createCanonicalUrl,
 		robots: () => (project.value?.status === 'approved' ? 'all' : 'noindex'),
 	})
@@ -2128,22 +2201,37 @@ watch(
 )
 
 async function setProcessing() {
-	// Guard against multiple submissions while mutation is pending
-	if (patchStatusMutation.isPending.value) return
-
+	if (
+		patchStatusMutation.isPending.value ||
+		!canSubmitProjectForReview(projectValidation.value, reviewSubmissionLoading.value)
+	) {
+		return false
+	}
+	reviewSubmissionPending.value = true
 	startLoading()
-	patchStatusMutation.mutate(
-		{ projectId: project.value.id, status: 'processing' },
-		{ onSettled: () => stopLoading() },
-	)
+	try {
+		const validation = await refreshProjectValidation()
+		if (!canSubmitProjectForReview(validation, false)) return false
+		await patchStatusMutation.mutateAsync({
+			projectId: project.value.id,
+			status: 'processing',
+			threadId: project.value.thread_id,
+		})
+		return true
+	} catch {
+		return false
+	} finally {
+		reviewSubmissionPending.value = false
+		stopLoading()
+	}
 }
 
-async function patchProject(resData, quiet = false) {
+async function patchProject(resData, quiet = false, throwOnError = false) {
 	startLoading()
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		patchProjectMutation.mutate(
-			{ projectId: project.value.id, data: resData },
+			{ projectId: project.value.id, data: resData, optimistic: !throwOnError },
 			{
 				onSuccess: async () => {
 					if (!quiet) {
@@ -2155,19 +2243,19 @@ async function patchProject(resData, quiet = false) {
 					}
 					resolve(true)
 				},
-				onError: () => resolve(false),
+				onError: (error) => (throwOnError ? reject(error) : resolve(false)),
 				onSettled: () => stopLoading(),
 			},
 		)
 	})
 }
 
-async function patchProjectV3(resData, quiet = false) {
+async function patchProjectV3(resData, quiet = false, throwOnError = false) {
 	startLoading()
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		patchProjectV3Mutation.mutate(
-			{ projectId: project.value.id, data: resData },
+			{ projectId: project.value.id, data: resData, optimistic: !throwOnError },
 			{
 				onSuccess: async () => {
 					if (!quiet) {
@@ -2179,7 +2267,7 @@ async function patchProjectV3(resData, quiet = false) {
 					}
 					resolve(true)
 				},
-				onError: () => resolve(false),
+				onError: (error) => (throwOnError ? reject(error) : resolve(false)),
 				onSettled: () => stopLoading(),
 			},
 		)
@@ -2201,30 +2289,58 @@ async function patchIcon(icon) {
 	})
 }
 
-async function createGalleryItem(file, title, description, featured, ordering) {
+async function createGalleryItem(
+	file,
+	title,
+	description,
+	featured,
+	ordering,
+	throwOnError = false,
+) {
 	startLoading()
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		createGalleryItemMutation.mutate(
-			{ projectId: project.value.id, file, title, description, featured, ordering },
+			{
+				projectId: project.value.id,
+				file,
+				title,
+				description,
+				featured,
+				ordering,
+			},
 			{
 				onSuccess: () => resolve(true),
-				onError: () => resolve(false),
+				onError: (error) => (throwOnError ? reject(error) : resolve(false)),
 				onSettled: () => stopLoading(),
 			},
 		)
 	})
 }
 
-async function editGalleryItem(imageUrl, title, description, featured, ordering) {
+async function editGalleryItem(
+	imageUrl,
+	title,
+	description,
+	featured,
+	ordering,
+	throwOnError = false,
+) {
 	startLoading()
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		editGalleryItemMutation.mutate(
-			{ projectId: project.value.id, imageUrl, title, description, featured, ordering },
+			{
+				projectId: project.value.id,
+				imageUrl,
+				title,
+				description,
+				featured,
+				ordering,
+			},
 			{
 				onSuccess: () => resolve(true),
-				onError: () => resolve(false),
+				onError: (error) => (throwOnError ? reject(error) : resolve(false)),
 				onSettled: () => stopLoading(),
 			},
 		)
@@ -2254,7 +2370,10 @@ async function copyPermalink() {
 	await navigator.clipboard.writeText(`${config.public.siteUrl}/project/${project.value.id}`)
 }
 
-const collapsedChecklist = ref(false)
+const collapsedChecklist = useLocalStorage(
+	computed(() => `project-checklist-collapsed-${projectId.value ?? ''}`),
+	false,
+)
 
 const showModerationChecklist = ref(false)
 const collapsedModerationChecklist = useLocalStorage('collapsed-moderation-checklist', false)
@@ -2379,6 +2498,8 @@ function handleKeybinds(event) {
 }
 
 const navLinks = computed(() => {
+	if (!project.value) return []
+
 	const routeType = route.params.type || project.value.project_type
 	const projectUrl = `/${routeType}/${project.value.slug ? project.value.slug : project.value.id}`
 
@@ -2429,6 +2550,9 @@ provideProjectPageContext({
 	currentMember,
 	allMembers,
 	organization,
+	projectValidation,
+	projectValidationLoading,
+	projectLinksNetworkValidationLoading,
 	// Lazy version loading
 	versions,
 	versionsLoading,
@@ -2442,6 +2566,7 @@ provideProjectPageContext({
 
 	// Invalidate all project queries (auto-refetches active ones)
 	invalidate: invalidateProject,
+	refreshProjectValidation,
 
 	// Lazy loading
 	loadVersions,

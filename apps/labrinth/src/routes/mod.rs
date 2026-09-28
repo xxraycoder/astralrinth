@@ -136,7 +136,10 @@ pub fn root_config(cfg: &mut web::ServiceConfig) {
             .wrap(default_cors())
             .service(index::index_get)
             .service(index::build_get)
-            .service(Files::new("/", "assets/")),
+            .service(Files::new(
+                "/",
+                concat!(env!("CARGO_MANIFEST_DIR"), "/assets"),
+            )),
     );
 }
 
@@ -235,6 +238,26 @@ impl ApiError {
     }
 
     pub fn as_api_error<'a>(&self) -> crate::models::error::ApiError<'a> {
+        let report = match self {
+            Self::Internal(report)
+            | Self::Request(report)
+            | Self::Auth(report)
+            | Self::NotFound(report)
+            | Self::Conflict(report)
+            | Self::FailedDependency(report)
+            | Self::PreconditionRequired(report)
+            | Self::PreconditionFailed(report)
+            | Self::RateLimit(report) => report,
+        };
+        let details = report
+            .chain()
+            .skip(1)
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+
+        let validation = report
+            .downcast_ref::<v3::projects::validate::ProjectValidationError>();
+
         crate::models::error::ApiError {
             error: match self {
                 Self::Internal(..) => "internal_error",
@@ -247,8 +270,12 @@ impl ApiError {
                 Self::PreconditionFailed(..) => "precondition_failed",
                 Self::RateLimit(..) => "ratelimit_error",
             },
-            description: format!("{self:#}"),
-            details: None,
+            description: report.to_string(),
+            details: validation
+                .map(|error| serde_json::json!({ "nags": error.0 }))
+                .or_else(|| {
+                    (!details.is_empty()).then(|| serde_json::json!(details))
+                }),
         }
     }
 }
@@ -270,5 +297,27 @@ impl actix_web::ResponseError for ApiError {
 
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code()).json(self.as_api_error())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ApiError;
+
+    #[test]
+    fn api_error_serializes_source_chain_as_details() {
+        let error = ApiError::Request(
+            eyre::eyre!("root cause")
+                .wrap_err("intermediate context")
+                .wrap_err("request failed"),
+        );
+
+        let response = error.as_api_error();
+
+        assert_eq!(response.description, "request failed");
+        assert_eq!(
+            response.details,
+            Some(serde_json::json!(["intermediate context", "root cause"])),
+        );
     }
 }
