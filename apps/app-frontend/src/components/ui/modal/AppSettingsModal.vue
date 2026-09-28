@@ -469,7 +469,7 @@ const messages = defineMessages({
 		</template>
 	</TabbedModal>
 
-	<LauncherUpdateModal ref="launcherUpdateModal" :version="version" />
+	<LauncherUpdateModal ref="launcherUpdateModal" :version="appInfo?.version ?? ''" />
 </template>
 
 <style lang="scss" scoped>

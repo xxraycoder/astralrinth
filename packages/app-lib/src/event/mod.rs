@@ -116,7 +116,6 @@ pub enum AppEvent {
     Instance(InstancePayload),
     InstanceGroupsChanged(InstanceGroupsChangedPayload),
     OnboardingChecklist(crate::state::OnboardingChecklist),
-    InstanceBulkUpdateProgress(InstanceBulkUpdateProgressPayload),
     InstallJob(std::sync::Arc<InstallJobSnapshot>),
     Command(CommandPayload),
     Warning(WarningPayload),
@@ -155,8 +154,6 @@ pub fn export_app_event_bindings(
             LoadingBarType,
             LoadingPayload,
             WarningPayload,
-            InstanceBulkUpdateProgressPayload,
-            InstanceBulkUpdateProgressStage,
             CommandPayload,
             ProcessPayload,
             ProcessPayloadType,
@@ -307,10 +304,6 @@ pub enum LoadingBarType {
         instance_id: String,
         instance_name: String,
     },
-    InstanceUpdate {
-        instance_id: String,
-        instance_name: String,
-    },
     ZipExtract {
         instance_id: String,
         instance_name: String,
@@ -353,36 +346,10 @@ pub struct WarningPayload {
     pub message: String,
 }
 
-// This code is modified by AstralRinth
 #[derive(Serialize, Clone)]
 #[cfg(feature = "tauri")]
 pub struct InfoPayload {
     pub message: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[cfg_attr(
-    feature = "export-ts",
-    derive(ts_rs::TS, postcard_bindgen::PostcardBindings)
-)]
-#[serde(rename_all = "camelCase")]
-pub struct InstanceBulkUpdateProgressPayload {
-    pub instance_id: String,
-    pub stage: InstanceBulkUpdateProgressStage,
-    pub current: usize,
-    pub total: usize,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[cfg_attr(
-    feature = "export-ts",
-    derive(ts_rs::TS, postcard_bindgen::PostcardBindings)
-)]
-#[serde(rename_all = "snake_case")]
-pub enum InstanceBulkUpdateProgressStage {
-    ResolvingVersions,
-    Downloading,
-    Finishing,
 }
 
 #[derive(Clone)]

@@ -1,12 +1,12 @@
 use super::{FriendPayload, LoadingBarId};
 #[cfg(feature = "tauri")]
 use crate::event::{
-    AppEvent, InfoPayload, InstanceGroupsChangedPayload, InstancePayload, LoadingPayload,
-    ProcessPayload, WarningPayload,
+    AppEvent, InfoPayload, InstanceGroupsChangedPayload, InstancePayload,
+    LoadingPayload, ProcessPayload, WarningPayload,
 };
 use crate::event::{
-    CommandPayload, EventError, InstanceBulkUpdateProgressPayload,
-    InstancePayloadType, LoadingBar, LoadingBarType, ProcessPayloadType,
+    CommandPayload, EventError, InstancePayloadType, LoadingBar,
+    LoadingBarType, ProcessPayloadType,
 };
 use crate::state::OnboardingChecklist;
 use futures::prelude::*;
@@ -167,8 +167,6 @@ pub async fn emit_warning(message: &str) -> crate::Result<()> {
     Ok(())
 }
 
-// This code is modified by AstralRinth
-// emit_info(message)
 pub async fn emit_info(message: &str) -> crate::Result<()> {
     #[cfg(feature = "tauri")]
     {
@@ -184,18 +182,6 @@ pub async fn emit_info(message: &str) -> crate::Result<()> {
             .map_err(EventError::from)?;
     }
     tracing::info!("{}", message);
-    Ok(())
-}
-
-#[allow(unused_variables)]
-pub async fn emit_instance_bulk_update_progress(
-    payload: InstanceBulkUpdateProgressPayload,
-) -> crate::Result<()> {
-    #[cfg(feature = "tauri")]
-    {
-        let event_state = crate::EventState::get();
-        event_state.send(AppEvent::InstanceBulkUpdateProgress(payload))?;
-    }
     Ok(())
 }
 
