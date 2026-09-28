@@ -2,9 +2,6 @@
 resolver = "2"
 members = [
   "apps/app",
-  "apps/app-playground",
-  "apps/daedalus_client",
-  "apps/labrinth",
   "packages/app-lib",
   "packages/ariadne",
   "packages/component-derive",

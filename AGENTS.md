@@ -13,14 +13,8 @@ This is the Modrinth monorepo — it contains all Modrinth projects, both fronte
 
 | App               | Description                    |
 | ----------------- | ------------------------------ |
-| `frontend`        | Main Modrinth website (Nuxt 3) |
 | `app-frontend`    | Desktop/app frontend (Vue 3)   |
 | `app`             | Desktop/app shell (Tauri)      |
-| `app-playground`  | Testing playground for app     |
-| `labrinth`        | Backend API service            |
-| `daedalus_client` | Daedalus client implementation |
-| `docs`            | Documentation site (Astro)     |
-
 ### Packages (`packages/`)
 
 | Package            | Description                                           |
@@ -49,14 +43,13 @@ Run these from the **root** folder before opening a pull request - do not run th
 - **Website:** `pnpm prepr:frontend:web`
 - **App frontend:** `pnpm prepr:frontend:app`
 - **Frontend libs:** `pnpm prepr:frontend:lib`
-- **All frontend (app+web):** `pnpm prepr`
-- **Labrinth (backend):** See `apps/labrinth/AGENTS.md`
+- **All app frontend checks:** `pnpm prepr:frontend:app`
 
-The website and app `prepr` commands
+The frontend `prepr` commands
 
 ## Dev Commands
 
-- **Website:** `pnpm web:dev` (copy `.env` template in `apps/frontend/` first)
+
 - **App:** `pnpm app:dev` (copy `.env` template in `packages/app-lib/` first)
 - **Storybook (packages/ui):** `pnpm storybook`
 
@@ -64,8 +57,8 @@ The website and app `prepr` commands
 
 Each project may have its own file with detailed instructions:
 
-- [`apps/labrinth/AGENTS.md`](apps/labrinth/AGENTS.md) — Backend API
-- [`apps/frontend/AGENTS.md`](apps/frontend/AGENTS.md) - Frontend Website
+
+
 
 ## Code Guidelines
 
