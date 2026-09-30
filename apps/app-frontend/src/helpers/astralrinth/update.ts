@@ -1,27 +1,32 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
-import { ref } from 'vue'
+import { arch } from '@tauri-apps/plugin-os'
 import { fetch } from '@tauri-apps/plugin-http'
+import { ref } from 'vue'
 
 import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
 
-export type LauncherReleaseAsset = {
+const systems = ['macos', 'windows', 'linux'] as const
+
+type LauncherOperatingSystem = (typeof systems)[number]
+
+type LauncherReleaseAsset = {
 	name: string
 	browser_download_url: string
-	download_count: number
+	download_count?: number
 }
 
-export type LauncherRelease = {
+type LauncherRelease = {
 	tag_name: string
 	name: string
-	assets: LauncherReleaseAsset[]
+	os_type: Record<LauncherOperatingSystem, LauncherReleaseAsset[]>
 }
 
 // import.meta.env uses `vite.config.ts`
 // Environments can be configured in `packages/app-lib/` directory.
 export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.REPO_XORISON_URL}didirus/AstralRinth/`
 export const LAUNCHER_RELEASES_URL = `${LAUNCHER_REPOSITORY_URL}releases`
-export const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.REPO_XORISON_API_URL}repos/didirus/AstralRinth/releases/latest`
+export const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.REPO_XORISON_API_URL}public/product/astralrinth`
 
 export const isUpdateInstalling = ref(false)
 export const isUpdateAvailable = ref(false)
@@ -30,24 +35,9 @@ export const latestLauncherReleaseHttpStatus = ref<number | null>(null)
 
 const currentOS = ref('')
 
-const systems = ['macos', 'windows', 'linux'] as const
-const osExtensions = {
-	linux: ['.deb', '.rpm', '.AppImage'],
-	macos: ['.dmg', '.pkg', '.app'],
-	windows: ['.exe', '.msi'],
-}
-
 const isDeveloper = isTauri() && (await isDev())
 
-const blacklistBeginPrefixes = [
-	'dev',
-	'nightly',
-	'dirty',
-	'dirty-dev',
-	'dirty-nightly',
-	'dirty_dev',
-	'dirty_nightly',
-]
+const blacklistBeginPrefixes = ['dev', 'nightly']
 
 export async function fetchRemote(): Promise<void> {
 	currentOS.value = (await getOS()).toLowerCase()
@@ -56,7 +46,8 @@ export async function fetchRemote(): Promise<void> {
 		if (!currentOS.value) {
 			throw new Error(String('Current OS is undefined'))
 		}
-		const response = await fetch(LAUNCHER_LATEST_RELEASE_API)
+		// Get latest AstralRinth release from API.
+		const response = await fetch(LAUNCHER_LATEST_RELEASE_API + '?version=latest')
 		latestLauncherReleaseHttpStatus.value = response.status
 		if (!response.ok) {
 			throw new Error(String(response.status))
@@ -125,11 +116,7 @@ export async function downloadLatestRelease(
 
 	try {
 		isUpdateInstalling.value = true
-		return await initUpdateLauncher(
-			installer.browser_download_url,
-			installer.name,
-			currentOS.value,
-		)
+		return await initUpdateLauncher(installer.browser_download_url, installer.name, currentOS.value)
 	} finally {
 		isUpdateInstalling.value = false
 	}
@@ -140,39 +127,43 @@ export function getAvailableInstallers(): LauncherReleaseAsset[] {
 		return []
 	}
 
-	return getInstallers(resolveOperationalSystemExtension(), latestLauncherReleases.value.assets)
+	const builds = latestLauncherReleases.value.os_type[currentOS.value as (typeof systems)[number]]
+	return getInstallers(builds ?? [], arch())
 }
 
-function getInstallers(os: string[], builds: LauncherReleaseAsset[]): LauncherReleaseAsset[] {
+function getInstallers(
+	builds: LauncherReleaseAsset[],
+	architecture: string,
+): LauncherReleaseAsset[] {
+	const architecturePattern = resolveArchitecturePattern(architecture)
+	if (!architecturePattern) {
+		return []
+	}
+
 	return builds.filter((build) => {
-		if (blacklistBeginPrefixes.some((prefix) => build.name.startsWith(prefix))) {
+		if (blacklistBeginPrefixes.some((prefix) => build.name.toLowerCase().startsWith(prefix))) {
 			return false
 		}
 
-		const matchesExtension = os.some((extension) => build.name.endsWith(extension))
-		if (matchesExtension && isDeveloper) {
+		const matchesArchitecture = architecturePattern.test(build.name)
+		if (matchesArchitecture && isDeveloper) {
 			console.debug(build.name, build.browser_download_url)
 		}
 
-		return matchesExtension
+		return matchesArchitecture
 	})
 }
 
-function resolveOperationalSystemExtension(): string[] {
-	try {
-		switch (currentOS.value) {
-			case 'macos':
-				return osExtensions.macos
-			case 'windows':
-				return osExtensions.windows
-			case 'linux':
-				return osExtensions.linux
-			default:
-				throw new Error(String("Operational System can't be resolved"))
-		}
-	} catch (error) {
-		console.error("Operational System can't be resolved")
-		return []
+function resolveArchitecturePattern(architecture: string): RegExp | null {
+	switch (architecture.toLowerCase()) {
+		case 'x86_64':
+		case 'x64':
+			return /(?:x64|x86_64|amd64)/i
+		case 'aarch64':
+		case 'arm64':
+			return /(?:aarch64|arm64)/i
+		default:
+			return null
 	}
 }
 

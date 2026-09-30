@@ -70,15 +70,13 @@ const latestReleaseTag = computed(() =>
 const latestUpdateTitle = computed(() =>
 	formatReleaseValue(latestLauncherReleases.value?.name ?? ''),
 )
-const downloadableFiles = computed(() =>
-	formatReleaseValue(latestLauncherReleases.value?.assets.length ?? 0),
+const latestReleaseAssets = computed(() =>
+	Object.values(latestLauncherReleases.value?.os_type ?? {}).flat(),
 )
+const downloadableFiles = computed(() => formatReleaseValue(latestReleaseAssets.value.length))
 const totalDownloads = computed(() =>
 	formatReleaseValue(
-		latestLauncherReleases.value?.assets.reduce(
-			(total, asset) => total + asset.download_count,
-			0,
-		) ?? 0,
+		latestReleaseAssets.value.reduce((total, asset) => total + (asset.download_count ?? 0), 0),
 	),
 )
 const httpStatus = computed(() => {
