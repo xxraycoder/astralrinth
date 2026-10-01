@@ -9,24 +9,26 @@ import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
 const systems = ['macos', 'windows', 'linux'] as const
 
 type LauncherOperatingSystem = (typeof systems)[number]
+type LauncherArchitecture = 'arm64' | 'amd64'
 
 type LauncherReleaseAsset = {
 	name: string
 	browser_download_url: string
-	download_count?: number
+	download_count: number
 }
 
 type LauncherRelease = {
 	tag_name: string
 	name: string
-	os_type: Record<LauncherOperatingSystem, LauncherReleaseAsset[]>
+	total_downloads: number
+	assets: Record<LauncherArchitecture, Record<LauncherOperatingSystem, LauncherReleaseAsset[]>>
 }
 
 // import.meta.env uses `vite.config.ts`
 // Environments can be configured in `packages/app-lib/` directory.
-export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.REPO_XORISON_URL}didirus/AstralRinth/`
-export const LAUNCHER_RELEASES_URL = `${LAUNCHER_REPOSITORY_URL}releases`
-export const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.REPO_XORISON_API_URL}public/product/astralrinth`
+export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.XORISON_REPO_URL}didirus/AstralRinth/`
+export const LAUNCHER_RELEASE_API = `${import.meta.env.XORISON_API_URL}public/product/astralrinth`
+
 
 export const isUpdateInstalling = ref(false)
 export const isUpdateAvailable = ref(false)
@@ -47,7 +49,7 @@ export async function fetchRemote(): Promise<void> {
 			throw new Error(String('Current OS is undefined'))
 		}
 		// Get latest AstralRinth release from API.
-		const response = await fetch(LAUNCHER_LATEST_RELEASE_API + '?version=latest')
+		const response = await fetch(LAUNCHER_RELEASE_API + '?version=latest')
 		latestLauncherReleaseHttpStatus.value = response.status
 		if (!response.ok) {
 			throw new Error(String(response.status))
@@ -127,41 +129,39 @@ export function getAvailableInstallers(): LauncherReleaseAsset[] {
 		return []
 	}
 
-	const builds = latestLauncherReleases.value.os_type[currentOS.value as (typeof systems)[number]]
-	return getInstallers(builds ?? [], arch())
-}
-
-function getInstallers(
-	builds: LauncherReleaseAsset[],
-	architecture: string,
-): LauncherReleaseAsset[] {
-	const architecturePattern = resolveArchitecturePattern(architecture)
-	if (!architecturePattern) {
+	const architecture = resolveArchitecture(arch())
+	const operatingSystem = currentOS.value as LauncherOperatingSystem
+	if (!architecture || !systems.includes(operatingSystem)) {
 		return []
 	}
 
+	const builds = latestLauncherReleases.value.assets[architecture]?.[operatingSystem]
+	return getInstallers(builds ?? [])
+}
+
+function getInstallers(builds: LauncherReleaseAsset[]): LauncherReleaseAsset[] {
 	return builds.filter((build) => {
 		if (blacklistBeginPrefixes.some((prefix) => build.name.toLowerCase().startsWith(prefix))) {
 			return false
 		}
 
-		const matchesArchitecture = architecturePattern.test(build.name)
-		if (matchesArchitecture && isDeveloper) {
+		if (isDeveloper) {
 			console.debug(build.name, build.browser_download_url)
 		}
 
-		return matchesArchitecture
+		return true
 	})
 }
 
-function resolveArchitecturePattern(architecture: string): RegExp | null {
+function resolveArchitecture(architecture: string): LauncherArchitecture | null {
 	switch (architecture.toLowerCase()) {
 		case 'x86_64':
 		case 'x64':
-			return /(?:x64|x86_64|amd64)/i
+		case 'amd64':
+			return 'amd64'
 		case 'aarch64':
 		case 'arm64':
-			return /(?:aarch64|arm64)/i
+			return 'arm64'
 		default:
 			return null
 	}

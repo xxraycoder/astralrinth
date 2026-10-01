@@ -5,7 +5,7 @@ import { computed } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
 import {
-	LAUNCHER_LATEST_RELEASE_API,
+	LAUNCHER_RELEASE_API,
 	latestLauncherReleaseHttpStatus,
 	latestLauncherReleases,
 } from '@/helpers/astralrinth/update'
@@ -71,13 +71,13 @@ const latestUpdateTitle = computed(() =>
 	formatReleaseValue(latestLauncherReleases.value?.name ?? ''),
 )
 const latestReleaseAssets = computed(() =>
-	Object.values(latestLauncherReleases.value?.os_type ?? {}).flat(),
+	Object.values(latestLauncherReleases.value?.assets ?? {}).flatMap((assets) =>
+		Object.values(assets).flat(),
+	),
 )
 const downloadableFiles = computed(() => formatReleaseValue(latestReleaseAssets.value.length))
 const totalDownloads = computed(() =>
-	formatReleaseValue(
-		latestReleaseAssets.value.reduce((total, asset) => total + (asset.download_count ?? 0), 0),
-	),
+	formatReleaseValue(latestLauncherReleases.value?.total_downloads ?? 0),
 )
 const httpStatus = computed(() => {
 	return (
@@ -167,11 +167,11 @@ const httpStatus = computed(() => {
 					<dd class="m-0 mt-1">
 						<a
 							class="break-all neon-text"
-							:href="LAUNCHER_LATEST_RELEASE_API"
+							:href="LAUNCHER_RELEASE_API"
 							target="_blank"
 							rel="noopener noreferrer"
 						>
-							{{ LAUNCHER_LATEST_RELEASE_API }}
+							{{ LAUNCHER_RELEASE_API }}
 						</a>
 					</dd>
 				</div>

@@ -4,13 +4,10 @@ import {
 	BadgeCheckIcon,
 	CoffeeIcon,
 	DownloadIcon,
-	GameIcon,
-	GaugeIcon,
 	HeartHandshakeIcon,
 	LanguagesIcon,
 	LightBulbIcon,
 	MicrochipIcon,
-	ModrinthIcon,
 	PaintbrushIcon,
 	RefreshCwIcon,
 	Settings2Icon,
@@ -36,16 +33,12 @@ import { platform as getOsPlatform, version as getOsVersion } from '@tauri-apps/
 import { computed, provide, ref } from 'vue'
 
 import LauncherUpdateModal from '@/components/ui/astralrinth/LauncherUpdateModal.vue'
-import ExternalAuthLibrarySettings from '@/components/ui/settings/astralrinth/ExternalAuthLibrarySettings.vue'
-import UpdateSettings from '@/components/ui/settings/astralrinth/UpdateSettings.vue'
-import {
-	isUpdateAvailable,
-	isUpdateInstalling,
-	latestLauncherReleases,
-} from '@/helpers/astralrinth/update'
 import PrivacySettings from '@/components/ui/settings/account/PrivacySettings.vue'
 import ProfileSettings from '@/components/ui/settings/account/ProfileSettings.vue'
 import SocialSettings from '@/components/ui/settings/account/SocialSettings.vue'
+import ExternalAuthLibrarySettings from '@/components/ui/settings/astralrinth/ExternalAuthLibrarySettings.vue'
+import UpdateSettings from '@/components/ui/settings/astralrinth/UpdateSettings.vue'
+import VisualSettings from '@/components/ui/settings/astralrinth/VisualSettings.vue'
 import AppearanceSettings from '@/components/ui/settings/display/AppearanceSettings.vue'
 import BehaviorSettings from '@/components/ui/settings/display/BehaviorSettings.vue'
 import FeatureFlagSettings from '@/components/ui/settings/display/FeatureFlagSettings.vue'
@@ -55,6 +48,11 @@ import InstancesSyncedSettings from '@/components/ui/settings/instances/instance
 import JavaSettings from '@/components/ui/settings/instances/JavaSettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/instances/ResourceManagementSettings.vue'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
+import {
+	isUpdateAvailable,
+	isUpdateInstalling,
+	latestLauncherReleases,
+} from '@/helpers/astralrinth/update'
 import { appSettingsKeys, appSettingsQueryOptions, set } from '@/helpers/settings.ts'
 import {
 	appSettingsModalContextKey,
@@ -92,8 +90,8 @@ const tabCategories = defineMessages({
 	},
 	astralrinth: {
 		id: 'astralrinth.app.settings.sidebar.label.astralrinth',
-		defaultMessage: "AstralRinth"
-	}
+		defaultMessage: 'AstralRinth',
+	},
 })
 
 const tabs = [
@@ -188,6 +186,16 @@ const tabs = [
 		category: tabCategories.instances,
 		icon: MicrochipIcon,
 		content: ResourceManagementSettings,
+	},
+	{
+		name: defineMessage({
+			id: 'astralrinth.app.settings.tabs.visual',
+			defaultMessage: 'Visual',
+		}),
+		category: tabCategories.astralrinth,
+		icon: PaintbrushIcon,
+		content: VisualSettings,
+		badge: commonMessages.beta,
 	},
 	{
 		name: defineMessage({
@@ -447,22 +455,22 @@ const messages = defineMessages({
 					>
 						<template v-if="isUpdateInstalling">
 							<SpinnerIcon
-								class="size-6 animate-spin"
 								v-tooltip.bottom="formatMessage(messages.updateInstalling)"
+								class="size-6 animate-spin"
 							/>
 						</template>
 						<template v-else>
 							<DownloadIcon
-								class="size-6"
 								v-tooltip.bottom="formatMessage(messages.viewUpdateInfo)"
+								class="size-6"
 								@click="showUpdateModal()"
 							/>
 						</template>
 					</div>
 					<BadgeCheckIcon
 						v-else-if="latestLauncherReleases"
-						class="size-7 shrink-0 text-green"
 						v-tooltip.bottom="formatMessage(messages.updatesInstalled)"
+						class="size-7 shrink-0 text-green"
 					/>
 				</div>
 			</div>

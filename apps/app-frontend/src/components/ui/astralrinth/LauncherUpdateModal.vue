@@ -7,7 +7,7 @@ import {
 	downloadLatestRelease,
 	getAvailableInstallers,
 	isUpdateInstalling,
-	LAUNCHER_RELEASES_URL,
+
 	LAUNCHER_REPOSITORY_URL,
 	latestLauncherReleases,
 } from '@/helpers/astralrinth/update'
@@ -286,7 +286,7 @@ defineExpose({
 					{{ formatMessage(messages.errorHelpText) }}
 					<a
 						class="neon-text"
-						:href="LAUNCHER_RELEASES_URL"
+						:href="`${LAUNCHER_REPOSITORY_URL}releases`"
 						target="_blank"
 						rel="noopener noreferrer"
 					>
