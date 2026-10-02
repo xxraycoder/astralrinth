@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ChartIcon } from '@modrinth/assets'
 import { defineMessages, useVIntl } from '@modrinth/ui'
+import { isTauri } from '@tauri-apps/api/core'
+import { arch, platform } from '@tauri-apps/plugin-os'
 import { computed } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
 import {
+	latestLauncherRelease,
 	LAUNCHER_RELEASE_API,
-	latestLauncherReleaseHttpStatus,
-	latestLauncherReleases,
 } from '@/helpers/astralrinth/update'
 
 const { formatMessage } = useVIntl()
@@ -29,6 +30,18 @@ const messages = defineMessages({
 	analyticsDescription: {
 		id: 'astralrinth.app.settings.updates.analytics.description',
 		defaultMessage: 'Release and distribution statistics from the update provider.',
+	},
+	operatingSystem: {
+		id: 'astralrinth.app.settings.updates.os',
+		defaultMessage: 'Operating system',
+	},
+	architecture: {
+		id: 'astralrinth.app.settings.updates.arch',
+		defaultMessage: 'Architecture',
+	},
+	systemInformationUnavailable: {
+		id: 'astralrinth.app.settings.updates.system-information-unavailable',
+		defaultMessage: 'System information is unavailable.',
 	},
 	latestReleaseTag: {
 		id: 'astralrinth.app.settings.updates.latest-release-tag',
@@ -60,28 +73,33 @@ const messages = defineMessages({
 	},
 })
 
+const operatingSystem = isTauri() ? platform() : null
+const architecture = isTauri() ? arch() : null
+
 function formatReleaseValue(value: string | number): string {
-	return latestLauncherReleases.value ? String(value) : formatMessage(messages.noUpdateInformation)
+	return latestLauncherRelease.value.data
+		? String(value)
+		: formatMessage(messages.noUpdateInformation)
 }
 
 const latestReleaseTag = computed(() =>
-	formatReleaseValue(latestLauncherReleases.value?.tag_name ?? ''),
+	formatReleaseValue(latestLauncherRelease.value.data?.tag_name ?? ''),
 )
 const latestUpdateTitle = computed(() =>
-	formatReleaseValue(latestLauncherReleases.value?.name ?? ''),
+	formatReleaseValue(latestLauncherRelease.value.data?.name ?? ''),
 )
 const latestReleaseAssets = computed(() =>
-	Object.values(latestLauncherReleases.value?.assets ?? {}).flatMap((assets) =>
+	Object.values(latestLauncherRelease.value.data?.assets ?? {}).flatMap((assets) =>
 		Object.values(assets).flat(),
 	),
 )
 const downloadableFiles = computed(() => formatReleaseValue(latestReleaseAssets.value.length))
 const totalDownloads = computed(() =>
-	formatReleaseValue(latestLauncherReleases.value?.total_downloads ?? 0),
+	formatReleaseValue(latestLauncherRelease.value.data?.total_downloads ?? 0),
 )
 const httpStatus = computed(() => {
 	return (
-		latestLauncherReleaseHttpStatus.value?.toString() ?? formatMessage(messages.noUpdateInformation)
+		latestLauncherRelease.value.httpStatus?.toString() ?? formatMessage(messages.noUpdateInformation)
 	)
 })
 </script>
@@ -92,11 +110,11 @@ const httpStatus = computed(() => {
 		:description="formatMessage(messages.pageDescription)"
 	>
 		<section
-			class="rounded-xl border border-solid border-[rgba(62,140,222,0.3)] bg-[rgba(62,140,222,0.055)] p-1"
+			class="glass-surface rounded-2xl border border-solid border-surface-5 bg-surface-3 p-5"
 		>
 			<div class="flex items-start gap-3">
 				<div
-					class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(62,140,222,0.14)] text-brand"
+					class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-highlight text-brand"
 				>
 					<ChartIcon class="size-5" />
 				</div>
@@ -112,61 +130,83 @@ const httpStatus = computed(() => {
 
 			<dl class="m-0 mt-4 grid grid-cols-2 gap-3">
 				<div
-					class="col-span-2 rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+				>
+					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
+						{{ formatMessage(messages.operatingSystem) }}
+					</dt>
+					<dd class="m-0 mt-1 break-words text-base font-semibold text-contrast">
+						{{ operatingSystem ?? formatMessage(messages.systemInformationUnavailable) }}
+					</dd>
+				</div>
+
+				<div
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+				>
+					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
+						{{ formatMessage(messages.architecture) }}
+					</dt>
+					<dd class="m-0 mt-1 break-words text-base font-semibold text-contrast">
+						{{ architecture ?? formatMessage(messages.systemInformationUnavailable) }}
+					</dd>
+				</div>
+
+				<div
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.latestReleaseTag) }}
 					</dt>
-					<dd class="m-0 mt-1 text-base font-semibold neon-text">{{ latestReleaseTag }}</dd>
+					<dd class="m-0 mt-1 text-base font-semibold text-contrast">{{ latestReleaseTag }}</dd>
 				</div>
 
 				<div
-					class="col-span-2 rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.latestUpdateTitle) }}
 					</dt>
-					<dd class="m-0 mt-1 break-words text-base font-semibold neon-text">
+					<dd class="m-0 mt-1 break-words text-base font-semibold text-contrast">
 						{{ latestUpdateTitle }}
 					</dd>
 				</div>
 
 				<div
-					class="rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.downloadableFiles) }}
 					</dt>
-					<dd class="m-0 mt-1 text-xl font-bold neon-text">{{ downloadableFiles }}</dd>
+					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ downloadableFiles }}</dd>
 				</div>
 
 				<div
-					class="rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.totalDownloads) }}
 					</dt>
-					<dd class="m-0 mt-1 text-xl font-bold neon-text">{{ totalDownloads }}</dd>
+					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ totalDownloads }}</dd>
 				</div>
 
 				<div
-					class="col-span-2 rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.httpStatus) }}
 					</dt>
-					<dd class="m-0 mt-1 text-xl font-bold neon-text">{{ httpStatus }}</dd>
+					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ httpStatus }}</dd>
 				</div>
 
 				<div
-					class="col-span-2 rounded-xl border border-solid border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.14)] p-3"
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.apiUrl) }}
 					</dt>
 					<dd class="m-0 mt-1">
 						<a
-							class="break-all neon-text"
+							class="break-all text-link hover:underline focus-visible:underline"
 							:href="LAUNCHER_RELEASE_API"
 							target="_blank"
 							rel="noopener noreferrer"
@@ -179,7 +219,3 @@ const httpStatus = computed(() => {
 		</section>
 	</AstralRinthSettingsPage>
 </template>
-
-<style lang="scss" scoped>
-@import '../../../../../../../packages/assets/styles/astralrinth/neon-text.scss';
-</style>

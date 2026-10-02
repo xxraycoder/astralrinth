@@ -1,7 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
-import { arch } from '@tauri-apps/plugin-os'
 import { fetch } from '@tauri-apps/plugin-http'
+import { arch } from '@tauri-apps/plugin-os'
 import { ref } from 'vue'
 
 import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
@@ -32,8 +32,13 @@ export const LAUNCHER_RELEASE_API = `${import.meta.env.XORISON_API_URL}public/pr
 
 export const isUpdateInstalling = ref(false)
 export const isUpdateAvailable = ref(false)
-export const latestLauncherReleases = ref<LauncherRelease | null>(null)
-export const latestLauncherReleaseHttpStatus = ref<number | null>(null)
+export const latestLauncherRelease = ref<{
+	data: LauncherRelease | null
+	httpStatus: number | null
+}>({
+	data: null,
+	httpStatus: null,
+})
 
 const currentOS = ref('')
 
@@ -43,20 +48,20 @@ const blacklistBeginPrefixes = ['dev', 'nightly']
 
 export async function fetchRemote(): Promise<void> {
 	currentOS.value = (await getOS()).toLowerCase()
-	latestLauncherReleaseHttpStatus.value = null
+	latestLauncherRelease.value.httpStatus = null
 	try {
 		if (!currentOS.value) {
 			throw new Error(String('Current OS is undefined'))
 		}
 		// Get latest AstralRinth release from API.
 		const response = await fetch(LAUNCHER_RELEASE_API + '?version=latest')
-		latestLauncherReleaseHttpStatus.value = response.status
+		latestLauncherRelease.value.httpStatus = response.status
 		if (!response.ok) {
 			throw new Error(String(response.status))
 		}
 
 		const remoteData = (await response.json()) as LauncherRelease
-		latestLauncherReleases.value = remoteData
+		latestLauncherRelease.value.data = remoteData
 
 		if (systems.includes(currentOS.value as (typeof systems)[number])) {
 			const rawLocalVersion = await getVersion()
@@ -90,7 +95,7 @@ export async function fetchRemote(): Promise<void> {
 		}
 	} catch (error) {
 		console.error('Failed to fetch remote releases:', error)
-		latestLauncherReleases.value = null
+		latestLauncherRelease.value.data = null
 		isUpdateAvailable.value = false
 		isUpdateInstalling.value = false
 	}
@@ -99,7 +104,7 @@ export async function fetchRemote(): Promise<void> {
 export async function downloadLatestRelease(
 	selectedInstaller?: LauncherReleaseAsset | null,
 ): Promise<boolean> {
-	if (!latestLauncherReleases.value) {
+	if (!latestLauncherRelease.value.data) {
 		return false
 	}
 
@@ -125,7 +130,7 @@ export async function downloadLatestRelease(
 }
 
 export function getAvailableInstallers(): LauncherReleaseAsset[] {
-	if (!latestLauncherReleases.value) {
+	if (!latestLauncherRelease.value.data) {
 		return []
 	}
 
@@ -135,7 +140,7 @@ export function getAvailableInstallers(): LauncherReleaseAsset[] {
 		return []
 	}
 
-	const builds = latestLauncherReleases.value.assets[architecture]?.[operatingSystem]
+	const builds = latestLauncherRelease.value.data.assets[architecture]?.[operatingSystem]
 	return getInstallers(builds ?? [])
 }
 

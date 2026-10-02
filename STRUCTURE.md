@@ -17,8 +17,9 @@ AstralRinth replaces the visible Modrinth App identity in the desktop product wi
 - The Tauri product name, executable name, application identifier, window titles, HTML title, settings label, startup messages, and user-facing error text are changed from Modrinth App to AstralRinth.
 - Modrinth launcher artwork is replaced with AstralRinth artwork in the splash screen, application icons, favicon/bundled icons, settings header, and account-provider controls.
 - `apps/app-frontend/src/components/ui/SplashScreen.vue` uses the AstralRinth app logo asset instead of the large inline Modrinth SVG and increases the logo presentation for the fork splash screen.
-- `packages/assets/icons/astralrinth/` adds the AstralRinth logo and Microsoft, Ely.by, and offline-account icons. `packages/assets/styles/astralrinth/` adds reusable neon text, neon icon, neon button, and soft-input styles.
-- `apps/app-frontend/src/App.vue`, settings, instance installation UI, update dialogs, and account dialogs use the fork's neon visual treatment. This is a product-level style layer, not only a logo replacement.
+- `packages/assets/icons/astralrinth/` adds the AstralRinth logo and Microsoft, Ely.by, and offline-account icons.
+- The frontend uses Modrinth components and theme colors. `apps/app-frontend/src/assets/stylesheets/liquid-glass.scss` adds optional translucent surfaces, blur, and layered depth while retaining the selected color theme. It replaces the removed neon text, icon, button, and soft-input styles formerly under `packages/assets/styles/astralrinth/`.
+- `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` exposes Liquid Glass in the beta-marked AstralRinth Visual tab. It uses the existing `advanced_rendering` setting and the settings modal's save/reset flow; the upstream Advanced rendering control is hidden in the app's Appearance settings.
 - `apps/app-frontend/package.json` carries an AstralRinth-specific application version, while `apps/app/tauri.conf.json`, `apps/app/tauri.linux.conf.json`, and `apps/app/tauri-release.conf.json` change the packaging identity and remove the upstream updater configuration.
 
 ### Account model and Minecraft authentication
@@ -65,10 +66,10 @@ The offline flow changes both authentication and launch arguments:
 
 The upstream Tauri updater is replaced for the fork's own launcher distribution:
 
-- `apps/app-frontend/src/helpers/astralrinth/update.ts` queries the configured Xorison/Gitea latest-release endpoint, normalizes and compares versions, ignores developer/nightly/dirty release names, filters installers by operating system, and exposes update status and HTTP diagnostics.
+- `apps/app-frontend/src/helpers/astralrinth/update.ts` queries the configured Xorison/Gitea latest-release endpoint, normalizes and compares versions, ignores developer/nightly/dirty release names, filters installers by operating system, and exposes update status and HTTP diagnostics. The shared `latestLauncherRelease` ref groups the release payload (`data`) and response status (`httpStatus`); the update modal and settings consumers use this contract.
 - `apps/app-frontend/src/components/ui/astralrinth/LauncherUpdateModal.vue` shows the installed version, latest release tag/title, backup warnings, repository link, installer selection, download state, and failure recovery link.
-- `apps/app-frontend/src/components/ui/settings/astralrinth/UpdateSettings.vue` displays release and distribution diagnostics: latest tag, release title, asset count, download count, HTTP status, and API URL.
-- `apps/app-frontend/src/App.vue` checks for updates during startup, posts an update notification, marks the settings icon with a neon indicator, and mounts the fork update modal.
+- `apps/app-frontend/src/components/ui/settings/astralrinth/UpdateSettings.vue` displays release and distribution diagnostics: operating system, architecture, latest tag, release title, asset count, download count, HTTP status, and API URL. OS and architecture come from the Tauri OS plugin; outside Tauri, the UI shows that system information is unavailable.
+- `apps/app-frontend/src/App.vue` checks for updates during startup, posts an update notification, marks the settings icon with the theme's brand color, and mounts the fork update modal.
 - `apps/app/src/api/utils.rs` and `packages/app-lib/src/api/astralrinth/update.rs` download the selected installer into the platform download directory, open or execute it according to the operating system, and exit the current process after a successful handoff.
 - `packages/app-lib/.env.prod`, `apps/app-frontend/vite.config.ts`, Tauri capabilities, CSP, and HTTP permissions add the Xorison endpoints and Ely.by endpoints required by this path.
 - The upstream `app-update` provider, automatic Modrinth updater prompts, updater signing metadata, updater capability, and `launcher-files.modrinth.com/updates.json` release path are removed or disconnected from the AstralRinth path. The two systems must not be merged accidentally during an upstream update.
@@ -235,7 +236,7 @@ The fork-specific implementation is distributed across frontend, Tauri, and Rust
 - Provider/library settings UI: `apps/app-frontend/src/components/ui/settings/astralrinth/ExternalAuthLibrarySettings.vue` and the AstralRinth settings page.
 - Tauri commands and OAuth verification window: `apps/app/src/api/astralrinth/mod.rs`.
 - Provider metadata, OAuth/device flows, and provider library lifecycle: `packages/app-lib/src/models/astralrinth/` and corresponding state/API modules.
-- Provider icons and UI styling: `packages/assets/icons/astralrinth/` and `packages/assets/styles/astralrinth/`.
+- Provider icons: `packages/assets/icons/astralrinth/`. Account dialogs use theme-aware component styles; the optional glass override is in `apps/app-frontend/src/assets/stylesheets/liquid-glass.scss`.
 
 Treat this as an end-to-end contract: UI provider IDs, Tauri command names and serialized data, Rust provider metadata, credential storage, and launcher argument construction must remain consistent. When changing one layer, trace the call through the others. Do not substitute Modrinth-account sign-in for Minecraft-account sign-in; these are separate flows.
 
@@ -259,6 +260,16 @@ Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `a
 - Backend authentication, provider metadata, and launcher integration: `packages/app-lib/src/models/astralrinth/` plus `packages/app-lib/src/launcher/`.
 
 The current UI lazily acquires/releases baked previews through `BakedSkinButton` and `skin-previews.ts`. Verify exports at the actual import source: rendering helpers have been reorganized over time, and an import that used to exist in `batch-skin-renderer.ts` may no longer be exported there. Keep account-type checks, custom skin capabilities, Ears behavior, and URL/resource cleanup connected when changing the renderer.
+
+### Liquid Glass and visual settings
+
+- Settings registration: `apps/app-frontend/src/components/ui/modal/AppSettingsModal.vue`; the AstralRinth Visual tab is marked as beta.
+- Toggle and persistence: `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` reads `useTheme().advancedRendering`, saves the existing `advanced_rendering` setting, and participates in the modal's unsaved-changes/save/reset flow. There is no separate Liquid Glass database setting or new migration.
+- Activation and styles: `apps/app-frontend/src/App.vue` watches `advancedRendering` and toggles `html.liquid-glass`; `apps/app-frontend/src/assets/stylesheets/global.scss` imports `liquid-glass.scss`.
+- Appearance UI: `apps/app-frontend/src/components/ui/settings/display/AppearanceSettings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. Keep the AstralRinth Visual control connected when adapting upstream appearance settings.
+- Decoration: glass backgrounds and blur for panels, buttons, switches, and input wrappers use negative-z-index pseudo-elements with `pointer-events: none`; menus retain their own decorative `::before`. The override includes opaque fallbacks, contrast/forced-color handling, and reduced-motion rules.
+
+Treat Liquid Glass as a visual layer, not a replacement for component behavior. Preserve native modal transitions, focus indicators, disabled states, hit areas, and fixed-position menu anchoring. After changing the override or shared component markup, verify mouse, keyboard, scrolling, and nested-menu interactions in the running app; non-intercepting pseudo-elements alone do not prove all interaction paths are unaffected.
 
 ### Other fork behavior
 

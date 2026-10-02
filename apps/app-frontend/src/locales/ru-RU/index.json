@@ -225,7 +225,7 @@
     "message": "Переустановить"
   },
   "astralrinth.app.settings.external-auth-libraries.request-server": {
-    "message": "Запросить с сервера"
+    "message": "Обновить"
   },
   "astralrinth.app.settings.external-auth-libraries.requesting-server": {
     "message": "Запрос данных..."
@@ -242,8 +242,29 @@
   "astralrinth.app.settings.external-auth-libraries.version": {
     "message": "Версия"
   },
+  "astralrinth.app.settings.sidebar.label.astralrinth": {
+    "message": "AstralRinth"
+  },
   "astralrinth.app.settings.tabs.external-auth-libraries": {
     "message": "Библиотеки аутентификации"
+  },
+  "astralrinth.app.settings.tabs.visual": {
+    "message": "Визуальные настройки"
+  },
+  "astralrinth.app.settings.visual.description": {
+    "message": "Настройте визуальные эффекты AstralRinth, не изменяя выбранную тему."
+  },
+  "astralrinth.app.settings.visual.liquid-glass.description": {
+    "message": "Используйте полупрозрачные поверхности, размытие и многослойную глубину интерфейса. Отключите эту настройку, если эффекты влияют на производительность или читаемость."
+  },
+  "astralrinth.app.settings.visual.liquid-glass.title": {
+    "message": "Liquid Glass"
+  },
+  "astralrinth.app.settings.visual.note": {
+    "message": "Liquid Glass — визуальное переопределение AstralRinth. Выбранная цветовая тема и взаимодействие с приложением остаются без изменений."
+  },
+  "astralrinth.app.settings.visual.title": {
+    "message": "Визуальные настройки"
   },
   "astralrinth.app.settings.update-installing": {
     "message": "Установка обновления..."
@@ -260,6 +281,15 @@
   "astralrinth.app.settings.updates.description": {
     "message": "Просматривайте канал релизов AstralRinth, состояние распространения и диагностику провайдера обновлений."
   },
+	"astralrinth.app.settings.updates.os": {
+		"message": "Операционная система"
+	},
+	"astralrinth.app.settings.updates.arch": {
+		"message": "Архитектура"
+	},
+	"astralrinth.app.settings.updates.system-information-unavailable": {
+		"message": "Системная информация недоступна."
+	},
   "astralrinth.app.settings.updates.api-url": {
     "message": "URL API поставщика обновлений"
   },

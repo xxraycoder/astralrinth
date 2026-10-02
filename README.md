@@ -1,6 +1,6 @@
 # AstralRinth
 
-AstralRinth is a Minecraft launcher with its own visual identity, built for a clean and flexible game experience. It offers a neon-inspired interface, no advertising or promotional blocks, flexible account support, and updates delivered through Xorison services.
+AstralRinth is a Minecraft launcher with its own visual identity, built for a clean and flexible game experience. It offers a Modrinth-style interface with optional Liquid Glass effects, no advertising or promotional blocks, flexible account support, and updates delivered through Xorison services.
 
 ## Languages
 
@@ -22,7 +22,8 @@ Avoid releases whose version begins with `dev`, `nightly`, or `dirty`: they are 
 
 ## What AstralRinth offers
 
-- AstralRinth branding throughout the launcher, with custom icons, splash screen, window titles, and a neon-styled interface.
+- AstralRinth branding throughout the launcher, with custom icons, splash screen, window titles, and a Modrinth-style interface.
+- Optional Liquid Glass effects with translucent surfaces, blur, and layered depth, controlled from the dedicated AstralRinth visual settings without changing the selected color theme.
 - A focused desktop experience without ads, promotional blocks, or surveys; telemetry is disabled by the fork.
 - Russian and English translations for AstralRinth-specific screens and messages.
 - Minecraft account sign-in with Microsoft, Ely.by, or an offline account. Ely.by sign-in uses OAuth device authorization.
@@ -30,7 +31,7 @@ Avoid releases whose version begins with `dev`, `nightly`, or `dirty`: they are 
 - `authlib-injector` management for external authentication: browse local JARs, install and select a version, or let AstralRinth install a compatible version when needed.
 - Offline account support, including a compatibility workaround for Minecraft 1.16.4 and 1.16.5.
 - A dedicated AstralRinth settings section and a one-time notification offering to add randomized custom icons to instances that do not have one.
-- Launcher updates through Xorison: check for releases, choose the installer for Windows, macOS, or Linux, and view update diagnostics in settings.
+- Launcher updates through Xorison: check for releases, choose the installer for Windows, macOS, or Linux, and view update diagnostics, including your operating system and architecture, in settings.
 - Discord Rich Presence with AstralRinth-specific status messages and a launcher download link.
 
 ## Getting started
@@ -40,6 +41,10 @@ Avoid releases whose version begins with `dev`, `nightly`, or `dirty`: they are 
 3. Create or choose a Minecraft instance.
 4. For an external account that uses an authentication server, open the instance settings and configure `authlib-injector`.
 5. Launch the game. AstralRinth will use the recommended Java version when possible; you can choose Java manually in settings if needed.
+
+## Visual settings
+
+Open **Settings → AstralRinth → Visual** to enable or disable **Liquid Glass**, then save your changes. This visual option is marked as beta and is separate from the color theme selected in Appearance settings. Disable it if the effects reduce performance or readability.
 
 ## Updates and support
 

@@ -186,6 +186,12 @@ debugStartup('App setup entered')
 const appSettings = useAppSettings()
 const appTheme = useTheme()
 const quickInstances = useQuickInstanceLimit()
+
+watch(
+	() => appTheme.advancedRendering,
+	(enabled) => document.documentElement.classList.toggle('liquid-glass', enabled),
+	{ immediate: true },
+)
 const router = useRouter()
 const route = useRoute()
 const { channel: appEventChannel, events: appEvents } = setupAppEventsProvider()
@@ -1928,10 +1934,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</suspense>
 			<NavButton
 				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-				:class="{ 'neon-icon pulse': isUpdateAvailable }"
+
 				:to="() => appSettingsModal?.show()"
 			>
-				<SettingsIcon />
+				<SettingsIcon :class="{ 'text-brand': isUpdateAvailable }" />
 			</NavButton>
 			<IconButton
 				v-if="credentials === undefined"
@@ -2225,10 +2231,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 </template>
 
 <style lang="scss" scoped>
-// This code line modified by AstralRinth
-@import '../../../packages/assets/styles/astralrinth/neon-icon.scss';
-// This code line modified by AstralRinth
-@import '../../../packages/assets/styles/astralrinth/neon-text.scss';
+
 .app-grid-layout,
 .app-contents {
 	--top-bar-height: 3rem;

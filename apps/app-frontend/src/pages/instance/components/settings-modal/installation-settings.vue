@@ -499,9 +499,3 @@ provideInstallationSettings({
 		</template>
 	</InstallationSettingsLayout>
 </template>
-
-<style lang="scss" scoped>
-@import '@modrinth/assets/styles/astralrinth/neon-button.scss';
-@import '@modrinth/assets/styles/astralrinth/neon-text.scss';
-@import '@modrinth/assets/styles/astralrinth/neon-icon.scss';
-</style>

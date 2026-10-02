@@ -162,12 +162,14 @@ defineExpose({
 		max-width="500px"
 	>
 		<div class="flex flex-col gap-4 px-6 py-5">
-			<label class="label form-label">{{ formatMessage(messages.offlineNameLabel) }}</label>
+			<label class="m-0 block text-sm font-semibold text-contrast">
+				{{ formatMessage(messages.offlineNameLabel) }}
+			</label>
 			<input
 				:value="props.offlinePlayerName"
 				type="text"
 				:placeholder="formatMessage(messages.offlineNamePlaceholder)"
-				class="input soft-input"
+				class="input w-full rounded-xl border border-solid border-surface-5 text-contrast"
 				@input="emit('update:offlinePlayerName', ($event.target as HTMLInputElement).value)"
 			/>
 			<div class="mt-6 ml-auto">
@@ -185,8 +187,6 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
-@import '../../../../../../../../packages/assets/styles/astralrinth/soft-inputs.scss';
-
 .auth-method {
 	@apply flex w-full cursor-pointer items-center gap-4 rounded-xl border border-solid border-surface-5 bg-button-bg px-4 py-3 text-left text-primary transition-colors;
 

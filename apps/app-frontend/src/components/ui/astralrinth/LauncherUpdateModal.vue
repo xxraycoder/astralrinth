@@ -7,9 +7,8 @@ import {
 	downloadLatestRelease,
 	getAvailableInstallers,
 	isUpdateInstalling,
-
+	latestLauncherRelease,
 	LAUNCHER_REPOSITORY_URL,
-	latestLauncherReleases,
 } from '@/helpers/astralrinth/update'
 
 type ModalHandle = {
@@ -27,8 +26,8 @@ const updateModalView = ref<ModalHandle | null>(null)
 const updateRequestFailView = ref<ModalHandle | null>(null)
 const selectedInstallerName = ref<string | null>(null)
 
-const releaseTag = computed(() => latestLauncherReleases.value?.tag_name ?? '')
-const releaseTitle = computed(() => latestLauncherReleases.value?.name ?? '')
+const releaseTag = computed(() => latestLauncherRelease.value.data?.tag_name ?? '')
+const releaseTitle = computed(() => latestLauncherRelease.value.data?.name ?? '')
 const availableInstallers = computed(() => getAvailableInstallers())
 const selectedInstaller = computed(
 	() =>
@@ -184,7 +183,9 @@ defineExpose({
 		:header="formatMessage(messages.updateHeader)"
 	>
 		<div class="space-y-3 pb-16">
-			<div class="space-y-1 rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] p-3">
+			<div
+				class="glass-surface space-y-1 rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3"
+			>
 				<p class="m-0 text-base">
 					<strong>{{ formatMessage(messages.updateTitle) }}</strong>
 				</p>
@@ -192,40 +193,44 @@ defineExpose({
 			</div>
 
 			<div
-				class="space-y-2 rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3"
+				class="glass-surface space-y-2 rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3"
 			>
 				<div class="space-y-2">
 					<p class="m-0">
-						<strong class="neon-text">{{ formatMessage(messages.updateNoticeTitle) }}</strong>
+						<strong class="text-contrast">{{ formatMessage(messages.updateNoticeTitle) }}</strong>
 					</p>
 					<p class="m-0 text-secondary text-sm">{{ formatMessage(messages.updateNoticeLead) }}</p>
 					<p class="m-0 text-sm">
 						{{ formatMessage(messages.updateNoticeWindows) }}
-						<code class="neon-text">%appdata%\Roaming\AstralRinthApp</code>
+						<code class="break-words rounded bg-surface-4 px-1 py-0.5 text-contrast">
+													%appdata%\Roaming\AstralRinthApp
+												</code>
 					</p>
 					<p class="m-0 text-sm">
 						{{ formatMessage(messages.updateNoticeMacos) }}
-						<code class="neon-text">~/Library/Application Support/AstralRinthApp</code>
+						<code class="break-words rounded bg-surface-4 px-1 py-0.5 text-contrast">
+													~/Library/Application Support/AstralRinthApp
+												</code>
 					</p>
 					<p class="m-0 text-sm">{{ formatMessage(messages.updateNoticeOutro) }}</p>
 				</div>
 			</div>
 
 			<div
-				class="space-y-2 rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] p-3 text-sm text-secondary"
+				class="glass-surface space-y-2 rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3 text-sm text-secondary"
 			>
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.latestReleaseTag) }}</strong>
-					<span class="neon-text">{{ releaseTag }}</span>
+					<span class="break-words text-contrast">{{ releaseTag }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.latestReleaseTitle) }}</strong>
-					<span class="neon-text">{{ releaseTitle }}</span>
+					<span class="break-words text-contrast">{{ releaseTitle }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.installedVersion) }}</strong>
-					<span class="neon-text">v{{ props.version }}</span>
+					<span class="break-words text-contrast">v{{ props.version }}</span>
 				</p>
 				<a
-					class="inline-flex neon-text"
+					class="inline-flex text-link hover:underline focus-visible:underline"
 					:href="LAUNCHER_REPOSITORY_URL"
 					target="_blank"
 					rel="noopener noreferrer"
@@ -234,7 +239,9 @@ defineExpose({
 				</a>
 			</div>
 
-			<div class="space-y-2 rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] p-3">
+			<div
+				class="glass-surface space-y-2 rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3"
+			>
 				<div>
 					<p class="m-0 text-base">
 						<strong>{{ formatMessage(messages.installerTitle) }}</strong>
@@ -256,12 +263,12 @@ defineExpose({
 				/>
 			</div>
 
-			<div class="absolute bottom-4 right-4 flex items-center gap-4 neon-button neon">
-				<Button class="bordered" @click="updateModalView?.hide()">
+			<div class="absolute bottom-4 right-4 flex items-center gap-4">
+				<Button @click="updateModalView?.hide()">
 					{{ formatMessage(messages.cancelAction) }}
 				</Button>
 				<Button
-					class="bordered"
+					type="colored"
 					:disabled="isUpdateInstalling || !selectedInstallerUrl"
 					@click="initDownload()"
 				>
@@ -277,7 +284,9 @@ defineExpose({
 		:header="formatMessage(messages.errorHeader)"
 	>
 		<div class="space-y-3 pb-16">
-			<div class="space-y-2 rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] p-3">
+			<div
+				class="glass-surface space-y-2 rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3"
+			>
 				<p>
 					<strong>{{ formatMessage(messages.errorTitle) }}</strong>
 				</p>
@@ -285,7 +294,7 @@ defineExpose({
 				<p class="m-0 text-sm">
 					{{ formatMessage(messages.errorHelpText) }}
 					<a
-						class="neon-text"
+						class="text-link hover:underline focus-visible:underline"
 						:href="`${LAUNCHER_REPOSITORY_URL}releases`"
 						target="_blank"
 						rel="noopener noreferrer"
@@ -297,24 +306,19 @@ defineExpose({
 			</div>
 
 			<div
-				class="rounded-2xl border border-solid border-[rgba(255,255,255,0.12)] p-3 text-sm text-secondary"
+				class="glass-surface rounded-2xl border border-solid border-surface-5 bg-surface-3 p-3 text-sm text-secondary"
 			>
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.localVersion) }}</strong>
-					<span class="neon-text">v{{ props.version }}</span>
+					<span class="break-words text-contrast">v{{ props.version }}</span>
 				</p>
 			</div>
 
-			<div class="absolute bottom-4 right-4 flex items-center gap-4 neon-button neon">
-				<Button class="bordered" @click="updateRequestFailView?.hide()">
+			<div class="absolute bottom-4 right-4 flex items-center gap-4">
+				<Button @click="updateRequestFailView?.hide()">
 					{{ formatMessage(messages.closeAction) }}
 				</Button>
 			</div>
 		</div>
 	</ModalWrapper>
 </template>
-
-<style lang="scss" scoped>
-@import '../../../../../../packages/assets/styles/astralrinth/neon-button.scss';
-@import '../../../../../../packages/assets/styles/astralrinth/neon-text.scss';
-</style>

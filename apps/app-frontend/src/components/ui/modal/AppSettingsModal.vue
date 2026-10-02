@@ -21,6 +21,7 @@ import {
 	commonSettingsMessages,
 	defineMessage,
 	defineMessages,
+	IconButton,
 	injectNotificationManager,
 	ProgressBar,
 	TabbedModal,
@@ -51,7 +52,7 @@ import { useAppSettings } from '@/composables/use-app-settings.ts'
 import {
 	isUpdateAvailable,
 	isUpdateInstalling,
-	latestLauncherReleases,
+	latestLauncherRelease,
 } from '@/helpers/astralrinth/update'
 import { appSettingsKeys, appSettingsQueryOptions, set } from '@/helpers/settings.ts'
 import {
@@ -449,26 +450,24 @@ const messages = defineMessages({
 							{{ appInfo.osVersion }}
 						</p>
 					</div>
-					<div
+					<IconButton
 						v-if="isUpdateAvailable"
-						class="w-8 h-8 cursor-pointer hover:brightness-75 neon-icon pulse shrink-0"
+						v-tooltip.bottom="
+							formatMessage(isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo)
+						"
+						type="quiet"
+						size="sm"
+						:label="
+							formatMessage(isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo)
+						"
+						:loading="isUpdateInstalling"
+						@click="showUpdateModal()"
 					>
-						<template v-if="isUpdateInstalling">
-							<SpinnerIcon
-								v-tooltip.bottom="formatMessage(messages.updateInstalling)"
-								class="size-6 animate-spin"
-							/>
-						</template>
-						<template v-else>
-							<DownloadIcon
-								v-tooltip.bottom="formatMessage(messages.viewUpdateInfo)"
-								class="size-6"
-								@click="showUpdateModal()"
-							/>
-						</template>
-					</div>
+						<SpinnerIcon v-if="isUpdateInstalling" class="animate-spin" />
+						<DownloadIcon v-else class="text-brand" />
+					</IconButton>
 					<BadgeCheckIcon
-						v-else-if="latestLauncherReleases"
+						v-else-if="latestLauncherRelease.data"
 						v-tooltip.bottom="formatMessage(messages.updatesInstalled)"
 						class="size-7 shrink-0 text-green"
 					/>
@@ -479,7 +478,3 @@ const messages = defineMessages({
 
 	<LauncherUpdateModal ref="launcherUpdateModal" :version="appInfo?.version ?? ''" />
 </template>
-
-<style lang="scss" scoped>
-@import '../../../../../../packages/assets/styles/astralrinth/neon-icon.scss';
-</style>

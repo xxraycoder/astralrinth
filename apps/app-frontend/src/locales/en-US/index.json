@@ -225,7 +225,7 @@
     "message": "Reinstall"
   },
   "astralrinth.app.settings.external-auth-libraries.request-server": {
-    "message": "Request from server"
+    "message": "Refresh"
   },
   "astralrinth.app.settings.external-auth-libraries.requesting-server": {
     "message": "Requesting..."
@@ -248,6 +248,24 @@
   "astralrinth.app.settings.tabs.external-auth-libraries": {
     "message": "Authentication libraries"
   },
+  "astralrinth.app.settings.tabs.visual": {
+    "message": "Visual"
+  },
+  "astralrinth.app.settings.visual.description": {
+    "message": "Customize the visual effects used by AstralRinth without changing the selected theme."
+  },
+  "astralrinth.app.settings.visual.liquid-glass.description": {
+    "message": "Use translucent surfaces, blur, and layered depth across the app. Turn this off if the effects impact performance or readability."
+  },
+  "astralrinth.app.settings.visual.liquid-glass.title": {
+    "message": "Liquid Glass"
+  },
+  "astralrinth.app.settings.visual.note": {
+    "message": "Liquid Glass is an AstralRinth visual override. Your selected color theme and all app interactions remain unchanged."
+  },
+  "astralrinth.app.settings.visual.title": {
+    "message": "Visual"
+  },
   "astralrinth.app.settings.update-installing": {
     "message": "Installing update..."
   },
@@ -263,6 +281,15 @@
   "astralrinth.app.settings.updates.description": {
     "message": "Inspect the AstralRinth release channel, distribution status, and update-provider diagnostics."
   },
+	"astralrinth.app.settings.updates.os": {
+		"message": "Operating system"
+	},
+	"astralrinth.app.settings.updates.arch": {
+		"message": "Architecture"
+	},
+	"astralrinth.app.settings.updates.system-information-unavailable": {
+		"message": "System information is unavailable."
+	},
   "astralrinth.app.settings.updates.api-url": {
     "message": "Update provider API URL"
   },

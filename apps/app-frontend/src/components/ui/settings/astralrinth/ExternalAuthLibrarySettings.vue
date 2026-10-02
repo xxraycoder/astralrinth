@@ -53,7 +53,7 @@ const messages = defineMessages({
 	},
 	requestServer: {
 		id: 'astralrinth.app.settings.external-auth-libraries.request-server',
-		defaultMessage: 'Request from server',
+		defaultMessage: 'Refresh',
 	},
 	requestingServer: {
 		id: 'astralrinth.app.settings.external-auth-libraries.requesting-server',

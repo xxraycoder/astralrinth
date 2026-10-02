@@ -10,14 +10,14 @@ defineProps<{
 <template>
 	<div class="flex min-w-0 flex-col gap-5">
 		<header
-			class="relative overflow-hidden rounded-2xl border border-solid border-[rgba(62,140,222,0.38)] bg-[linear-gradient(135deg,rgba(62,140,222,0.14),rgba(62,140,222,0.035)_58%,transparent)] p-5"
+			class="glass-surface relative overflow-hidden rounded-2xl border border-solid border-surface-5 bg-surface-3 p-5"
 		>
 			<div
-				class="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-[rgba(62,140,222,0.12)] blur-3xl"
+				class="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-brand-highlight blur-3xl"
 			/>
 			<div class="relative flex items-center gap-4">
 				<div
-					class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-solid border-[rgba(62,140,222,0.35)] bg-[rgba(62,140,222,0.16)] text-brand shadow-[0_12px_32px_rgba(0,0,0,0.18)]"
+					class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-highlight text-brand"
 				>
 					<AstralRinthLogo class="size-7" />
 				</div>

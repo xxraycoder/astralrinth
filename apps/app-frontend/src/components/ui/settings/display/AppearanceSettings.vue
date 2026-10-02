@@ -158,5 +158,12 @@ provideAppearanceSettings({
 </script>
 
 <template>
-	<AppearanceSettingsLayout />
+	<AppearanceSettingsLayout class="app-appearance-settings" />
 </template>
+
+<style scoped>
+.app-appearance-settings
+	:deep(div.flex.items-center.justify-between:has(> div > #advanced-rendering)) {
+	display: none;
+}
+</style>
