@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { PaletteIcon } from '@modrinth/assets'
-import { commonMessages, defineMessages, Slider, Toggle, useSavable, useVIntl } from '@modrinth/ui'
+import {
+	commonMessages,
+	defineMessages,
+	injectNotificationManager,
+	Slider,
+	Toggle,
+	useSavable,
+	useVIntl,
+} from '@modrinth/ui'
 import { computed, inject, onBeforeUnmount, onMounted } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
@@ -11,6 +19,7 @@ import { appSettingsModalContextKey } from '@/providers/app-settings-modal'
 const theme = useTheme()
 const settingsModal = inject(appSettingsModalContextKey, null)
 const { formatMessage } = useVIntl()
+const { handleError } = injectNotificationManager()
 
 const messages = defineMessages({
 	pageTitle: {
@@ -66,11 +75,12 @@ function getVisualSettingsState(): VisualSettingsState {
 const { saved, current, changes, saving, hasChanges, reset, save } = useSavable(
 	getVisualSettingsState,
 	async () => {
+		const { liquidGlass, glassLevel } = current.value
 		const settings = await get()
-		settings.advanced_rendering = current.value.liquidGlass
+		settings.advanced_rendering = liquidGlass
 		await set(settings)
-		theme.advancedRendering = current.value.liquidGlass
-		theme.glassLevel = current.value.glassLevel
+		theme.advancedRendering = liquidGlass
+		theme.glassLevel = glassLevel
 	},
 )
 
@@ -81,11 +91,16 @@ const glassLevelPosition = computed({
 	},
 })
 
+const glassLevelLabel = computed(
+	() =>
+		`${formatMessage(messages.glassLevelTitle)}: ${formatMessage(messages[current.value.glassLevel])}`,
+)
+
 async function saveVisualSettings(): Promise<void> {
 	try {
 		await save()
-	} catch {
-		return
+	} catch (error) {
+		handleError(error)
 	}
 }
 
@@ -141,6 +156,7 @@ onBeforeUnmount(() => {
 				<Toggle
 					id="astralrinth-liquid-glass"
 					:model-value="current.liquidGlass"
+					:disabled="saving"
 					:aria-label="formatMessage(messages.liquidGlassTitle)"
 					@update:model-value="current.liquidGlass = $event ?? false"
 				/>
@@ -156,7 +172,7 @@ onBeforeUnmount(() => {
 					:max="GLASS_LEVEL_OPTIONS.length - 1"
 					:step="1"
 					:disabled="!current.liquidGlass || saving"
-					:aria-label="formatMessage(messages.glassLevelTitle)"
+					:aria-label="glassLevelLabel"
 				/>
 				<div class="grid grid-cols-3 gap-2 text-sm text-secondary">
 					<span
@@ -177,7 +193,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.glass-level-slider {
+.glass-level-slider.glass-level-slider {
 	:deep(> span),
 	:deep(.slider-value) {
 		display: none;

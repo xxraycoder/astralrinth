@@ -8,18 +8,18 @@ AstralRinth is a fork of Modrinth's codebase, not a separate launcher layered on
 
 ## AstralRinth changes over upstream Modrinth
 
-This section describes the fork-specific delta represented by the AstralRinth patch over the Modrinth App baseline. It is intentionally more detailed than the feature map below: use it when reviewing an upstream merge, deciding whether a file is fork-owned, or checking whether an apparent cleanup would remove a product capability.
+This section describes fork-specific behavior in the current checkout and relevant removals from the Modrinth App baseline. It is intentionally more detailed than the feature map below: use it when reviewing an upstream merge, deciding whether a file is fork-owned, or checking whether an apparent cleanup would remove a product capability.
 
 ### Product identity, branding, and visual presentation
 
-AstralRinth replaces the visible Modrinth App identity in the desktop product with its own identity:
+AstralRinth replaces the main desktop product identity with its own identity; some upstream wording and metadata remain (for example in privacy and survey text, Cargo metadata, and the API user agent):
 
 - The Tauri product name, executable name, application identifier, window titles, HTML title, settings label, startup messages, and user-facing error text are changed from Modrinth App to AstralRinth.
 - Modrinth launcher artwork is replaced with AstralRinth artwork in the splash screen, application icons, favicon/bundled icons, settings header, and account-provider controls.
 - `apps/app-frontend/src/components/ui/SplashScreen.vue` uses the AstralRinth app logo asset instead of the large inline Modrinth SVG and increases the logo presentation for the fork splash screen.
 - `packages/assets/icons/astralrinth/` adds the AstralRinth logo and Microsoft, Ely.by, and offline-account icons.
 - The frontend uses Modrinth components and theme colors. `apps/app-frontend/src/assets/stylesheets/liquid-glass.scss` adds optional translucent surfaces, blur, and layered depth while retaining the selected color theme. It replaces the removed neon text, icon, button, and soft-input styles formerly under `packages/assets/styles/astralrinth/`.
-- `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` exposes Liquid Glass in the beta-marked AstralRinth Visual tab. It uses the existing `advanced_rendering` setting and the settings modal's save/reset flow; the upstream Advanced rendering control is hidden in the app's Appearance settings.
+- `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` exposes Liquid Glass in the beta-marked AstralRinth Visual tab. It exposes a three-position Glass level slider (Matte, Standard, Transparent), uses the existing `advanced_rendering` setting for the toggle and local storage for the level, and participates in the settings modal's save/reset flow; the upstream Advanced rendering control is hidden in the app's Appearance settings.
 - `apps/app-frontend/package.json` carries an AstralRinth-specific application version, while `apps/app/tauri.conf.json`, `apps/app/tauri.linux.conf.json`, and `apps/app/tauri-release.conf.json` change the packaging identity and remove the upstream updater configuration.
 
 ### Account model and Minecraft authentication
@@ -27,7 +27,7 @@ AstralRinth replaces the visible Modrinth App identity in the desktop product wi
 AstralRinth expands the upstream Minecraft account model. This is separate from signing into a Modrinth website account.
 
 - Microsoft accounts remain supported, but the account selector becomes a method chooser rather than a single Microsoft sign-in button.
-- Offline accounts can be created from the UI with a validated player name. The name is limited to 3–20 ASCII letters, digits, and underscores, and the flow has dedicated input, validation, retry, and unexpected-error modals.
+- Offline accounts can be created from the UI with a validated player name. The frontend limits the name to 3–20 ASCII letters, digits, and underscores, and the flow has dedicated input, validation, retry, and unexpected-error modals.
 - External Minecraft authentication providers are discovered through native provider metadata. The patch defines Ely.by as a provider with its own OAuth endpoints, profile endpoint, Yggdrasil validation endpoint, Minecraft server name, skin-management URL, and `authlib-injector` release catalog.
 - External sign-in uses an OAuth Device Authorization flow. The Tauri host opens a dedicated always-on-top verification WebView, polls the provider until authorization, handles pending/slow-down/denied/expired states, and persists the returned credentials.
 - Account records gain `account_type`. Existing data is migrated from the old representation, Microsoft accounts are identified as `microsoft`, and offline accounts as `offline`.
@@ -50,7 +50,7 @@ AstralRinth adds a complete provider-library lifecycle that does not exist in th
 - `packages/app-lib/src/util/astralrinth/utils.rs` fetches provider release metadata, validates asset names, lists local JARs, downloads exact assets, stores the selected asset in SQLite, and can install the newest compatible library automatically.
 - `apps/app-frontend/src/components/ui/settings/astralrinth/ExternalAuthLibrarySettings.vue` exposes per-provider version discovery, refresh, installation, reinstall, local-only fallback, and selection.
 - `packages/app-lib/migrations/20260802201752_external-auth-libraries.sql` creates the provider-to-asset selection table.
-- When an external account launches, the selected JAR is verified and passed as `-javaagent:<path>=<server>`. Missing or corrupt libraries produce the serializable `external_auth_library_not_installed` error and a dedicated recovery message pointing to AstralRinth settings.
+- When an external account launches, the selected JAR's asset name and local file existence are checked before it is passed as `-javaagent:<path>=<server>`. Missing selections/files or invalid asset names produce the serializable `external_auth_library_not_installed` error; the file-existence check does not validate JAR contents. The frontend provides a dedicated recovery message pointing to AstralRinth settings.
 - If no local library exists, the launcher attempts to install the latest compatible provider library. If local libraries exist but the selected one is missing, it reports the error rather than silently changing the user's selection.
 - Asset names are restricted to safe JAR file names, preventing path traversal through remote release metadata or persisted selections.
 
@@ -58,7 +58,7 @@ AstralRinth adds a complete provider-library lifecycle that does not exist in th
 
 The offline flow changes both authentication and launch arguments:
 
-- `packages/app-lib/src/state/minecraft_auth.rs` creates a local profile with a generated UUID and non-expiring placeholder tokens.
+- `packages/app-lib/src/state/minecraft_auth.rs` creates a local profile with a random UUID, `null` placeholder tokens, and an expiry 99 years in the future. Offline accounts bypass online token refresh.
 - For Minecraft 1.16.4 and 1.16.5, `packages/app-lib/src/models/astralrinth/authentication.rs` applies the vanilla multiplayer compatibility workaround by setting the Minecraft API hosts to an invalid endpoint and enabling the custom API environment.
 - The launcher emits informational events when applying the compatibility workaround or loading an external provider library. These events are surfaced as frontend notifications through the new `info` event path.
 
@@ -66,13 +66,13 @@ The offline flow changes both authentication and launch arguments:
 
 The upstream Tauri updater is replaced for the fork's own launcher distribution:
 
-- `apps/app-frontend/src/helpers/astralrinth/update.ts` queries the configured Xorison/Gitea latest-release endpoint, normalizes and compares versions, ignores developer/nightly/dirty release names, filters installers by operating system, and exposes update status and HTTP diagnostics. The shared `latestLauncherRelease` ref groups the release payload (`data`) and response status (`httpStatus`); the update modal and settings consumers use this contract.
+- `apps/app-frontend/src/helpers/astralrinth/update.ts` queries `${XORISON_API_URL}public/product/astralrinth?version=latest`, normalizes and compares version number parts, selects installers from the release's architecture/OS asset groups, and excludes asset names starting with `dev` or `nightly` (not `dirty`). It does not filter release tags/titles by these prefixes; it exposes update status and HTTP diagnostics. The shared `latestLauncherRelease` ref groups the release payload (`data`) and response status (`httpStatus`); the update modal and settings consumers use this contract. The repository link uses `XORISON_REPO_URL`, while the checked-in `.env.prod` defines `XORISON_GIT_URL` instead; without an externally supplied `XORISON_REPO_URL`, that link is malformed.
 - `apps/app-frontend/src/components/ui/astralrinth/LauncherUpdateModal.vue` shows the installed version, latest release tag/title, backup warnings, repository link, installer selection, download state, and failure recovery link.
 - `apps/app-frontend/src/components/ui/settings/astralrinth/UpdateSettings.vue` displays release and distribution diagnostics: operating system, architecture, latest tag, release title, asset count, download count, HTTP status, and API URL. OS and architecture come from the Tauri OS plugin; outside Tauri, the UI shows that system information is unavailable.
 - `apps/app-frontend/src/App.vue` checks for updates during startup, posts an update notification, marks the settings icon with the theme's brand color, and mounts the fork update modal.
-- `apps/app/src/api/utils.rs` and `packages/app-lib/src/api/astralrinth/update.rs` download the selected installer into the platform download directory, open or execute it according to the operating system, and exit the current process after a successful handoff.
+- `apps/app/src/api/utils.rs`, `packages/app-lib/src/util/astralrinth/utils.rs`, and `packages/app-lib/src/api/astralrinth/update.rs` download the selected package into the platform Downloads directory. Windows executes `.exe`/`.msi` installers (with a folder fallback); macOS opens the package; Linux opens the containing folder for manual installation. The helper exits after `get_resource` returns success, but open failures are logged rather than propagated, and the Tauri command discards download errors. UI success therefore does not prove installation or handoff succeeded.
 - `packages/app-lib/.env.prod`, `apps/app-frontend/vite.config.ts`, Tauri capabilities, CSP, and HTTP permissions add the Xorison endpoints and Ely.by endpoints required by this path.
-- The upstream `app-update` provider, automatic Modrinth updater prompts, updater signing metadata, updater capability, and `launcher-files.modrinth.com/updates.json` release path are removed or disconnected from the AstralRinth path. The two systems must not be merged accidentally during an upstream update.
+- Upstream updater code remains, including `app-update.ts`, `app-update-button/`, Rust updater implementations/dependencies, and `apps/app/capabilities/updater.json`, but it is not wired into the Xorison update path. The default Cargo features and current build workflow do not enable `updater`, and the Tauri configs do not select the updater capability or supply upstream signing configuration. Do not accidentally reactivate it during an upstream update.
 
 ### Skin and account-type restrictions
 
@@ -86,13 +86,13 @@ The upstream Tauri updater is replaced for the fork's own launcher distribution:
 
 ### Advertising, consent, promotion, and campaign removals
 
-AstralRinth deliberately removes the Modrinth advertising and promotional surface from the fork:
+AstralRinth removes the desktop advertising integration and selected promotional surfaces, but not every upstream campaign or survey feature:
 
 - The desktop ad WebView, ads Tauri plugin, ads capability, ads bridge/controller/CMP scripts, ad event, ad helpers, consent notification, consent settings, ad window visibility holds, and ad-related modal hooks are removed.
 - `PromotionWrapper.vue` and the desktop ad placement are deleted. Download-manager sizing no longer reserves 250 pixels for an ad.
-- Website ad components and placements are removed or commented out in project, collection, discovery, organization, and user pages. `apps/frontend/src/public/ads.txt` is deleted.
+- `apps/frontend/`, including its ad placements and `src/public/ads.txt`, is absent from this desktop-only checkout. This is not a claim about a maintained website build.
 - Advertising consent text and localization entries are removed from the app locales and privacy settings. The telemetry toggle is disabled when telemetry has already been forced off by the fork startup path.
-- The Pride fundraiser banner, Pride badge export, Pride badge definition, Pride campaign assets, and related blog/site media are deleted from the patched tree.
+- Earlier campaign/banner and badge-icon removals are not a blanket removal of campaign support. The current tree still contains `packages/ui/src/components/content/PrideCollectionWidget.vue`, campaign blog articles/media, and campaign-gated Pride skins in `apps/app-frontend/src/pages/Skins.vue`.
 - The app filters news articles whose title, summary, description, or excerpt contains entries from the fork's filtered phrase list. This affects the news feed, not only a single campaign component.
 
 These removals are intentional fork behavior. Do not restore them from upstream as part of a mechanical conflict resolution without an explicit product decision.
@@ -102,11 +102,12 @@ These removals are intentional fork behavior. Do not restore them from upstream 
 - `apps/app-frontend/src/App.vue` writes `telemetry = false` during startup and does not initialize the upstream analytics launch path in the patched code.
 - The fork still keeps the surrounding analytics helper contracts where shared code requires them, so removing or renaming analytics imports must be checked against all callers rather than assuming the entire analytics package is gone.
 - The privacy settings UI no longer offers Modrinth advertising consent management. The telemetry control is presented as disabled when the fork has forced telemetry off.
+- This disables the normal PostHog usage-analytics path, not all reporting or external requests. `apps/app-frontend/src/main.js` still calls `setupErrorReporting`; its production-only Sentry integration initializes on user interaction or errors, enables browser tracing, and does not check `telemetry`. `SurveyPopup.vue` remains mounted and fetches Modrinth surveys on Windows; opening a survey passes the Modrinth user ID to Tally when available. Hosting Intercom integration also remains.
 
 ### Startup, notifications, and onboarding changes
 
-- The upstream onboarding checklist is removed from the app shell and its component is deleted. Sidebar visibility is no longer gated by onboarding progress.
-- A one-time new icon editor notification is added under `apps/app-frontend/src/components/ui/new-icon-editor-notification/`. It can open a modal that finds iconless instances and applies randomized custom icons through the existing icon editor.
+- The upstream onboarding checklist UI component is deleted and sidebar visibility is no longer gated by onboarding progress. Its provider/state, native commands, events, and migration remain; `App.vue` still initializes the checklist.
+- A new icon editor notification, shown once when its local-storage marker can be persisted, is added under `apps/app-frontend/src/components/ui/new-icon-editor-notification/`. It can open a modal that finds iconless instances and applies randomized custom icons through the existing icon editor.
 - The app subscribes to a native `info` event and turns backend informational messages into user notifications.
 - The upstream `ads_consent_required` event is removed from Rust, generated TypeScript event types, postcard decoding, and frontend event handling.
 - Some upstream promotional and hosting-update UI is removed from `App.vue`, while ordinary instance, friend, and launcher functionality remains.
@@ -134,7 +135,7 @@ The fork adds native commands and changes the Tauri boundary:
 - `apps/app/tauri.conf.json` changes the application identity and CSP, adds Xorison/Ely.by network origins, removes the ads capability, and uses `mise exec` for frontend build commands.
 - `apps/app/tauri-release.conf.json` no longer enables the upstream updater feature, updater public key, Windows signing command, or updater capability in the shown patch.
 - `apps/app/src/api/mod.rs` serializes the external-auth-library error into a frontend-stable error code.
-- `apps/app-frontend/vite.config.ts` excludes Vue core packages from dependency optimization and accepts the `REPO_XORISON_` environment prefix.
+- `apps/app-frontend/vite.config.ts` excludes Vue core packages from dependency optimization and accepts the `XORISON_` environment prefix.
 
 Every new `invoke` call must remain connected to a registered Rust command, a capability, an allowed origin where applicable, and a matching frontend return type.
 
@@ -148,6 +149,7 @@ AstralRinth changes initial defaults and adds account/library persistence:
 - `external_auth_libraries` stores the selected provider library asset.
 - SQLx offline query snapshots are regenerated to include `account_type` and the changed account upsert/select queries.
 - The backup directory changes from a Modrinth-branded path to `AstralRinthApp/Backups/app-db`.
+- Liquid Glass enablement reuses SQLite's `advanced_rendering` setting (default `true`); the Glass level is frontend-local under `astralrinth-glass-level`, defaults to `standard`, and is not part of database migrations or account appearance sync.
 
 When rebasing migrations, preserve both fresh-install behavior and upgrades from existing Modrinth/AstralRinth databases. The account-type column is not cosmetic: it controls token refresh, skin capabilities, JVM arguments, and launch validation.
 
@@ -164,7 +166,7 @@ The fork also changes repository operations rather than only application code:
 
 - The root README is replaced with AstralRinth installation, feature, support, and Russian-language documentation. `readme/ru_ru/README.md` is added.
 - `STRUCTURE.md`, `mise.toml`, the AstralRinth issue form, and an AstralRinth desktop build workflow are added.
-- The build workflow targets Linux x86_64/aarch64, Windows x86_64/aarch64, and macOS x86_64/aarch64, installs the required Rust/Node/pnpm/Java tooling, builds Tauri bundles, marks experimental packages, generates SHA-256 checksum files, and uploads artifacts.
+- The build workflow targets Linux x86_64/aarch64, Windows x86_64/aarch64, and macOS x86_64/aarch64, installs the required Rust/Node/pnpm/Java tooling, builds Tauri bundles, marks experimental packages, generates SHA-256 checksum files, and uploads GitHub Actions artifacts. It does not publish GitHub/Xorison releases. It runs on configured branch/tag pushes and manual dispatch, not pull requests; Linux ARM64, Windows ARM64, and macOS x86_64 packages receive the `nightly_expiremental_` filename prefix.
 - The patch removes or replaces many upstream Modrinth workflows for website deployment, Labrinth deployment, app build/release, Crowdin automation, generic CI, PR cancellation, changelog comments, slash commands, and API-client publishing. These removals mean that upstream workflow files should not be restored blindly.
 - `.gitignore` ignores `cmp_*.patch`, allowing local upstream-comparison patches to remain untracked.
 
@@ -210,7 +212,7 @@ Treat `.github/` as configuration for this repository, not as a place to preserv
 
 ### Assets and upstream automation
 
-- `.github/assets/` currently contains `api_cover.png`, `app_cover.png`, `monorepo_cover.png`, and `web_cover.png`. README files reference some of these images, so do not delete them without first replacing/removing those references. They are Modrinth-branded assets, and the repository's `COPYING.md` explicitly says forks must remove Modrinth branding. Replace referenced covers with AstralRinth artwork, update the READMEs, then remove unused upstream images.
+- `.github/assets/` currently contains `api_cover.png`, `app_cover.png`, `monorepo_cover.png`, and `web_cover.png`. `apps/app/README.md` references `app_cover.png`, so do not delete that cover without first replacing/removing the reference. They are Modrinth-branded assets, and the repository's `COPYING.md` explicitly says forks must remove Modrinth branding. Replace referenced covers with AstralRinth artwork, update the READMEs, then remove unused upstream images.
 - Do not retain Modrinth deployment, release, triage, merge-queue, or helper-script workflows/actions merely for parity with upstream. Keep a workflow/action only when AstralRinth's own process invokes it; verify callers, `uses:` references, and repository settings before removing any file.
 - Root automation such as `scripts/` is separate from `.github/`: remove an upstream script only after checking for package scripts, Cargo scripts, workflow steps, or documentation that invokes it.
 
@@ -248,9 +250,9 @@ The fork's launcher update is separate from upstream Modrinth app updates:
 2. `apps/app-frontend/src/App.vue` runs the check and presents the update notification/modal entry point.
 3. `apps/app-frontend/src/components/ui/astralrinth/LauncherUpdateModal.vue` presents release information and installer selection.
 4. `apps/app-frontend/src/components/ui/settings/astralrinth/UpdateSettings.vue` provides the related settings surface.
-5. `packages/app-lib/src/api/astralrinth/update.rs` and `apps/app/src/api/astralrinth/` provide native update support.
+5. `apps/app/src/api/utils.rs` registers `plugin:utils|init_update_launcher`; `packages/app-lib/src/util/astralrinth/utils.rs` and `packages/app-lib/src/api/astralrinth/update.rs` download/open the package and handle process exit. The Tauri `api/astralrinth/` module handles authentication, not updates.
 
-Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `app-update-button/`, which represent the upstream app-update UI/state. The upstream provider's action wiring is not the Xorison update path. Preserve and test each update flow independently.
+Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `app-update-button/`, which represent the upstream app-update UI/state. The upstream provider's action wiring is not the Xorison update path, and its presence does not imply a second active self-update flow. Keep it disconnected unless explicitly re-enabled as a product decision.
 
 ### Skins, Ears, and account-specific behavior
 
@@ -264,8 +266,10 @@ The current UI lazily acquires/releases baked previews through `BakedSkinButton`
 ### Liquid Glass and visual settings
 
 - Settings registration: `apps/app-frontend/src/components/ui/modal/AppSettingsModal.vue`; the AstralRinth Visual tab is marked as beta.
-- Toggle and persistence: `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` reads `useTheme().advancedRendering`, saves the existing `advanced_rendering` setting, and participates in the modal's unsaved-changes/save/reset flow. There is no separate Liquid Glass database setting or new migration.
-- Activation and styles: `apps/app-frontend/src/App.vue` watches `advancedRendering` and toggles `html.liquid-glass`; `apps/app-frontend/src/assets/stylesheets/global.scss` imports `liquid-glass.scss`.
+- Controls and save/reset: `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` edits `useTheme().advancedRendering` and `glassLevel` through the modal's unsaved-changes/save/reset flow. The three-position slider is disabled while Liquid Glass is off or a save is in progress; edits apply after saving, not as a live preview.
+- Persistence: the toggle saves the existing SQLite `advanced_rendering` setting. `apps/app-frontend/src/composables/use-theme.ts` loads/saves the level separately in WebView local storage under `astralrinth-glass-level`. Missing, invalid, or unreadable stored values fall back to `standard`; storage-write failures are ignored, so the level may not survive a restart if storage is unavailable. The level is not synced with account appearance, and neither control adds a database setting or migration.
+- Levels: `matte` uses near-opaque surfaces and 32px blur without decorative gradients; `standard` is the default translucent/blurred style with gradients and theme-specific blur; `transparent` lowers surface opacity and removes glass backdrop filtering and decorative gradients. Accessibility/unsupported-backdrop-filter fallbacks can still make surfaces opaque.
+- Activation and styles: `apps/app-frontend/src/App.vue` watches `advancedRendering` and `glassLevel`, toggles `html.liquid-glass`, and sets `html[data-glass-level]`; `apps/app-frontend/src/assets/stylesheets/global.scss` imports `liquid-glass.scss`.
 - Appearance UI: `apps/app-frontend/src/components/ui/settings/display/AppearanceSettings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. Keep the AstralRinth Visual control connected when adapting upstream appearance settings.
 - Decoration: glass backgrounds and blur for panels, buttons, switches, and input wrappers use negative-z-index pseudo-elements with `pointer-events: none`; menus retain their own decorative `::before`. The override includes opaque fallbacks, contrast/forced-color handling, and reduced-motion rules.
 
@@ -306,8 +310,8 @@ Review database migrations for both fresh installs and upgrades from the actual 
 
 ## Verification commands
 
-Follow root [`AGENTS.md`](AGENTS.md) and project instructions. For the app frontend, its package build script is `pnpm --filter @modrinth/app-frontend build`; repository frontend lint/PR checks should follow the prescribed `pnpm prepr:frontend:app` workflow when requested. A build/type diagnostic is especially useful after resolving Vue component imports and frontend/Rust event contracts. Rust backend checks are documented in the relevant project guidance.
+Follow root [`AGENTS.md`](AGENTS.md) and project instructions. For the app frontend, its package build script is `pnpm --filter @modrinth/app-frontend build`; repository frontend lint/PR checks should follow the prescribed `pnpm prepr:frontend:app` workflow when requested. Use the prescribed frontend checks for import/type diagnostics after resolving Vue components and frontend/Rust event contracts; do not run standalone `typecheck`/`tsc` or broader pre-PR checks unless requested. For Rust checks, identify the affected crate in `Cargo.toml` and read its project guidance if present.
 
 ## Baseline and limits
 
-`AR-0.19.202` is the stable AstralRinth release reference used in the recent upstream comparison. It is a comparison point, not proof that every future upstream behavior must remain unchanged. For each upstream update, state explicitly which behavior is preserved, migrated, intentionally replaced, or needs product-owner confirmation. Recheck this file when folder ownership, release/update architecture, or fork-specific integration points change.
+`AR-0.19.202` is an existing local tag used as the AstralRinth release reference in the recent upstream comparison; it does not establish the latest published stable version. It is a comparison point, not proof that every future upstream behavior must remain unchanged. For each upstream update, state explicitly which behavior is preserved, migrated, intentionally replaced, or needs product-owner confirmation. Recheck this file when folder ownership, release/update architecture, or fork-specific integration points change.
