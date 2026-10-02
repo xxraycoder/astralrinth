@@ -18,7 +18,7 @@
 		pointer-events: none;
 		border-radius: inherit;
 		background-color: var(--_glass-background);
-		background-image: var(--_glass-image);
+		background-image: var(--glass-surface-image, var(--_glass-image));
 		background-blend-mode: screen, normal;
 		-webkit-backdrop-filter: var(--glass-backdrop);
 		backdrop-filter: var(--glass-backdrop);
@@ -51,11 +51,17 @@
 }
 
 html.liquid-glass {
+	--glass-opacity: 0.68;
+	--glass-opacity-strong: 0.8;
+	--glass-opacity-subtle: 0.6;
+	--glass-content-opacity: 0.74;
+	--glass-content-opacity-deep: 0.78;
+	--glass-blur: 20px;
 	--glass-surface-transition:
 		background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-	--glass-background: rgba(39, 41, 46, 0.88);
-	--glass-background-strong: rgba(39, 41, 46, 0.96);
-	--glass-background-subtle: rgba(35, 38, 44, 0.86);
+	--glass-background: rgba(39, 41, 46, var(--glass-opacity));
+	--glass-background-strong: rgba(39, 41, 46, var(--glass-opacity-strong));
+	--glass-background-subtle: rgba(35, 38, 44, var(--glass-opacity-subtle));
 	--glass-background-opaque: var(--surface-3);
 	--glass-border: rgba(236, 249, 251, 0.2);
 	--glass-border-strong: rgba(236, 249, 251, 0.36);
@@ -63,51 +69,78 @@ html.liquid-glass {
 	--color-base: var(--color-contrast);
 	--color-secondary: var(--glass-text-muted);
 	--glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-	--glass-backdrop: blur(20px) saturate(155%);
+	--glass-backdrop: blur(var(--glass-blur)) saturate(155%);
 	--glass-accent-a: rgba(27, 217, 106, 0.13);
 	--glass-accent-b: rgba(79, 156, 255, 0.1);
-	--glass-content-background: rgba(22, 24, 28, 0.9);
+	--glass-content-background: rgba(22, 24, 28, var(--glass-content-opacity));
 }
 
 html.light-mode.liquid-glass {
-	--glass-background: rgba(255, 255, 255, 0.88);
-	--glass-background-strong: rgba(255, 255, 255, 0.96);
-	--glass-background-subtle: rgba(255, 255, 255, 0.86);
+	--glass-background: rgba(255, 255, 255, var(--glass-opacity));
+	--glass-background-strong: rgba(255, 255, 255, var(--glass-opacity-strong));
+	--glass-background-subtle: rgba(255, 255, 255, var(--glass-opacity-subtle));
 	--glass-background-opaque: var(--surface-3);
 	--glass-border: rgba(72, 86, 110, 0.28);
 	--glass-border-strong: rgba(72, 86, 110, 0.46);
 	--glass-text-muted: #4b5870;
 	--glass-shadow: 0 10px 30px rgba(35, 45, 65, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.72);
-	--glass-backdrop: blur(18px) saturate(145%);
+	--glass-blur: 18px;
+	--glass-backdrop: blur(var(--glass-blur)) saturate(145%);
 	--glass-accent-a: rgba(0, 175, 92, 0.12);
 	--glass-accent-b: rgba(31, 104, 192, 0.1);
-	--glass-content-background: rgba(235, 235, 235, 0.9);
+	--glass-content-background: rgba(235, 235, 235, var(--glass-content-opacity));
 }
 
 html.oled-mode.liquid-glass {
-	--glass-background: rgba(16, 16, 19, 0.88);
-	--glass-background-strong: rgba(16, 16, 19, 0.96);
-	--glass-background-subtle: rgba(10, 10, 12, 0.86);
+	--glass-background: rgba(16, 16, 19, var(--glass-opacity));
+	--glass-background-strong: rgba(16, 16, 19, var(--glass-opacity-strong));
+	--glass-background-subtle: rgba(10, 10, 12, var(--glass-opacity-subtle));
 	--glass-background-opaque: var(--surface-3);
-	--glass-content-background: rgba(0, 0, 0, 0.92);
+	--glass-content-background: rgba(0, 0, 0, var(--glass-content-opacity-deep));
 	--glass-text-muted: #c5c9bf;
 	--glass-border: rgba(242, 243, 237, 0.2);
 	--glass-border-strong: rgba(242, 243, 237, 0.36);
 }
 
 html.retro-mode.liquid-glass {
-	--glass-background: rgba(35, 36, 33, 0.88);
-	--glass-background-strong: rgba(35, 36, 33, 0.96);
-	--glass-background-subtle: rgba(35, 36, 33, 0.86);
+	--glass-background: rgba(35, 36, 33, var(--glass-opacity));
+	--glass-background-strong: rgba(35, 36, 33, var(--glass-opacity-strong));
+	--glass-background-subtle: rgba(35, 36, 33, var(--glass-opacity-subtle));
 	--glass-background-opaque: var(--surface-3);
 	--glass-border: rgba(230, 226, 209, 0.2);
 	--glass-border-strong: rgba(230, 226, 209, 0.38);
 	--glass-text-muted: #c9c8b9;
 	--glass-shadow: 0 10px 26px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(230, 226, 209, 0.16);
-	--glass-backdrop: blur(16px) saturate(120%);
+	--glass-blur: 16px;
+	--glass-backdrop: blur(var(--glass-blur)) saturate(120%);
 	--glass-accent-a: rgba(77, 146, 39, 0.16);
 	--glass-accent-b: rgba(9, 159, 239, 0.08);
-	--glass-content-background: rgba(25, 25, 23, 0.92);
+	--glass-content-background: rgba(25, 25, 23, var(--glass-content-opacity-deep));
+}
+
+html.liquid-glass[data-glass-level='matte'] {
+	--glass-opacity: 0.96;
+	--glass-opacity-strong: 0.99;
+	--glass-opacity-subtle: 0.94;
+	--glass-content-opacity: 0.98;
+	--glass-content-opacity-deep: 0.98;
+	--glass-blur: 32px;
+	--glass-backdrop: blur(var(--glass-blur)) saturate(100%);
+	--glass-surface-image: none;
+}
+
+html.liquid-glass[data-glass-level='transparent'] {
+	--glass-opacity: 0.45;
+	--glass-opacity-strong: 0.65;
+	--glass-opacity-subtle: 0.35;
+	--glass-content-opacity: 0.55;
+	--glass-content-opacity-deep: 0.6;
+	--glass-backdrop: none;
+	--glass-surface-image: none;
+}
+
+html.liquid-glass[data-glass-level='transparent'] :is(.group\/input, .input, textarea, select) {
+	background-image: none;
 }
 
 html.liquid-glass
@@ -168,9 +201,11 @@ html.liquid-glass [role='menu']::before {
 	pointer-events: none;
 	border-radius: inherit;
 	background-color: var(--glass-background-strong);
-	background-image:
+	background-image: var(
+		--glass-surface-image,
 		radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.04), transparent 34%),
-		linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 38%);
+		linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 38%)
+	);
 	background-blend-mode: screen, normal;
 	-webkit-backdrop-filter: var(--glass-backdrop);
 	backdrop-filter: var(--glass-backdrop);
@@ -552,6 +587,10 @@ html.liquid-glass
 		backdrop-filter: none;
 	}
 
+	html.liquid-glass .app-contents {
+		background-color: var(--glass-background-opaque);
+	}
+
 	html.liquid-glass [role='menu']::before {
 		display: none;
 	}
@@ -590,6 +629,10 @@ html.liquid-glass
 		box-shadow: none;
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
+	}
+
+	html.liquid-glass .app-contents {
+		background-color: var(--glass-background-opaque);
 	}
 
 	html.liquid-glass [role='menu']::before {

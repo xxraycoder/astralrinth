@@ -188,8 +188,11 @@ const appTheme = useTheme()
 const quickInstances = useQuickInstanceLimit()
 
 watch(
-	() => appTheme.advancedRendering,
-	(enabled) => document.documentElement.classList.toggle('liquid-glass', enabled),
+	[() => appTheme.advancedRendering, () => appTheme.glassLevel],
+	([enabled, level]) => {
+		document.documentElement.classList.toggle('liquid-glass', enabled)
+		document.documentElement.dataset.glassLevel = level
+	},
 	{ immediate: true },
 )
 const router = useRouter()

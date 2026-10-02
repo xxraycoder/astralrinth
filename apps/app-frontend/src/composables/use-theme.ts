@@ -2,6 +2,9 @@ import { prepareThemeColorTransition } from '@modrinth/ui'
 import { computed, reactive, ref, watch } from 'vue'
 
 export const THEME_OPTIONS = ['dark', 'light', 'oled', 'retro', 'system'] as const
+export const GLASS_LEVEL_OPTIONS = ['matte', 'standard', 'transparent'] as const
+export type GlassLevel = (typeof GLASS_LEVEL_OPTIONS)[number]
+
 export const DARK_THEMES = ['dark', 'oled', 'retro'] as const
 
 export type ColorTheme = (typeof THEME_OPTIONS)[number]
@@ -11,6 +14,7 @@ type NativeTheme = 'light' | 'dark'
 
 const PREFERRED_THEME_KEY = 'modrinth-theme'
 const PREFERRED_DARK_THEME_KEY = 'modrinth-preferred-dark-theme'
+const GLASS_LEVEL_KEY = 'astralrinth-glass-level'
 
 export function isDarkTheme(theme: string): theme is DarkTheme {
 	return (DARK_THEMES as readonly string[]).includes(theme)
@@ -48,10 +52,24 @@ function loadPreferredDarkTheme(): DarkTheme {
 	return 'dark'
 }
 
+function loadGlassLevel(): GlassLevel {
+	try {
+		const stored = window.localStorage.getItem(GLASS_LEVEL_KEY)
+		if (stored && (GLASS_LEVEL_OPTIONS as readonly string[]).includes(stored)) {
+			return stored as GlassLevel
+		}
+	} catch {
+		return 'standard'
+	}
+
+	return 'standard'
+}
+
 const preferred = ref<ColorTheme>(loadPreferredTheme())
 const preview = ref<ColorTheme | null>(null)
 const preferredDark = ref<DarkTheme>(loadPreferredDarkTheme())
 const advancedRendering = ref(true)
+const glassLevel = ref<GlassLevel>(loadGlassLevel())
 const syncAcrossDevices = ref(false)
 const nativeThemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
 const native = ref<NativeTheme>(nativeThemeQuery.matches ? 'dark' : 'light')
@@ -86,6 +104,14 @@ watch(
 	},
 	{ immediate: true },
 )
+
+watch(glassLevel, (level) => {
+	try {
+		window.localStorage.setItem(GLASS_LEVEL_KEY, level)
+	} catch {
+		return
+	}
+})
 
 watch(preferredDark, (theme) => {
 	try {
@@ -134,6 +160,7 @@ const theme = reactive({
 	native,
 	syncAcrossDevices,
 	advancedRendering,
+	glassLevel,
 	options: THEME_OPTIONS,
 	applyAccountAppearance,
 })

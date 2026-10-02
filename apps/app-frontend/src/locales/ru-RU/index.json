@@ -254,6 +254,18 @@
   "astralrinth.app.settings.visual.description": {
     "message": "Настройте визуальные эффекты AstralRinth, не изменяя выбранную тему."
   },
+	"astralrinth.app.settings.visual.glass-level.matte": {
+		"message": "Матовый"
+	},
+	"astralrinth.app.settings.visual.glass-level.standard": {
+		"message": "Стандартный"
+	},
+	"astralrinth.app.settings.visual.glass-level.title": {
+		"message": "Уровень стекла"
+	},
+	"astralrinth.app.settings.visual.glass-level.transparent": {
+		"message": "Прозрачный"
+	},
   "astralrinth.app.settings.visual.liquid-glass.description": {
     "message": "Используйте полупрозрачные поверхности, размытие и многослойную глубину интерфейса. Отключите эту настройку, если эффекты влияют на производительность или читаемость."
   },

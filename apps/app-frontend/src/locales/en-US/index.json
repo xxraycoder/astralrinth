@@ -254,6 +254,18 @@
   "astralrinth.app.settings.visual.description": {
     "message": "Customize the visual effects used by AstralRinth without changing the selected theme."
   },
+	"astralrinth.app.settings.visual.glass-level.matte": {
+		"message": "Matte"
+	},
+	"astralrinth.app.settings.visual.glass-level.standard": {
+		"message": "Standard"
+	},
+	"astralrinth.app.settings.visual.glass-level.title": {
+		"message": "Glass level"
+	},
+	"astralrinth.app.settings.visual.glass-level.transparent": {
+		"message": "Transparent"
+	},
   "astralrinth.app.settings.visual.liquid-glass.description": {
     "message": "Use translucent surfaces, blur, and layered depth across the app. Turn this off if the effects impact performance or readability."
   },
