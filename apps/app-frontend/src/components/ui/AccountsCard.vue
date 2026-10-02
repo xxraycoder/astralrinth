@@ -16,7 +16,7 @@
 	<Accordion
 		v-else
 		class="w-full mt-2 bg-button-bg border border-solid border-surface-5 rounded-xl overflow-clip"
-		button-class="button-base w-full bg-transparent px-3 py-2 border-0 cursor-pointer"
+		button-class="account-select w-full bg-transparent px-3 py-2 border-0 rounded-xl cursor-pointer hover:bg-surface-4"
 		:open-by-default="false"
 	>
 		<template #title>
@@ -50,11 +50,20 @@
 				</div>
 			</div>
 		</template>
-		<div class="bg-button-bg pt-1 pb-2 border-0 border-t border-solid border-surface-5">
+		<div class="bg-button-bg p-2 border-0 border-t border-solid border-surface-5">
 			<template v-if="accounts.length > 0">
-				<div v-for="account in accounts" :key="account.profile.id" class="flex gap-1 items-center">
+				<div
+					v-for="account in accounts"
+					:key="account.profile.id"
+					class="flex gap-1 items-center rounded-lg mb-1"
+					:class="{
+						'bg-brand-highlight': selectedAccount?.profile.id === account.profile.id,
+					}"
+				>
 					<button
-						class="flex items-center flex-shrink flex-grow overflow-clip gap-2 p-2 border-0 bg-transparent cursor-pointer button-base min-w-0"
+						type="button"
+						class="account-select flex items-center flex-shrink flex-grow gap-2 p-2 border-0 rounded-lg bg-transparent cursor-pointer min-w-0 text-left hover:bg-surface-4"
+						:aria-pressed="selectedAccount?.profile.id === account.profile.id"
 						@click="setAccount(account)"
 					>
 						<RadioButtonCheckedIcon
@@ -83,15 +92,17 @@
 						v-tooltip="formatMessage(messages.removeAccount)"
 						type="quiet"
 						color="red"
+						interaction="filled"
+						:circular="false"
 						:label="formatMessage(messages.removeAccount)"
-						class="mr-2 !bg-button-bg !text-primary ![box-shadow:var(--shadow-button)] hover:!bg-red focus-visible:!bg-red hover:!text-[var(--color-accent-contrast)] focus-visible:!text-[var(--color-accent-contrast)]"
+						class="mr-1 !text-secondary"
 						@click="logout(account.profile.id)"
 					>
 						<TrashIcon />
 					</IconButton>
 				</div>
 			</template>
-			<div class="flex flex-col gap-2 px-2 pt-2">
+			<div class="flex flex-col gap-2 pt-2">
 				<Button type="colored" color="brand" @click="showAccountLoginModal">
 					<span class="inline-flex items-center gap-2">
 						<PlusIcon />
@@ -448,6 +459,17 @@ const messages = defineMessages({
 </script>
 
 <style scoped lang="scss">
+:deep(.account-select) {
+	border: none;
+	outline: none;
+	transition: background-color 0.15s ease;
+
+	&:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: -2px;
+	}
+}
+
 .vector-icon {
 	width: 0.875rem;
 	height: 0.875rem;

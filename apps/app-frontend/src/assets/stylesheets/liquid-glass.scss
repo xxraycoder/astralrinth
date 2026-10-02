@@ -1,14 +1,26 @@
-/** Keep glass decoration below content without making the interaction layer a fixed-position containing block. */
-@mixin glass-decoration($background) {
+/** Keep glass behind content without changing its colors or creating a fixed-position containing block. */
+@mixin glass-decoration(
+	$background,
+	$opaque: var(--surface-3),
+	$replace-background: true
+) {
 	--_glass-background: #{$background};
+	--_glass-background-opaque: #{$opaque};
 	--_glass-image:
-		radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.04), transparent 34%),
+		radial-gradient(
+			circle at 18% 0%,
+			rgba(255, 255, 255, 0.04),
+			transparent 34%
+		),
 		linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 38%);
 	isolation: isolate;
-	background-color: transparent;
-	background-image: none;
-	-webkit-backdrop-filter: none;
-	backdrop-filter: none;
+
+	@if $replace-background {
+		background-color: transparent;
+		background-image: none;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
 
 	&::after {
 		content: '';
@@ -20,13 +32,18 @@
 		background-color: var(--_glass-background);
 		background-image: var(--glass-surface-image, var(--_glass-image));
 		background-blend-mode: screen, normal;
+		box-shadow: var(--glass-shadow);
 		-webkit-backdrop-filter: var(--glass-backdrop);
 		backdrop-filter: var(--glass-backdrop);
 		transition: var(--glass-surface-transition);
 	}
 
-	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-		background-color: var(--glass-background-opaque);
+	@supports not (
+		(backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+	) {
+		@if $replace-background {
+			background-color: var(--_glass-background-opaque);
+		}
 
 		&::after {
 			display: none;
@@ -40,9 +57,9 @@
 	}
 
 	@media (prefers-contrast: more), (forced-colors: active) {
-		background-color: var(--glass-background-opaque);
-		border-color: var(--surface-5);
-		box-shadow: none;
+		@if $replace-background {
+			background-color: var(--_glass-background-opaque);
+		}
 
 		&::after {
 			display: none;
@@ -55,67 +72,65 @@ html.liquid-glass {
 	--glass-opacity-strong: 0.8;
 	--glass-opacity-subtle: 0.6;
 	--glass-content-opacity: 0.74;
-	--glass-content-opacity-deep: 0.78;
 	--glass-blur: 20px;
 	--glass-surface-transition:
 		background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-	--glass-background: rgba(39, 41, 46, var(--glass-opacity));
-	--glass-background-strong: rgba(39, 41, 46, var(--glass-opacity-strong));
-	--glass-background-subtle: rgba(35, 38, 44, var(--glass-opacity-subtle));
-	--glass-background-opaque: var(--surface-3);
+	--glass-background: color-mix(
+		in srgb,
+		var(--surface-3) calc(var(--glass-opacity) * 100%),
+		transparent
+	);
+	--glass-background-strong: color-mix(
+		in srgb,
+		var(--surface-3) calc(var(--glass-opacity-strong) * 100%),
+		transparent
+	);
+	--glass-background-subtle: color-mix(
+		in srgb,
+		var(--surface-4) calc(var(--glass-opacity-subtle) * 100%),
+		transparent
+	);
+	--glass-content-background: color-mix(
+		in srgb,
+		var(--surface-1) calc(var(--glass-content-opacity) * 100%),
+		transparent
+	);
 	--glass-border: rgba(236, 249, 251, 0.2);
 	--glass-border-strong: rgba(236, 249, 251, 0.36);
-	--glass-text-muted: #c5ced8;
-	--color-base: var(--color-contrast);
-	--color-secondary: var(--glass-text-muted);
-	--glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+	--glass-shadow:
+		0 12px 32px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 	--glass-backdrop: blur(var(--glass-blur)) saturate(155%);
 	--glass-accent-a: rgba(27, 217, 106, 0.13);
 	--glass-accent-b: rgba(79, 156, 255, 0.1);
-	--glass-content-background: rgba(22, 24, 28, var(--glass-content-opacity));
 }
 
 html.light-mode.liquid-glass {
-	--glass-background: rgba(255, 255, 255, var(--glass-opacity));
-	--glass-background-strong: rgba(255, 255, 255, var(--glass-opacity-strong));
-	--glass-background-subtle: rgba(255, 255, 255, var(--glass-opacity-subtle));
-	--glass-background-opaque: var(--surface-3);
 	--glass-border: rgba(72, 86, 110, 0.28);
 	--glass-border-strong: rgba(72, 86, 110, 0.46);
-	--glass-text-muted: #4b5870;
-	--glass-shadow: 0 10px 30px rgba(35, 45, 65, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+	--glass-shadow:
+		0 10px 30px rgba(35, 45, 65, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.72);
 	--glass-blur: 18px;
 	--glass-backdrop: blur(var(--glass-blur)) saturate(145%);
 	--glass-accent-a: rgba(0, 175, 92, 0.12);
 	--glass-accent-b: rgba(31, 104, 192, 0.1);
-	--glass-content-background: rgba(235, 235, 235, var(--glass-content-opacity));
 }
 
 html.oled-mode.liquid-glass {
-	--glass-background: rgba(16, 16, 19, var(--glass-opacity));
-	--glass-background-strong: rgba(16, 16, 19, var(--glass-opacity-strong));
-	--glass-background-subtle: rgba(10, 10, 12, var(--glass-opacity-subtle));
-	--glass-background-opaque: var(--surface-3);
-	--glass-content-background: rgba(0, 0, 0, var(--glass-content-opacity-deep));
-	--glass-text-muted: #c5c9bf;
+	--glass-content-opacity: 0.78;
 	--glass-border: rgba(242, 243, 237, 0.2);
 	--glass-border-strong: rgba(242, 243, 237, 0.36);
 }
 
 html.retro-mode.liquid-glass {
-	--glass-background: rgba(35, 36, 33, var(--glass-opacity));
-	--glass-background-strong: rgba(35, 36, 33, var(--glass-opacity-strong));
-	--glass-background-subtle: rgba(35, 36, 33, var(--glass-opacity-subtle));
-	--glass-background-opaque: var(--surface-3);
+	--glass-content-opacity: 0.78;
 	--glass-border: rgba(230, 226, 209, 0.2);
 	--glass-border-strong: rgba(230, 226, 209, 0.38);
-	--glass-text-muted: #c9c8b9;
-	--glass-shadow: 0 10px 26px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(230, 226, 209, 0.16);
+	--glass-shadow:
+		0 10px 26px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(230, 226, 209, 0.16);
 	--glass-blur: 16px;
 	--glass-backdrop: blur(var(--glass-blur)) saturate(120%);
 	--glass-accent-a: rgba(77, 146, 39, 0.16);
 	--glass-accent-b: rgba(9, 159, 239, 0.08);
-	--glass-content-background: rgba(25, 25, 23, var(--glass-content-opacity-deep));
 }
 
 html.liquid-glass[data-glass-level='matte'] {
@@ -123,7 +138,6 @@ html.liquid-glass[data-glass-level='matte'] {
 	--glass-opacity-strong: 0.99;
 	--glass-opacity-subtle: 0.94;
 	--glass-content-opacity: 0.98;
-	--glass-content-opacity-deep: 0.98;
 	--glass-blur: 32px;
 	--glass-backdrop: blur(var(--glass-blur)) saturate(100%);
 	--glass-surface-image: none;
@@ -134,13 +148,8 @@ html.liquid-glass[data-glass-level='transparent'] {
 	--glass-opacity-strong: 0.65;
 	--glass-opacity-subtle: 0.35;
 	--glass-content-opacity: 0.55;
-	--glass-content-opacity-deep: 0.6;
 	--glass-backdrop: none;
 	--glass-surface-image: none;
-}
-
-html.liquid-glass[data-glass-level='transparent'] :is(.group\/input, .input, textarea, select) {
-	background-image: none;
 }
 
 html.liquid-glass
@@ -148,20 +157,26 @@ html.liquid-glass
 		.glass-surface,
 		.modal-body,
 		[role='dialog'],
-		[role='menu'],
 		.v-popper__inner,
-		.floating-action-bar > div
-	):not([role='menu']) {
-	color: var(--color-base);
-	border-color: var(--glass-border);
-	box-shadow: var(--glass-shadow);
+		:where(.floating-action-bar > div)
+	) {
 	@include glass-decoration(var(--glass-background));
+	box-shadow: var(--glass-shadow);
+
+	&::after {
+		border: 1px solid var(--glass-border);
+		box-shadow: none;
+	}
 }
 
 html.liquid-glass
-	:is(.glass-surface, [role='dialog'], .v-popper__inner, .floating-action-bar > div):not(
-		.modal-body
-	):not([role='menu']):not(:where(.absolute, .fixed, .sticky)) {
+	:is(
+		.glass-surface,
+		.modal-body,
+		[role='dialog'],
+		.v-popper__inner,
+		.floating-action-bar > div
+	):not(:where(.absolute, .fixed, .sticky)) {
 	position: relative;
 }
 
@@ -170,62 +185,62 @@ html.liquid-glass
 		.glass-surface--strong,
 		.modal-body,
 		[role='dialog'],
-		[role='menu'],
 		.v-popper__inner,
-		.floating-action-bar > div
-	):not([role='menu']) {
+		:where(.floating-action-bar > div)
+	) {
 	--_glass-background: var(--glass-background-strong);
 }
 
 html.liquid-glass .glass-surface--subtle {
 	--_glass-background: var(--glass-background-subtle);
+	--_glass-background-opaque: var(--surface-4);
 }
 
-/** Keep fixed-position submenus anchored to the viewport, not the blurred parent menu. */
+/** A menu's backdrop must not change the containing block of its fixed-position submenus. */
 html.liquid-glass [role='menu'] {
 	isolation: isolate;
-	color: var(--color-base);
 	background-color: transparent;
 	background-image: none;
-	border-color: var(--glass-border);
-	box-shadow: var(--glass-shadow);
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
+
+	&::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		pointer-events: none;
+		border: 1px solid var(--glass-border);
+		border-radius: inherit;
+		background-color: var(--glass-background-strong);
+		background-image: var(
+			--glass-surface-image,
+			radial-gradient(
+				circle at 18% 0%,
+				rgba(255, 255, 255, 0.04),
+				transparent 34%
+			),
+			linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 38%)
+		);
+		box-shadow: var(--glass-shadow);
+		-webkit-backdrop-filter: var(--glass-backdrop);
+		backdrop-filter: var(--glass-backdrop);
+		transition: var(--glass-surface-transition);
+	}
 }
 
-html.liquid-glass [role='menu']::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-	border-radius: inherit;
-	background-color: var(--glass-background-strong);
-	background-image: var(
-		--glass-surface-image,
-		radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.04), transparent 34%),
-		linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 38%)
-	);
-	background-blend-mode: screen, normal;
-	-webkit-backdrop-filter: var(--glass-backdrop);
-	backdrop-filter: var(--glass-backdrop);
-}
-
-html.liquid-glass .glass-surface--interactive:hover,
-html.liquid-glass .glass-surface--interactive:focus-within,
 html.liquid-glass
 	:is(
 		.modal-body,
 		[role='dialog'],
-		[role='menu'],
 		.v-popper__inner,
 		.floating-action-bar > div
-	):hover {
+	):hover::after,
+html.liquid-glass [role='menu']:hover::before {
 	border-color: var(--glass-border-strong);
 }
 
 html.liquid-glass .app-grid-layout {
-	background-color: var(--color-bg);
 	background-image:
 		radial-gradient(circle at 5% 0%, var(--glass-accent-a), transparent 38%),
 		radial-gradient(circle at 95% 100%, var(--glass-accent-b), transparent 42%);
@@ -236,191 +251,107 @@ html.liquid-glass .app-contents {
 }
 
 html.liquid-glass .from-bg-raised.to-transparent {
-	--tw-gradient-from: transparent !important;
-	--tw-gradient-to: transparent !important;
 	--tw-gradient-stops: transparent !important;
 }
 
-html.liquid-glass .modal-body > .grid > div:first-child > .relative > div.flex.h-full.flex-col {
-	padding-right: 0.75rem;
-	scrollbar-gutter: stable;
-}
-
 html.liquid-glass
 	:is(
 		.button-frame--base,
 		.button-frame--colored,
-		.button-frame--colored-text,
-		.button-frame--outlined,
-		.button-frame--quiet,
-		.btn,
+		:where(.btn:not(.btn-transparent)),
 		.button-base,
-		.button-like,
-		.stylized-toggle,
-		.nav-button,
-		button[role='switch']
+		:where(button[role='switch'])
 	) {
-	position: relative;
-	color: var(--color-contrast);
-	border-color: var(--glass-border);
-	box-shadow: var(--glass-shadow);
-	@include glass-decoration(var(--glass-background-subtle));
-	--_glass-image:
-		radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.04), transparent 45%),
-		linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 42%);
+	@include glass-decoration(var(--glass-background-subtle), var(--surface-4));
 
 	&::after {
-		border: 1px solid;
-		border-color: inherit;
+		border: 1px solid var(--glass-border);
 	}
 }
 
 html.liquid-glass
-	:is(
-		.button-frame--base,
-		.button-frame--colored-text,
-		.button-frame--outlined,
-		.button-frame--quiet
+	:is(.btn, .button-base, button[role='switch']):not(
+		:where(.absolute, .fixed, .sticky)
 	) {
-	--_glass-background: var(--glass-background-strong);
-	border-color: var(--glass-border);
+	position: relative;
 }
 
-html.liquid-glass
-	:is(
-		.button-frame--colored,
-		.btn-primary,
-		.btn-danger,
-		.btn-red,
-		.btn-orange,
-		.btn-green,
-		.btn-blue,
-		.btn-purple,
-		.btn-gray
-	) {
+html.liquid-glass .button-frame--base {
 	--_glass-background: color-mix(
 		in srgb,
-		var(--button-color, var(--_background-color)) 12%,
-		var(--glass-background-strong)
+		var(--surface-4) calc(var(--glass-opacity-strong) * 100%),
+		transparent
 	);
-	border-color: var(--button-color, var(--_accent-color));
-	border-color: color-mix(
+}
+
+html.liquid-glass .button-frame--colored {
+	--_glass-background: color-mix(
 		in srgb,
-		var(--button-color, var(--_accent-color)) 58%,
-		var(--glass-border)
+		var(--button-color) calc(var(--glass-opacity-strong) * 100%),
+		transparent
 	);
-	color: var(--color-contrast);
-	box-shadow:
-		var(--glass-shadow),
-		0 0 0 1px color-mix(in srgb, var(--button-color, var(--_accent-color)) 22%, transparent);
+	--_glass-background-opaque: var(--button-color);
 }
 
+html.liquid-glass .btn:not(.btn-transparent) {
+	--_glass-background: color-mix(
+		in srgb,
+		var(--_background-color) calc(var(--glass-opacity-strong) * 100%),
+		transparent
+	);
+	--_glass-background-opaque: var(--_background-color);
+}
+
+/** Quiet/outlined controls keep their native backgrounds paired with their native hover/focus colors. */
 html.liquid-glass
 	:is(
-		.button-frame--colored,
-		.btn-primary,
-		.btn-danger,
-		.btn-red,
-		.btn-orange,
-		.btn-green,
-		.btn-blue,
-		.btn-purple,
-		.btn-gray
-	):hover:not(:disabled):not([disabled]):not(.disabled):not([aria-disabled='true']),
-html.liquid-glass
-	:is(
-		.button-frame--base,
-		.button-frame--colored,
-		.button-frame--colored-text,
-		.button-frame--outlined,
 		.button-frame--quiet,
-		.btn,
-		.button-base,
-		.button-like,
-		.stylized-toggle,
-		.nav-button,
-		button[role='switch']
-	):focus-visible:not(:disabled):not([disabled]):not(.disabled):not([aria-disabled='true']),
-html.liquid-glass
-	:is(
-		.button-frame--base,
-		.button-frame--colored,
-		.button-frame--colored-text,
 		.button-frame--outlined,
-		.button-frame--quiet,
-		.btn,
-		.button-base,
-		.button-like,
-		.stylized-toggle,
-		.nav-button,
-		button[role='switch']
-	):hover:not(:disabled):not([disabled]):not(.disabled):not([aria-disabled='true']) {
-	border-color: var(--glass-border-strong);
-}
-
-html.liquid-glass
-	:is(button[data-button], .btn, .button-base, .button-like, .nav-button, button[role='switch']):focus-visible:not(:disabled):not([aria-disabled='true']) {
-	outline: 2px solid var(--color-contrast);
-	outline-offset: 3px;
-}
-
-html.liquid-glass
-	:is(
-		button[data-button],
-		.button-frame--colored,
-		.button-frame--base,
-		.button-frame--outlined,
-		.button-frame--quiet
+		.btn.btn-transparent,
+		.nav-button
 	) {
-	border-radius: var(--radius-lg);
-}
-
-
-html.liquid-glass :is(.button-frame--colored-text, .button-frame--outlined) {
-	color: var(--color-contrast);
-	color: color-mix(in srgb, var(--color-contrast) 80%, var(--button-color, var(--color-contrast)));
-}
-
-html.liquid-glass :is([role='menuitem'], .button-menu-item) {
-	color: var(--color-contrast);
-}
-
-html.liquid-glass :is([role='menuitem'], .button-menu-item):hover,
-html.liquid-glass :is([role='menuitem'], .button-menu-item):focus-visible {
-	background-color: var(--glass-background-subtle);
-	color: var(--color-contrast);
-}
-
-html.liquid-glass .modal-body span.bg-brand-highlight.text-brand-green {
-	display: inline-flex;
-	align-items: center;
-	line-height: 1;
-}
-
-html.liquid-glass .nav-button {
-	border-radius: 50%;
+	@include glass-decoration(transparent, $replace-background: false);
 
 	&::after {
-		z-index: -2;
+		border: 1px solid var(--glass-border);
 	}
 }
 
-html.liquid-glass .app-sidebar .sidebar-default-content > div:first-child > :is(div, .accordion) {
-	position: relative;
-	border-radius: var(--radius-xl);
-	border-color: var(--glass-border);
-	box-shadow: var(--glass-shadow);
-	@include glass-decoration(var(--glass-background-subtle));
-	--_glass-image: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 58%);
+html.liquid-glass
+	:is(
+		.button-frame--base,
+		.button-frame--colored,
+		.button-frame--outlined,
+		.button-frame--quiet,
+		.btn,
+		.button-base,
+		.nav-button,
+		button[role='switch']
+	) {
+	&:hover:not(:disabled):not(.disabled):not([aria-disabled='true'])::after,
+	&:focus-visible:not(:disabled):not(.disabled):not(
+			[aria-disabled='true']
+		)::after {
+		border-color: var(--glass-border-strong);
+	}
+}
+
+html.liquid-glass .nav-button::after {
+	z-index: -2;
 }
 
 html.liquid-glass
 	.app-sidebar
 	.sidebar-default-content
 	> div:first-child
-	> :is(div, .accordion)
-	> :is(button, div) {
-	border-radius: inherit;
+	> div {
+	position: relative;
+	@include glass-decoration(var(--glass-background-subtle), var(--surface-4));
+	box-shadow: var(--glass-shadow);
+
+	&::after {
+		box-shadow: none;
+	}
 }
 
 html.liquid-glass
@@ -429,99 +360,69 @@ html.liquid-glass
 	> div:first-child
 	.accordion-content
 	> div
+	> div
 	> div {
-	border: 0;
-	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 	background-color: transparent;
 	background-image: none;
-	overflow: hidden;
 }
 
-html.liquid-glass
-	.app-sidebar
-	.sidebar-default-content
-	> div:first-child
-	.accordion-content
-	> div
-	> div
-	> div {
-	margin-inline: 0.25rem;
-	border-radius: var(--radius-lg);
-	background-color: transparent;
-	transition: background-color 180ms ease;
+html.liquid-glass button[role='switch'][aria-checked='true'] {
+	--_glass-background: color-mix(
+		in srgb,
+		var(--color-brand) calc(var(--glass-opacity-strong) * 100%),
+		transparent
+	);
+	--_glass-background-opaque: var(--color-brand);
 }
 
-html.liquid-glass
-	.app-sidebar
-	.sidebar-default-content
-	> div:first-child
-	.accordion-content
-	> div
-	> div
-	> div:hover {
+html.liquid-glass :is(.input, textarea, select) {
 	background-color: var(--glass-background-subtle);
-}
-
-html.liquid-glass :is(.glass-toggle, button[role='switch']) {
-	position: relative;
-	box-shadow: var(--glass-shadow);
-	@include glass-decoration(var(--glass-background-subtle));
-	--_glass-image: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 60%);
-}
-
-html.liquid-glass :is(.glass-toggle, button[role='switch'])[aria-checked='true'] {
-	--_glass-background: color-mix(in srgb, var(--color-brand) 24%, var(--glass-background-strong));
-	border-color: var(--color-brand);
-}
-
-html.liquid-glass :is(.glass-toggle, button[role='switch']) > span {
-	border: 1px solid var(--glass-border-strong);
-	background-color: var(--glass-background-strong);
-	box-shadow: var(--glass-shadow);
-}
-
-html.liquid-glass :is(.group\/input, .input, textarea, select) {
-	border-color: var(--glass-border);
-	background-color: var(--glass-background-subtle);
-	background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 55%);
+	background-image: var(
+		--glass-surface-image,
+		linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 55%)
+	);
 	box-shadow: var(--glass-shadow);
 	-webkit-backdrop-filter: var(--glass-backdrop);
 	backdrop-filter: var(--glass-backdrop);
-	color: var(--color-contrast);
 }
 
-html.liquid-glass :is(.group\/input, .input) {
-	border-radius: var(--radius-lg);
-}
-
-html.liquid-glass :is(.group\/input, .input):not(input):not(textarea):not(select) {
+html.liquid-glass .group\/input {
 	position: relative;
-	@include glass-decoration(var(--glass-background-subtle));
-	--_glass-image: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 55%);
+	@include glass-decoration(var(--glass-background-subtle), var(--surface-4));
+	--_glass-image: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.04),
+		transparent 55%
+	);
 }
 
-html.liquid-glass :is(.group\/input, .input) :is(input, textarea) {
-	border: 0;
+html.liquid-glass .group\/input.bg-transparent {
+	--_glass-background: transparent;
+	--_glass-background-opaque: transparent;
+}
+
+html.liquid-glass .group\/input[data-invalid='true'] {
+	--_glass-background: color-mix(
+		in srgb,
+		var(--color-red-highlight) calc(var(--glass-opacity-subtle) * 100%),
+		transparent
+	);
+	--_glass-background-opaque: var(--color-red-highlight);
+}
+
+html.liquid-glass .group\/input :is(input, textarea) {
 	background: transparent !important;
-	background-image: none !important;
 	box-shadow: none !important;
-	color: var(--color-contrast);
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
 }
 
-html.liquid-glass :is(.group\/input, .input) :is(input, textarea)::placeholder {
-	color: var(--glass-text-muted);
-	opacity: 1;
-}
-
-html.liquid-glass
-	:is(.group\/input, .input)
-	:is(svg, [aria-hidden='true']) {
-	color: var(--glass-text-muted);
-}
-
-html.liquid-glass :is(.glass-slider-track, .slider-track) {
-	border: 1px solid var(--glass-border);
-	background-color: var(--glass-background-subtle);
+html.liquid-glass .slider-track {
+	background-color: color-mix(
+		in srgb,
+		var(--surface-5) calc(var(--glass-opacity-subtle) * 100%),
+		transparent
+	);
 	box-shadow:
 		inset 0 1px 2px rgba(0, 0, 0, 0.18),
 		var(--glass-shadow);
@@ -529,113 +430,66 @@ html.liquid-glass :is(.glass-slider-track, .slider-track) {
 	backdrop-filter: var(--glass-backdrop);
 }
 
-html.liquid-glass :is(.glass-slider-fill, .filled-slider-track) {
-	background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 70%);
+html.liquid-glass :is(.filled-slider-track, .slider-thumb) {
+	background-image: var(
+		--glass-surface-image,
+		linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 70%)
+	);
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
 }
 
-html.liquid-glass :is(.glass-slider-thumb, .slider-thumb) {
-	border: 1px solid var(--glass-border-strong);
-	background-color: var(--glass-background-strong);
-	background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 65%);
-	box-shadow: var(--glass-shadow);
+html.liquid-glass
+	:is(.color-picker-hue-slider, .editor-property-range)::-webkit-slider-thumb,
+html.liquid-glass
+	:is(.color-picker-hue-slider, .editor-property-range)::-moz-range-thumb {
 	-webkit-backdrop-filter: var(--glass-backdrop);
 	backdrop-filter: var(--glass-backdrop);
 }
 
-html.liquid-glass
-	:is(
-		.glass-range,
-		.slider,
-		.color-picker-hue-slider,
-		.editor-property-range
-	)::-webkit-slider-thumb,
-html.liquid-glass
-	:is(.glass-range, .slider, .color-picker-hue-slider, .editor-property-range)::-moz-range-thumb {
-	border-color: var(--glass-border-strong);
-	background: var(--glass-background-strong);
-	box-shadow: var(--glass-shadow);
-	-webkit-backdrop-filter: var(--glass-backdrop);
-	backdrop-filter: var(--glass-backdrop);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	html.liquid-glass
-		:is(
-			.glass-surface,
-			.modal-body,
-			[role='dialog'],
-			[role='menu'],
-			.v-popper__inner,
-			.floating-action-bar > div,
-			.button-frame--base,
-			.button-frame--colored,
-			.button-frame--colored-text,
-			.button-frame--outlined,
-			.button-frame--quiet,
-			.btn,
-			.button-base,
-			.button-like,
-			.stylized-toggle,
-			.nav-button,
-			button[role='switch']
-		),
-	html.liquid-glass :is(.group\/input, .input, textarea, select) {
-		background-color: var(--glass-background-opaque);
-		background-image: none;
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
+@supports not (
+	(backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+	html.liquid-glass {
+		--glass-shadow: none !important;
+		--glass-opacity: 1 !important;
+		--glass-opacity-strong: 1 !important;
+		--glass-opacity-subtle: 1 !important;
+		--glass-content-opacity: 1 !important;
+		--glass-surface-image: none !important;
+		--glass-backdrop: none !important;
 	}
 
-	html.liquid-glass .app-contents {
-		background-color: var(--glass-background-opaque);
-	}
+	html.liquid-glass [role='menu'] {
+		background-color: var(--surface-3);
 
-	html.liquid-glass [role='menu']::before {
-		display: none;
+		&::before {
+			display: none;
+		}
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	html.liquid-glass
-		:is(.glass-surface, .modal-body, [role='dialog'], [role='menu'], .v-popper__inner) {
+	html.liquid-glass [role='menu']::before {
 		transition: none;
 	}
 }
 
 @media (prefers-contrast: more), (forced-colors: active) {
-	html.liquid-glass
-		:is(
-			.glass-surface,
-			.modal-body,
-			[role='dialog'],
-			[role='menu'],
-			.v-popper__inner,
-			.button-frame--base,
-			.button-frame--colored,
-			.button-frame--colored-text,
-			.button-frame--outlined,
-			.button-frame--quiet,
-			.btn,
-			.button-base,
-			.button-like,
-			.stylized-toggle,
-			.nav-button,
-			button[role='switch']
-		) {
-		background-color: var(--glass-background-opaque);
-		background-image: none;
-		border-color: var(--surface-5);
-		box-shadow: none;
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
+	html.liquid-glass {
+		--glass-shadow: none !important;
+		--glass-opacity: 1 !important;
+		--glass-opacity-strong: 1 !important;
+		--glass-opacity-subtle: 1 !important;
+		--glass-content-opacity: 1 !important;
+		--glass-surface-image: none !important;
+		--glass-backdrop: none !important;
 	}
 
-	html.liquid-glass .app-contents {
-		background-color: var(--glass-background-opaque);
-	}
+	html.liquid-glass [role='menu'] {
+		background-color: var(--surface-3);
 
-	html.liquid-glass [role='menu']::before {
-		display: none;
+		&::before {
+			display: none;
+		}
 	}
 }
