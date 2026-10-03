@@ -47,9 +47,11 @@ Avoid test releases or package filenames beginning with `dev`, `nightly` for nor
 
 Open **Settings → AstralRinth → Visual** to enable or disable **Liquid Glass** and choose a **Glass level**, then save your changes:
 
-- **Matte:** near-opaque surfaces with stronger blur and no decorative gradients.
+- **Matte:** near-opaque surfaces with stronger blur and no glass-surface gradients.
 - **Standard** (default): translucent surfaces with blur and layered gradients.
-- **Transparent:** more transparent surfaces without glass backdrop blur or decorative gradients.
+- **Transparent:** more transparent surfaces without glass backdrop blur or glass-surface gradients.
+
+Liquid Glass adjusts background transparency and decoration while preserving the text and icon colors defined by the selected theme and each component. Buttons retain their built-in interaction colors.
 
 The level slider is disabled when Liquid Glass is off. Changes apply after saving; resetting unsaved changes restores the saved values. Enablement uses the launcher's existing setting, while the level is stored locally for this app installation and is not synced with your account. If local storage is unavailable, the level may revert to Standard after restarting.
 

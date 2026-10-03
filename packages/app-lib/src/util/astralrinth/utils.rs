@@ -27,13 +27,36 @@ pub struct Launcher {
 
 #[derive(Deserialize)]
 struct ExternalAuthLibraryRelease {
-    assets: Vec<ExternalAuthLibraryAsset>,
+	assets: ExternalAuthLibraryAssets,
+}
+
+#[derive(Deserialize)]
+struct ExternalAuthLibraryAssets {
+	#[serde(rename = "authlib-injector")]
+	authlib_injector: Vec<ExternalAuthLibraryAsset>,
 }
 
 #[derive(Deserialize)]
 struct ExternalAuthLibraryAsset {
-    name: String,
-    browser_download_url: String,
+	name: String,
+	browser_download_url: Option<String>,
+}
+
+impl ExternalAuthLibraryAsset {
+	fn browser_download_url(&self) -> Result<&str> {
+		self.browser_download_url
+			.as_deref()
+			.filter(|url| !url.trim().is_empty())
+			.ok_or_else(|| {
+				crate::ErrorKind::ParseError {
+					reason: format!(
+											"Library asset has no download URL: {}",
+											self.name,
+										),
+				}
+				.as_error()
+			})
+	}
 }
 
 /// Resolves the library selected in SQLite and verifies its local file.
@@ -113,9 +136,12 @@ pub async fn install_authlib_injector_library(
     validate_library_asset_name(asset_name)?;
     let asset = fetch_external_auth_library_release(library)
         .await?
-        .assets
-        .into_iter()
-        .find(|asset| asset.name == asset_name)
+		.assets
+		.authlib_injector
+		.into_iter()
+		.find(|asset| {
+					asset.name == asset_name && is_authlib_injector_asset_name(&asset.name)
+				})
         .ok_or_else(|| {
             crate::ErrorKind::ParseError {
                 reason: format!("Library asset not found: {asset_name}"),
@@ -132,25 +158,10 @@ pub async fn install_latest_authlib_injector_library(
     provider_id: &str,
     library: ExternalAuthLibrary,
 ) -> Result<PathBuf> {
-    let asset = fetch_external_auth_library_release(library)
-        .await?
-        .assets
-        .into_iter()
-        .filter_map(|asset| {
-            library_version(&asset.name).map(|version| (asset, version))
-        })
-        .max_by(|(left_asset, left_version), (right_asset, right_version)| {
-            left_version
-                .cmp(right_version)
-                .then_with(|| left_asset.name.cmp(&right_asset.name))
-        })
-        .map(|(asset, _)| asset)
-        .ok_or_else(|| crate::ErrorKind::ParseError {
-            reason: "No compatible external authentication library was found"
-                .to_string(),
-        })?;
+	let release = fetch_external_auth_library_release(library).await?;
+	let asset = latest_authlib_injector_asset(release)?;
 
-    install_authlib_injector_asset(provider_id, library, asset).await
+	install_authlib_injector_asset(provider_id, library, asset).await
 }
 
 async fn install_authlib_injector_asset(
@@ -171,7 +182,7 @@ async fn install_authlib_injector_asset(
         "[AR] Auth library download started"
     );
     let _ = emit_info("[AR] Installing auth library...").await;
-    let bytes = fetch_bytes_from_url(&asset.browser_download_url).await?;
+    let bytes = fetch_bytes_from_url(asset.browser_download_url()?).await?;
     let relative_path = path
         .strip_prefix(&libraries_dir)?
         .to_string_lossy()
@@ -237,7 +248,11 @@ fn validate_library_asset_name(asset_name: &str) -> Result<()> {
         .file_name()
         .and_then(|name| name.to_str())
         .is_some_and(|name| name == asset_name);
-    if !is_file_name || !asset_name.ends_with(".jar") {
+	if !is_file_name
+		|| asset_name.contains('\\')
+		|| asset_name.chars().any(|character| character.is_ascii_control())
+		|| !asset_name.to_ascii_lowercase().ends_with(".jar")
+	{
         return Err(crate::ErrorKind::InputError(format!(
             "Invalid external authentication library asset: {asset_name}",
         ))
@@ -269,6 +284,7 @@ async fn fetch_external_auth_library_release(
 ) -> Result<ExternalAuthLibraryRelease> {
     Ok(reqwest::Client::new()
         .get(library.release_url)
+		.header("Accept", "application/json")
         .timeout(std::time::Duration::from_secs(15))
         .send()
         .await?
@@ -277,10 +293,44 @@ async fn fetch_external_auth_library_release(
         .await?)
 }
 
+fn latest_authlib_injector_asset(
+	release: ExternalAuthLibraryRelease,
+) -> Result<ExternalAuthLibraryAsset> {
+	release
+		.assets
+		.authlib_injector
+		.into_iter()
+		.filter(|asset| asset.browser_download_url().is_ok())
+		.filter_map(|asset| {
+			library_version(&asset.name).map(|version| (asset, version))
+		})
+		.max_by(|(left_asset, left_version), (right_asset, right_version)| {
+			left_version
+				.cmp(right_version)
+				.then_with(|| left_asset.name.cmp(&right_asset.name))
+		})
+		.map(|(asset, _)| asset)
+		.ok_or_else(|| {
+			crate::ErrorKind::ParseError {
+				reason: "No downloadable compatible external authentication library was found"
+					.to_string(),
+			}
+			.as_error()
+		})
+}
+
+fn is_authlib_injector_asset_name(asset_name: &str) -> bool {
+	if validate_library_asset_name(asset_name).is_err() {
+		return false;
+	}
+	let name = asset_name.to_ascii_lowercase();
+	name.strip_prefix("old_")
+		.unwrap_or(&name)
+		.starts_with("authlib-injector-")
+}
+
 fn library_version(asset_name: &str) -> Option<Vec<u64>> {
-    if validate_library_asset_name(asset_name).is_err()
-        || !asset_name.contains("authlib-injector")
-    {
+	if !is_authlib_injector_asset_name(asset_name) {
         return None;
     }
 
@@ -390,4 +440,139 @@ async fn fetch_bytes_from_url(url: &str) -> Result<bytes::Bytes> {
         }
         .as_error()
     })
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn grouped_library_release_accepts_optional_upstream_metadata() {
+		let release: ExternalAuthLibraryRelease = serde_json::from_value(
+			serde_json::json!({
+				"total_downloads": 42,
+				"assets": {
+					"authlib": [{ "name": "authlib-9.0.jar" }],
+					"authlib-injector": [{
+						"name": "authlib-injector-1.2.jar",
+						"arbitrary_upstream_field": true,
+					}],
+				},
+			}),
+		)
+		.unwrap();
+		assert_eq!(release.assets.authlib_injector.len(), 1);
+		let asset = &release.assets.authlib_injector[0];
+		assert_eq!(asset.name, "authlib-injector-1.2.jar");
+		assert!(asset.browser_download_url.is_none());
+		assert!(asset.browser_download_url().is_err());
+	}
+
+	#[test]
+	fn latest_library_uses_only_downloadable_injector_assets() {
+		let release: ExternalAuthLibraryRelease = serde_json::from_value(
+			serde_json::json!({
+				"tag_name": "release",
+				"name": "Libraries",
+				"total_downloads": 0,
+				"assets": {
+					"authlib": [{
+						"name": "authlib-injector-999.0.jar",
+						"browser_download_url": "https://example.com/wrong-group.jar",
+					}],
+					"authlib-injector": [
+						{ "name": "authlib-injector-99.0.jar" },
+						{ "name": "authlib-injector-98.0.jar", "browser_download_url": " " },
+						{
+							"name": "authlib-100.0.jar",
+							"browser_download_url": "https://example.com/wrong-library.jar",
+						},
+						{
+							"name": "authlib-injector-1.9.jar",
+							"browser_download_url": "https://example.com/1.9.jar",
+						},
+						{
+							"name": "OLD_AUTHLIB-INJECTOR-1.10.JAR",
+							"browser_download_url": "https://example.com/1.10.jar",
+						},
+					],
+				},
+			}),
+		)
+		.unwrap();
+		let asset = latest_authlib_injector_asset(release).unwrap();
+		assert_eq!(asset.name, "OLD_AUTHLIB-INJECTOR-1.10.JAR");
+		assert_eq!(asset.browser_download_url().unwrap(), "https://example.com/1.10.jar");
+	}
+
+	#[test]
+	fn missing_null_or_blank_download_urls_cannot_be_installed() {
+		for metadata in [
+			serde_json::json!({ "name": "authlib-injector-1.2.jar" }),
+			serde_json::json!({
+				"name": "authlib-injector-1.2.jar",
+				"browser_download_url": null,
+			}),
+			serde_json::json!({
+				"name": "authlib-injector-1.2.jar",
+				"browser_download_url": " ",
+			}),
+		] {
+			let asset: ExternalAuthLibraryAsset =
+				serde_json::from_value(metadata).unwrap();
+			assert!(asset.browser_download_url().is_err());
+		}
+	}
+
+	#[test]
+	fn empty_injector_group_does_not_fall_back_to_authlib() {
+		let release: ExternalAuthLibraryRelease = serde_json::from_value(
+			serde_json::json!({
+				"assets": {
+					"authlib": [{
+						"name": "authlib-injector-1.2.jar",
+						"browser_download_url": "https://example.com/wrong-group.jar",
+					}],
+					"authlib-injector": [],
+				},
+			}),
+		)
+		.unwrap();
+		assert!(latest_authlib_injector_asset(release).is_err());
+	}
+
+	#[test]
+	fn library_release_rejects_flat_or_missing_injector_assets() {
+		for value in [
+			serde_json::json!({ "assets": [] }),
+			serde_json::json!({ "assets": { "authlib": [] } }),
+			serde_json::json!({ "assets": { "authlib-injector": {} } }),
+		] {
+			assert!(
+							serde_json::from_value::<ExternalAuthLibraryRelease>(value).is_err()
+						);
+		}
+	}
+
+	#[test]
+	fn injector_asset_names_match_the_public_api_safely() {
+		for name in [
+					"authlib-injector-1.2.jar",
+					"OLD_AUTHLIB-INJECTOR-1.10.JAR",
+				] {
+			assert!(is_authlib_injector_asset_name(name));
+			assert!(library_version(name).is_some());
+		}
+		for name in [
+			"authlib-1.2.jar",
+			"prefix-authlib-injector-1.2.jar",
+			"authlib-injector-1.2.zip",
+			"authlib-injector-../1.2.jar",
+			"old_authlib-injector-..\\1.2.jar",
+			"authlib-injector-1.2\0.jar",
+		] {
+			assert!(!is_authlib_injector_asset_name(name), "{name:?}");
+			assert!(library_version(name).is_none(), "{name:?}");
+		}
+	}
 }

@@ -307,13 +307,23 @@ html.liquid-glass
 	:is(
 		.button-frame--quiet,
 		.button-frame--outlined,
-		.btn.btn-transparent,
+		:where(.btn.btn-transparent),
 		.nav-button
 	) {
 	@include glass-decoration(transparent, $replace-background: false);
 
 	&::after {
 		border: 1px solid var(--glass-border);
+	}
+}
+
+/** Keep outlined-control compositing inside its rounded bounds during native filter/opacity states. */
+html.liquid-glass .button-frame--outlined {
+	contain: paint;
+
+	&::after {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
 	}
 }
 

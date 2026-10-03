@@ -92,11 +92,22 @@ export async function loadExternalAuthProviders() {
 }
 
 function parseExternalAuthLibraryAssets(value: unknown): string[] {
-	if (!value || typeof value !== 'object' || !('assets' in value) || !Array.isArray(value.assets)) {
-		throw new Error('The release response does not contain an assets array')
+	if (
+		!value ||
+		typeof value !== 'object' ||
+		Array.isArray(value) ||
+		!('assets' in value) ||
+		!value.assets ||
+		typeof value.assets !== 'object' ||
+		Array.isArray(value.assets) ||
+
+		!('authlib-injector' in value.assets) ||
+		!Array.isArray(value.assets['authlib-injector'])
+	) {
+		throw new Error('The release response does not contain an authlib-injector assets array')
 	}
 
-	return value.assets
+	return value.assets['authlib-injector']
 		.flatMap((asset) =>
 			typeof asset === 'object' &&
 			asset !== null &&
@@ -105,13 +116,10 @@ function parseExternalAuthLibraryAssets(value: unknown): string[] {
 				? [asset.name]
 				: [],
 		)
-		.filter(
-			(assetName) =>
-				assetName.includes('authlib-injector') &&
-				assetName.endsWith('.jar') &&
-				!assetName.includes('/') &&
-				!assetName.includes('\\'),
-		)
+		.filter((assetName) => {
+			const name = assetName.toLowerCase()
+			return name.startsWith('authlib-injector-') || name.startsWith('old_authlib-injector-')
+		})
 }
 
 async function fetchExternalAuthLibraryCatalogEntry(
@@ -195,9 +203,7 @@ export function getExternalAuthProvider(accountType?: string) {
 }
 
 /** Starts the native OAuth flow for one external authentication provider. */
-async function authenticateExternalProvider(
-	provider: string,
-): Promise<MinecraftCredential | null> {
+async function authenticateExternalProvider(provider: string): Promise<MinecraftCredential | null> {
 	return await invoke('plugin:auth|authenticate_external_provider', { provider })
 }
 

@@ -33,7 +33,7 @@ fn provider_registry_centralizes_backend_and_frontend_metadata() {
             "displayName": "Ely.by",
             "icon": "elyby",
             "skinManagementUrl": "https://ely.by/skins",
-            "libraryReleaseUrl": "https://xorison.dev/libs/minecraft/elyby",
+            "libraryReleaseUrl": "https://api.xorison.dev/v1/public/lib/elyby",
         }),
     );
 }
