@@ -2133,7 +2133,7 @@
     "message": "<shortcut>N</shortcut>を押してインスタンスをクイック作成"
   },
   "app.welcome-screen.title": {
-    "message": "Modrinthへようこそ"
+    "message": "AstralRinthへようこそ"
   },
   "app.world.server-modal.placeholder-address": {
     "message": "example.modrinth.gg"

@@ -3459,7 +3459,7 @@
     "message": "按 <shortcut>N</shortcut> 键快速创建实例"
   },
   "app.welcome-screen.title": {
-    "message": "欢迎使用 Modrinth"
+    "message": "欢迎使用 AstralRinth"
   },
   "app.world.server-modal.placeholder-address": {
     "message": "example.modrinth.gg"
