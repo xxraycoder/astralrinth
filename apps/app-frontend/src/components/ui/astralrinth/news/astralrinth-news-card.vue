@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { defineMessages, useFormatDateTime, useVIntl } from '@modrinth/ui'
+import { ExternalIcon } from '@modrinth/assets'
+import { ButtonLink, defineMessages, useFormatDateTime, useVIntl } from '@modrinth/ui'
 import { computed, ref, watch } from 'vue'
 
 import type { AstralRinthNewsArticle } from '@/helpers/astralrinth/news'
@@ -17,6 +18,10 @@ const messages = defineMessages({
 	new: {
 		id: 'astralrinth.app.news.new',
 		defaultMessage: 'New',
+	},
+	openArticle: {
+		id: 'astralrinth.app.news.open-article',
+		defaultMessage: 'Go to',
 	},
 })
 const imageFailed = ref(false)
@@ -88,6 +93,16 @@ watch(imageUrl, () => {
 					{{ formatMessage(messages.new) }}
 				</span>
 			</div>
+			<ButtonLink
+				v-if="articleUrl"
+				:href="articleUrl"
+				type="outlined"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				{{ formatMessage(messages.openArticle) }}
+				<ExternalIcon aria-hidden="true" />
+			</ButtonLink>
 		</div>
 	</article>
 </template>

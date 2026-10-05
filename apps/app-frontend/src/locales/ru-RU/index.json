@@ -446,6 +446,9 @@
 	"astralrinth.app.news.new": {
 		"message": "Новое"
 	},
+	"astralrinth.app.news.open-article": {
+		"message": "Перейти"
+	},
 	"astralrinth.app.news.title": {
 		"message": "Новости AstralRinth"
 	},
