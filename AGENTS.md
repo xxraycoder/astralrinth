@@ -74,6 +74,7 @@ Read the applicable standards in `standards/` before editing the relevant area.
 - Keep skin editing gated to Microsoft accounts. With no selected account, preserve the sign-in prompt and all shared authentication methods; do not restore demo editing. Verify no-account, Microsoft, offline, and external-provider states after changing these gates.
 - After changing AstralRinth news, verify startup loading, the age-based indicator, and client-side pagination. There must be no manual refresh/retry buttons; opening the news modal must not trigger another request.
 - For Rust checks, identify the affected crate in `Cargo.toml` and read its project guidance if present.
+- After changing external-provider library catalogs, verify flat remote assets, nullable latest-injector metadata, missing download URLs without automatic fallback, and continued use of existing local selections (including legacy files).
 
 ## Documentation maintenance
 

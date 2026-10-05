@@ -22,6 +22,7 @@ import {
 type Library = {
 	provider: ExternalAuthProvider
 	assetNames: string[]
+	remoteAssetNames: string[]
 	localAssetNames: string[]
 	selectedAssetName: string | null
 	savedAssetName: string | null
@@ -116,8 +117,16 @@ function sortLibraryVersions(assetNames: string[]): string[] {
 }
 
 function compareLibraryVersions(left: string, right: string): number {
-	const leftVersion = left.match(/\d+(?:\.\d+)+/)?.[0].split('.').map(Number) ?? []
-	const rightVersion = right.match(/\d+(?:\.\d+)+/)?.[0].split('.').map(Number) ?? []
+	const leftVersion =
+		left
+			.match(/\d+(?:\.\d+)+/)?.[0]
+			.split('.')
+			.map(Number) ?? []
+	const rightVersion =
+		right
+			.match(/\d+(?:\.\d+)+/)?.[0]
+			.split('.')
+			.map(Number) ?? []
 	const length = Math.max(leftVersion.length, rightVersion.length)
 
 	for (let index = 0; index < length; index++) {
@@ -137,7 +146,8 @@ function updateRefreshLock(): void {
 
 	const delay = getExternalAuthLibraryCatalogRefreshCooldown()
 	refreshLocked.value = delay > 0
-	refreshTimer = delay > 0 ? window.setTimeout(() => (refreshLocked.value = false), delay) : undefined
+	refreshTimer =
+		delay > 0 ? window.setTimeout(() => (refreshLocked.value = false), delay) : undefined
 }
 
 async function loadLibraries(forceRefresh = false): Promise<void> {
@@ -157,12 +167,16 @@ async function loadLibraries(forceRefresh = false): Promise<void> {
 		libraries.value = catalog.map(({ provider, assetNames }) => {
 			const state = statesByProvider.get(provider.id)
 			const localAssetNames = sortLibraryVersions(state?.localAssetNames ?? [])
-			const availableAssetNames = assetNames ? sortLibraryVersions(assetNames) : localAssetNames
+			const remoteAssetNames = assetNames ?? []
+			const availableAssetNames = sortLibraryVersions([
+				...new Set([...remoteAssetNames, ...localAssetNames]),
+			])
 			const savedAssetName = state?.selectedAssetName ?? null
 
 			return {
 				provider,
 				assetNames: availableAssetNames,
+				remoteAssetNames,
 				localAssetNames,
 				selectedAssetName: availableAssetNames.includes(savedAssetName ?? '')
 					? savedAssetName
@@ -208,7 +222,7 @@ async function selectLibrary(library: Library, assetName: string): Promise<void>
 
 async function installLibrary(library: Library): Promise<void> {
 	const assetName = library.selectedAssetName
-	if (!assetName || library.busy) {
+	if (!assetName || !library.remoteAssetNames.includes(assetName) || library.busy) {
 		return
 	}
 
@@ -327,7 +341,11 @@ onUnmounted(() => {
 					<Button
 						type="colored"
 						color="brand"
-						:disabled="library.localOnly || !library.selectedAssetName || library.busy || refreshing"
+						:disabled="
+							!library.remoteAssetNames.includes(library.selectedAssetName ?? '') ||
+							library.busy ||
+							refreshing
+						"
 						@click="installLibrary(library)"
 					>
 						<SpinnerIcon v-if="library.busy === 'installing'" class="animate-spin" />

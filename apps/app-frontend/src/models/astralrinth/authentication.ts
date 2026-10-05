@@ -97,17 +97,12 @@ function parseExternalAuthLibraryAssets(value: unknown): string[] {
 		typeof value !== 'object' ||
 		Array.isArray(value) ||
 		!('assets' in value) ||
-		!value.assets ||
-		typeof value.assets !== 'object' ||
-		Array.isArray(value.assets) ||
-
-		!('authlib-injector' in value.assets) ||
-		!Array.isArray(value.assets['authlib-injector'])
+		!Array.isArray(value.assets)
 	) {
 		throw new Error('The release response does not contain an authlib-injector assets array')
 	}
 
-	return value.assets['authlib-injector']
+	return value.assets
 		.flatMap((asset) =>
 			typeof asset === 'object' &&
 			asset !== null &&
@@ -118,7 +113,7 @@ function parseExternalAuthLibraryAssets(value: unknown): string[] {
 		)
 		.filter((assetName) => {
 			const name = assetName.toLowerCase()
-			return name.startsWith('authlib-injector-') || name.startsWith('old_authlib-injector-')
+			return name.startsWith('authlib-injector-')
 		})
 }
 
