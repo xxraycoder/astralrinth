@@ -506,6 +506,46 @@ mod tests {
 	}
 
 	#[test]
+	fn latest_elyby_library_selects_highest_version_regardless_of_asset_order() {
+		let mut assets = vec![
+			serde_json::json!({
+				"name": "authlib-injector-1.2.8.jar",
+				"download_count": 10371,
+				"browser_download_url": "https://git.xorison.dev/didirus/ElyIntegration/releases/download/default/authlib-injector-1.2.8.jar",
+			}),
+			serde_json::json!({
+				"name": "old_authlib-injector-1.2.5.jar",
+				"download_count": 5522,
+				"browser_download_url": "https://git.xorison.dev/didirus/ElyIntegration/releases/download/default/old_authlib-injector-1.2.5.jar",
+			}),
+			serde_json::json!({
+				"name": "old_authlib-injector-1.2.6.jar",
+				"download_count": 49,
+				"browser_download_url": "https://git.xorison.dev/didirus/ElyIntegration/releases/download/default/old_authlib-injector-1.2.6.jar",
+			}),
+			serde_json::json!({
+				"name": "old_authlib-injector-1.2.7.jar",
+				"download_count": 82202,
+				"browser_download_url": "https://git.xorison.dev/didirus/ElyIntegration/releases/download/default/old_authlib-injector-1.2.7.jar",
+			}),
+		];
+
+		for _ in 0..assets.len() {
+			let release: ExternalAuthLibraryRelease = serde_json::from_value(
+				serde_json::json!({ "assets": { "authlib-injector": assets } }),
+			)
+			.unwrap();
+			let asset = latest_authlib_injector_asset(release).unwrap();
+			assert_eq!(asset.name, "authlib-injector-1.2.8.jar");
+			assert_eq!(
+				asset.browser_download_url().unwrap(),
+				"https://git.xorison.dev/didirus/ElyIntegration/releases/download/default/authlib-injector-1.2.8.jar",
+			);
+			assets.rotate_left(1);
+		}
+	}
+
+	#[test]
 	fn missing_null_or_blank_download_urls_cannot_be_installed() {
 		for metadata in [
 			serde_json::json!({ "name": "authlib-injector-1.2.jar" }),
