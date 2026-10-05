@@ -7,7 +7,6 @@ import {
 	RotateCounterClockwiseIcon,
 	ShirtIcon,
 	SpinnerIcon,
-	WindowsIcon,
 } from '@modrinth/assets'
 import {
 	Button,
@@ -30,15 +29,12 @@ import { computed, inject, onMounted, onUnmounted, ref, useTemplateRef, watch } 
 
 import EarsModIcon from '@/assets/skins/ears-mod.png'
 import type AccountsCard from '@/components/ui/AccountsCard.vue'
-import EditSkinModal from '@/components/ui/skin/EditSkinModal.vue'
 import UnsupportedSkinAccount from '@/components/ui/astralrinth/skin/UnsupportedSkinAccount.vue'
+import EditSkinModal from '@/components/ui/skin/EditSkinModal.vue'
 import VirtualSkinSectionList from '@/components/ui/skin/VirtualSkinSectionList.vue'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
-import { handleSevereError } from '@/composables/use-error.js'
-import { check_reachable, get_default_user, login as login_flow, users } from '@/helpers/auth'
+import { check_reachable, get_default_user, users } from '@/helpers/auth'
 import { cleanupUnusedPreviews } from '@/helpers/rendering/skin-previews'
-import { loadExternalAuthProviders } from '@/models/astralrinth/authentication'
-import { trackEvent } from '@/helpers/analytics'
 import type { Cape, Skin, SkinTextureUrl } from '@/helpers/skins.ts'
 import {
 	equip_skin,
@@ -56,6 +52,7 @@ import {
 	set_custom_skin_order,
 } from '@/helpers/skins.ts'
 import { hasPride26Badge } from '@/helpers/user-campaigns.ts'
+import { loadExternalAuthProviders } from '@/models/astralrinth/authentication'
 import { useRootBreadcrumb } from '@/providers/breadcrumbs'
 import { appMessages } from '@/utils/app-messages'
 
@@ -170,10 +167,6 @@ const messages = defineMessages({
 		id: 'app.skins.apply-button',
 		defaultMessage: 'Apply',
 	},
-	demoApplyTooltip: {
-		id: 'app.skins.demo.apply-tooltip',
-		defaultMessage: 'Sign in to apply skins.',
-	},
 	editSkinButton: {
 		id: 'app.skins.preview.edit-button',
 		defaultMessage: 'Edit skin',
@@ -190,13 +183,13 @@ const messages = defineMessages({
 		id: 'app.skins.toggle-ears-features-on',
 		defaultMessage: 'Toggle on',
 	},
-	demoTitle: {
-		id: 'app.skins.demo.title',
-		defaultMessage: 'Editing with a demo account',
+	signInTitle: {
+		id: 'astralrinth.app.skins.sign-in.title',
+		defaultMessage: 'Sign in to manage skins',
 	},
-	demoDescription: {
-		id: 'app.skins.demo.description',
-		defaultMessage: 'Sign in to your Minecraft account to save and apply skins!',
+	signInDescription: {
+		id: 'astralrinth.app.skins.sign-in.description',
+		defaultMessage: 'Choose a sign-in method to add your Minecraft account.',
 	},
 	signInMethodsButton: {
 		id: 'astralrinth.app.skins.sign-in-methods.button',
@@ -815,21 +808,8 @@ async function loadCurrentUser() {
 	}
 }
 
-
 function showAccountLoginModal() {
 	accountsCard.value?.showAccountLoginModal()
-}
-
-async function login() {
-	accountsCard.value.setLoginDisabled(true)
-	const loggedIn = await login_flow().catch(handleSevereError)
-
-	if (loggedIn && accountsCard) {
-		await accountsCard.value.refreshValues()
-	}
-
-	trackEvent('AccountLogIn')
-	accountsCard.value.setLoginDisabled(false)
 }
 
 function openAddSkinFileBrowser() {
@@ -1079,7 +1059,6 @@ if (isMicrosoftAccount.value) {
 		v-if="isMicrosoftAccount"
 		ref="editSkinModal"
 		:capes="capes"
-		:demo="!currentUser"
 		@saved="onSkinSaved"
 		@deleted="() => loadSkins()"
 	/>
@@ -1161,17 +1140,13 @@ if (isMicrosoftAccount.value) {
 								</Button>
 								<Button
 									v-tooltip="
-										!currentUser
-											? formatMessage(messages.demoApplyTooltip)
-											: selectedSkinHasEarsFeatures
-												? formatMessage(messages.applyButton)
-												: undefined
+										selectedSkinHasEarsFeatures ? formatMessage(messages.applyButton) : undefined
 									"
 									type="colored"
 									color="brand"
 									size="lg"
 									class="skin-preview-action-button"
-									:disabled="!currentUser || isApplyingSkin || isSkinManagementReadOnly"
+									:disabled="isApplyingSkin || isSkinManagementReadOnly"
 									:aria-label="formatMessage(messages.applyButton)"
 									@click="applySelectedSkin"
 								>
@@ -1292,19 +1267,14 @@ if (isMicrosoftAccount.value) {
 				<InfoIcon class="size-6 shrink-0 text-blue" />
 				<div class="flex min-w-0 flex-col gap-1">
 					<p class="m-0 text-lg font-semibold leading-6 text-contrast">
-						{{ formatMessage(messages.demoTitle) }}
+						{{ formatMessage(messages.signInTitle) }}
 					</p>
 					<p class="m-0 text-base leading-6 text-primary">
-						{{ formatMessage(messages.demoDescription) }}
+						{{ formatMessage(messages.signInDescription) }}
 					</p>
 				</div>
 			</div>
-			<Button
-				v-show="accountsCard"
-				type="colored"
-				color="brand"
-				@click="showAccountLoginModal"
-			>
+			<Button v-show="accountsCard" type="colored" color="brand" @click="showAccountLoginModal">
 				{{ formatMessage(messages.signInMethodsButton) }}
 			</Button>
 		</div>

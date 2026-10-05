@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ChartIcon } from '@modrinth/assets'
-import { defineMessages, useVIntl } from '@modrinth/ui'
+import { defineMessages, injectNotificationManager, useVIntl } from '@modrinth/ui'
 import { isTauri } from '@tauri-apps/api/core'
 import { arch, platform } from '@tauri-apps/plugin-os'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
+import { latestLauncherRelease, LAUNCHER_RELEASE_API } from '@/helpers/astralrinth/update'
+
 import {
-	latestLauncherRelease,
-	LAUNCHER_RELEASE_API,
-} from '@/helpers/astralrinth/update'
+	externalAuthProviders,
+	loadExternalAuthProviders,
+} from '@/models/astralrinth/authentication'
 
 const { formatMessage } = useVIntl()
+const { handleError } = injectNotificationManager()
+
+onMounted(() => {
+	if (isTauri()) {
+		void loadExternalAuthProviders().catch(handleError)
+	}
+})
 
 const messages = defineMessages({
 	pageTitle: {
@@ -67,6 +76,10 @@ const messages = defineMessages({
 		id: 'astralrinth.app.settings.updates.api-url',
 		defaultMessage: 'Update provider API URL',
 	},
+	librariesApiUrl: {
+		id: 'astralrinth.app.settings.updates.libraries-api-url',
+		defaultMessage: 'Libraries provider API URL',
+	},
 	noUpdateInformation: {
 		id: 'astralrinth.app.settings.updates.no-update-information',
 		defaultMessage: 'No update information is available.',
@@ -99,7 +112,8 @@ const totalDownloads = computed(() =>
 )
 const httpStatus = computed(() => {
 	return (
-		latestLauncherRelease.value.httpStatus?.toString() ?? formatMessage(messages.noUpdateInformation)
+		latestLauncherRelease.value.httpStatus?.toString() ??
+		formatMessage(messages.noUpdateInformation)
 	)
 })
 </script>
@@ -212,6 +226,25 @@ const httpStatus = computed(() => {
 							rel="noopener noreferrer"
 						>
 							{{ LAUNCHER_RELEASE_API }}
+						</a>
+					</dd>
+				</div>
+				<div
+					v-for="provider in externalAuthProviders"
+					:key="provider.id"
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+				>
+					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
+						{{ formatMessage(messages.librariesApiUrl) }}
+					</dt>
+					<dd class="m-0 mt-1">
+						<a
+							class="break-all text-link hover:underline focus-visible:underline"
+							:href="provider.libraryReleaseUrl"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{{ provider.libraryReleaseUrl }}
 						</a>
 					</dd>
 				</div>

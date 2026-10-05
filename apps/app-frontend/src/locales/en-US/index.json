@@ -305,6 +305,9 @@
   "astralrinth.app.settings.updates.api-url": {
     "message": "Update provider API URL"
   },
+	"astralrinth.app.settings.updates.libraries-api-url": {
+		"message": "Libraries provider API URL"
+	},
   "astralrinth.app.settings.updates.downloadable-files": {
     "message": "Downloadable files"
   },
@@ -350,6 +353,12 @@
   "astralrinth.app.skins.unsupported-account.title": {
     "message": "Microsoft account required"
   },
+	"astralrinth.app.skins.sign-in.description": {
+		"message": "Choose a sign-in method to add your Minecraft account."
+	},
+	"astralrinth.app.skins.sign-in.title": {
+		"message": "Sign in to manage skins"
+	},
   "astralrinth.app.skins.sign-in-methods.button": {
     "message": "Sign-in methods"
   },

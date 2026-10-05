@@ -305,6 +305,9 @@
   "astralrinth.app.settings.updates.api-url": {
     "message": "URL API поставщика обновлений"
   },
+	"astralrinth.app.settings.updates.libraries-api-url": {
+		"message": "URL API поставщика библиотек"
+	},
   "astralrinth.app.settings.updates.downloadable-files": {
     "message": "Файлы для загрузки"
   },
@@ -350,6 +353,12 @@
   "astralrinth.app.skins.unsupported-account.title": {
     "message": "Требуется учётная запись Microsoft"
   },
+	"astralrinth.app.skins.sign-in.description": {
+		"message": "Выберите способ входа, чтобы добавить свой аккаунт Minecraft."
+	},
+	"astralrinth.app.skins.sign-in.title": {
+		"message": "Войдите в аккаунт, чтобы управлять скинами"
+	},
   "astralrinth.app.skins.sign-in-methods.button": {
     "message": "Способы входа"
   },

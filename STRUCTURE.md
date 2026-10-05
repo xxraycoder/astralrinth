@@ -1,8 +1,8 @@
-# AstralRinth repository structure and upstream integration guide
+# AstralRinth technical reference
 
 ## Purpose
 
-This document describes the repository architecture, package responsibilities, application entry points, fork-specific behavior, and shared integration contracts. Read [`AGENTS.md`](AGENTS.md) for working rules, upstream merge procedures, verification commands, and documentation maintenance requirements.
+This document describes the repository architecture, package responsibilities, development tooling, application entry points, fork-specific behavior, and shared integration contracts. AI working rules, upstream merge procedures, and maintenance instructions are in [`AGENTS.md`](AGENTS.md). User-facing installation and usage information is in [`README.md`](README.md) and its [Russian translation](readme/ru_ru/README.md).
 
 AstralRinth is a fork of Modrinth's codebase, not a separate launcher layered on top. Its desktop launcher shares the upstream app shell, frontend, and Rust app library. A change to an apparently generic Modrinth component, setting, API command, or database model can therefore break a fork-specific flow even when no file named `astralrinth` is edited.
 
@@ -23,10 +23,10 @@ The repository uses pnpm workspaces and Turborepo for JavaScript/TypeScript pack
 | `apps/app/` | Tauri/Rust desktop host | Registers native plugins, commands, permissions, capabilities, window behavior, and desktop startup. |
 | `packages/app-lib/` | Shared Rust launcher/backend library used by the desktop host | Owns settings persistence/migrations, Minecraft authentication and launching, process lifecycle, app events, and AstralRinth backend modules. |
 | `packages/assets/` | Shared icons, styles, and design assets | Contains AstralRinth logos, provider icons, and fork-specific visual styles. |
-| `packages/ui/` | Shared Modrinth Vue component library | App frontend composes these components; check API changes when replacing wrappers or migrating UI. |
-| `packages/api-client/` | Shared API client | Prefer its current API types/contracts over deprecated utility-package types when touching shared frontend code. |
-| `packages/` (other) | Shared utilities, config, protocol, assets, analytics, and related libraries | Keep packages required by the desktop app or its frontend; verify references before pruning. |
-| `scripts/`, `.github/`, `standards/` | Repository automation, fork-owned CI, and engineering standards | Keep only automation and policies that AstralRinth actively uses; upstream Modrinth workflows are not required just because this is a fork. |
+| `packages/ui/` | Shared Modrinth Vue component library | The app frontend composes these components through shared props, exports, and layout contracts. |
+| `packages/api-client/` | Shared API client | Provides current API types/contracts; the utility package also contains older types. |
+| `packages/` (other) | Shared utilities, config, protocol, assets, analytics, and related libraries | Includes dependencies used by the desktop app and its frontend. |
+| `scripts/`, `.github/`, `standards/` | Repository automation, fork-owned CI, and engineering standards | Contains automation and policies for the AstralRinth checkout, distinct from upstream deployment infrastructure. |
 
 The working tree intentionally excludes upstream projects not needed to build the desktop launcher: `apps/frontend/`, `apps/labrinth/`, `apps/docs/`, `apps/daedalus_client/`, and `apps/app-playground/`. The root `docker-compose.yml` for backend-service development is also excluded. These deletions are a fork-maintenance policy, not evidence that upstream has removed those projects.
 
@@ -47,9 +47,16 @@ The working tree intentionally excludes upstream projects not needed to build th
 | `path-util`        | Path utilities                                        |
 | `sqlx-tracing`     | SQLx query tracing                                    |
 
+## Development tooling and commands
+
+- The desktop development entry point is `pnpm app:dev --cache=local:r` from the repository root. `local:r` uses the local Turborepo cache in read-only mode. Environment variants such as `.env.local` and `.env.prod` are in `packages/app-lib/`. Its `build.rs` reads the active `.env` through `dotenvy`; the build workflow prepares that file by copying `.env.prod` to `.env`.
+- Frontend type checking without a build is `pnpm --filter @modrinth/app-frontend tsc:check` from the repository root, or `pnpm tsc:check` from `apps/app-frontend/`. The package script runs `vue-tsc --noEmit`.
+- Frontend ESLint and Prettier are available through the app frontend's package tooling. Its `lint` script checks the whole frontend; `pnpm exec eslint <file...>` and `pnpm exec prettier --check <file...>` from `apps/app-frontend/` support file-scoped checks.
+- Rust crate membership and features are defined in the root and package `Cargo.toml` files. Frontend tool versions and workspace dependencies are defined in `package.json`, `pnpm-workspace.yaml`, and `mise.toml`.
+
 ## AstralRinth changes over upstream Modrinth
 
-This section describes fork-specific behavior in the current checkout and relevant removals from the Modrinth App baseline. It is intentionally more detailed than the feature map below: use it when reviewing an upstream merge, deciding whether a file is fork-owned, or checking whether an apparent cleanup would remove a product capability.
+This section describes fork-specific behavior in the current checkout and relevant removals from the Modrinth App baseline. The feature map below lists implementation entry points for those behaviors.
 
 ### Product identity, branding, and visual presentation
 
@@ -73,7 +80,7 @@ AstralRinth expands the upstream Minecraft account model. This is separate from 
 - External sign-in uses an OAuth Device Authorization flow. The Tauri host opens a dedicated always-on-top verification WebView, polls the provider until authorization, handles pending/slow-down/denied/expired states, and persists the returned credentials.
 - Account records gain `account_type`. Existing data is migrated from the old representation, Microsoft accounts are identified as `microsoft`, and offline accounts as `offline`.
 - Credential refresh now distinguishes Microsoft, external-provider, offline, and unknown account types. External refresh tokens use the provider OAuth flow; offline accounts are not sent through online token refresh.
-- `AccountsCard.vue`, `MinecraftRequiredModal.vue`, `Skins.vue`, and the new AstralRinth account components share the same account-type-aware flow. Do not restore a direct Microsoft-only button without reconnecting all supported account methods.
+- `AccountsCard.vue`, `MinecraftRequiredModal.vue`, `Skins.vue`, and the new AstralRinth account components share the same account-type-aware flow. The shared chooser exposes Microsoft, offline, and registered external-provider methods.
 
 The main contract crosses these layers:
 
@@ -114,7 +121,7 @@ The upstream Tauri updater is replaced for the fork's own launcher distribution:
 - `apps/app-frontend/src/App.vue` checks for updates during startup, posts an update notification, marks the settings icon with the theme's brand color, and mounts the fork update modal.
 - `apps/app/src/api/utils.rs`, `packages/app-lib/src/util/astralrinth/utils.rs`, and `packages/app-lib/src/api/astralrinth/update.rs` download the selected package into the platform Downloads directory. Windows executes `.exe`/`.msi` installers (with a folder fallback); macOS opens the package; Linux opens the containing folder for manual installation. The helper exits after `get_resource` returns success, but open failures are logged rather than propagated, and the Tauri command discards download errors. UI success therefore does not prove installation or handoff succeeded.
 - `packages/app-lib/.env.prod`, `apps/app-frontend/vite.config.ts`, Tauri capabilities, CSP, and HTTP permissions add the Xorison endpoints and Ely.by endpoints required by this path.
-- Upstream updater code remains, including `app-update.ts`, `app-update-button/`, Rust updater implementations/dependencies, and `apps/app/capabilities/updater.json`, but it is not wired into the Xorison update path. The default Cargo features and current build workflow do not enable `updater`, and the Tauri configs do not select the updater capability or supply upstream signing configuration. Do not accidentally reactivate it during an upstream update.
+- Upstream updater code remains, including `app-update.ts`, `app-update-button/`, Rust updater implementations/dependencies, and `apps/app/capabilities/updater.json`, but it is not wired into the Xorison update path. The default Cargo features and current build workflow do not enable `updater`, and the Tauri configs do not select the updater capability or supply upstream signing configuration. Its presence does not represent a second active self-update flow.
 
 ### Skin and account-type restrictions
 
@@ -124,7 +131,8 @@ The upstream Tauri updater is replaced for the fork's own launcher distribution:
 - Offline and external accounts are treated as read-only for Mojang skin operations.
 - External providers can expose their own skin-management URL; `UnsupportedSkinAccount.vue` offers a provider-specific link instead of trying to call Mojang endpoints.
 - The edit modal, file input, delete confirmation, cape loading, and skin loading are only mounted or executed for Microsoft accounts.
-- Existing Ears and custom skin rendering remains part of the shared launcher behavior and must not be removed while adapting these account checks.
+- Without a selected account, the skin page shows a sign-in prompt with the shared account-method chooser (Microsoft, offline, and external providers). There is no demo-editing mode or demo-account type; `EditSkinModal.vue` has no demo prop.
+- Ears and custom skin rendering remain part of the shared launcher behavior alongside these account checks.
 
 ### Advertising, consent, promotion, and campaign removals
 
@@ -137,12 +145,12 @@ AstralRinth removes the desktop advertising integration and selected promotional
 - Earlier campaign/banner and badge-icon removals are not a blanket removal of campaign support. The current tree still contains `packages/ui/src/components/content/PrideCollectionWidget.vue`, campaign blog articles/media, and campaign-gated Pride skins in `apps/app-frontend/src/pages/Skins.vue`.
 - The app filters news articles whose title, summary, description, or excerpt contains entries from the fork's filtered phrase list. This affects the news feed, not only a single campaign component.
 
-These removals are intentional fork behavior. Do not restore them from upstream as part of a mechanical conflict resolution without an explicit product decision.
+These removals are intentional differences from the upstream desktop product.
 
 ### Privacy and analytics behavior
 
 - `apps/app-frontend/src/App.vue` writes `telemetry = false` during startup and does not initialize the upstream analytics launch path in the patched code.
-- The fork still keeps the surrounding analytics helper contracts where shared code requires them, so removing or renaming analytics imports must be checked against all callers rather than assuming the entire analytics package is gone.
+- The fork retains analytics helper contracts used by shared code; the analytics package is not entirely removed.
 - The privacy settings UI no longer offers Modrinth advertising consent management. The telemetry control is presented as disabled when the fork has forced telemetry off.
 - This disables the normal PostHog usage-analytics path, not all reporting or external requests. `apps/app-frontend/src/main.js` still calls `setupErrorReporting`; its production-only Sentry integration initializes on user interaction or errors, enables browser tracing, and does not check `telemetry`. `SurveyPopup.vue` remains mounted and fetches Modrinth surveys on Windows; opening a survey passes the Modrinth user ID to Tally when available. Hosting Intercom integration also remains.
 
@@ -179,7 +187,7 @@ The fork adds native commands and changes the Tauri boundary:
 - `apps/app/src/api/mod.rs` serializes the external-auth-library error into a frontend-stable error code.
 - `apps/app-frontend/vite.config.ts` excludes Vue core packages from dependency optimization and accepts the `XORISON_` environment prefix.
 
-Every new `invoke` call must remain connected to a registered Rust command, a capability, an allowed origin where applicable, and a matching frontend return type.
+The native invocation boundary consists of frontend `invoke` wrappers and return types, registered Rust commands, Tauri permissions/capabilities, and allowed origins where applicable.
 
 ### Persistence and migration changes
 
@@ -193,7 +201,7 @@ AstralRinth changes initial defaults and adds account/library persistence:
 - The backup directory changes from a Modrinth-branded path to `AstralRinthApp/Backups/app-db`.
 - Liquid Glass enablement reuses SQLite's `advanced_rendering` setting (default `true`); the Glass level is frontend-local under `astralrinth-glass-level`, defaults to `standard`, and is not part of database migrations or account appearance sync.
 
-When rebasing migrations, preserve both fresh-install behavior and upgrades from existing Modrinth/AstralRinth databases. The account-type column is not cosmetic: it controls token refresh, skin capabilities, JVM arguments, and launch validation.
+Migrations cover fresh installations and existing Modrinth/AstralRinth databases. The account-type column controls token refresh, skin capabilities, JVM arguments, and launch validation.
 
 ### Localization and user-facing text
 
@@ -209,12 +217,12 @@ The fork also changes repository operations rather than only application code:
 - The root README is replaced with AstralRinth installation, feature, support, and Russian-language documentation. `readme/ru_ru/README.md` is added.
 - `STRUCTURE.md` documents the repository architecture, fork-specific behavior, and integration contracts; `AGENTS.md` contains agent instructions and links to this guide. The fork also adds `mise.toml`, the AstralRinth issue form, and an AstralRinth desktop build workflow.
 - The build workflow targets Linux x86_64/aarch64, Windows x86_64/aarch64, and macOS x86_64/aarch64, installs the required Rust/Node/pnpm/Java tooling, builds Tauri bundles, marks experimental packages, generates SHA-256 checksum files, and uploads GitHub Actions artifacts. It does not publish GitHub/Xorison releases. It runs on configured branch/tag pushes and manual dispatch, not pull requests; Linux ARM64, Windows ARM64, and macOS x86_64 packages receive the `nightly_expiremental_` filename prefix.
-- The patch removes or replaces many upstream Modrinth workflows for website deployment, Labrinth deployment, app build/release, Crowdin automation, generic CI, PR cancellation, changelog comments, slash commands, and API-client publishing. These removals mean that upstream workflow files should not be restored blindly.
+- The patch removes or replaces many upstream Modrinth workflows for website deployment, Labrinth deployment, app build/release, Crowdin automation, generic CI, PR cancellation, changelog comments, slash commands, and API-client publishing. The resulting CI/CD configuration is fork-owned rather than a mirror of upstream automation.
 - `.gitignore` ignores `cmp_*.patch`, allowing local upstream-comparison patches to remain untracked.
 
-### High-risk upstream merge boundaries
+### Cross-layer integration boundaries
 
-The following upstream changes require an explicit AstralRinth review rather than a file-level “take theirs” resolution:
+Fork behavior spans the following shared files and subsystems:
 
 - `App.vue`, `AccountsCard.vue`, `Skins.vue`, settings registration, generated app events, and locale extraction.
 - `apps/app/src/api/auth.rs`, `apps/app/src/api/utils.rs`, `apps/app/src/api/mod.rs`, `apps/app/src/main.rs`, capabilities, and Tauri configuration.
@@ -222,26 +230,23 @@ The following upstream changes require an explicit AstralRinth review rather tha
 - Any upstream updater, advertising, campaign, onboarding, or promotional changes.
 - Any database query or model change involving `account_type`, external library selections, telemetry, theme defaults, or backup paths.
 
-For each upstream update, classify the result as **preserved**, **adapted**, **intentionally removed**, or **requiring product-owner confirmation**. The fork's behavior is distributed across several layers, so a conflict-free file can still break the feature if its command, event, migration, capability, or generated binding counterpart is not updated.
+These features depend on matching commands, events, migrations, capabilities, and generated bindings across layers. Git conflict status alone does not establish compatibility.
 
 ## GitHub repository metadata (`.github/`)
 
-Treat `.github/` as configuration for this repository, not as a place to preserve every file from upstream Modrinth. Keep files that serve an active AstralRinth workflow, GitHub feature, or repository instruction; remove upstream automation that is not part of AstralRinth's CI/CD or release process.
+`.github/` contains this repository's build automation, issue configuration, editor instructions, and documentation assets. It is not a complete copy of upstream Modrinth automation.
 
-### Keep while they are in use
+### Workflow and issue configuration
 
-- `.github/workflows/astralrinth-build.yml`: AstralRinth's desktop build pipeline and its platform artifacts/checksums. Keep and evolve this workflow as the fork's own CI/CD contract.
-- `.github/ISSUE_TEMPLATE/astralrinth-bug.yml`: the sole bug-report form in the patch, scoped to AstralRinth-specific issues and collecting affected area, OS, launcher version, install source, account type, reproduction steps, logs, and system details. The upstream app, website, hosting, API bug forms, and generic feature-request form are removed; do not restore them without a product decision.
-- `.github/ISSUE_TEMPLATE/config.yml`: disables blank issues and directs users to AstralRinth Telegram support, while retaining the Modrinth Support Portal link. Keep these links consistent with the actual support policy rather than assuming every link must point to AstralRinth.
-- `.github/instructions/i18n-convert.instructions.md`: editor/AI instruction for Vue localization. Keep only if the team still uses this instruction; it is not required by GitHub Actions or the application build.
+- `.github/workflows/astralrinth-build.yml`: AstralRinth's desktop build pipeline and its platform artifacts/checksums.
+- `.github/ISSUE_TEMPLATE/astralrinth-bug.yml`: the sole bug-report form in the patch, scoped to AstralRinth-specific issues and collecting affected area, OS, launcher version, install source, account type, reproduction steps, logs, and system details. The upstream app, website, hosting, API bug forms, and generic feature-request form are removed.
+- `.github/ISSUE_TEMPLATE/config.yml`: disables blank issues and directs users to AstralRinth Telegram support, while retaining the Modrinth Support Portal link. The configuration therefore includes both fork and upstream support destinations.
+- `.github/instructions/i18n-convert.instructions.md`: editor/AI instruction for Vue localization, separate from GitHub Actions and the application build.
 
 ### Assets and upstream automation
 
-- `.github/assets/` currently contains `api_cover.png`, `app_cover.png`, `monorepo_cover.png`, and `web_cover.png`. `apps/app/README.md` references `app_cover.png`, so do not delete that cover without first replacing/removing the reference. They are Modrinth-branded assets, and the repository's `COPYING.md` explicitly says forks must remove Modrinth branding. Replace referenced covers with AstralRinth artwork, update the READMEs, then remove unused upstream images.
-- Do not retain Modrinth deployment, release, triage, merge-queue, or helper-script workflows/actions merely for parity with upstream. Keep a workflow/action only when AstralRinth's own process invokes it; verify callers, `uses:` references, and repository settings before removing any file.
-- Root automation such as `scripts/` is separate from `.github/`: remove an upstream script only after checking for package scripts, Cargo scripts, workflow steps, or documentation that invokes it.
-
-When importing upstream changes, review `.github/` as a fork-owned boundary: preserve AstralRinth build/release automation and issue policy, and do not reintroduce upstream CI jobs or helper actions that the fork does not use.
+- `.github/assets/` currently contains `api_cover.png`, `app_cover.png`, `monorepo_cover.png`, and `web_cover.png`. `apps/app/README.md` references `app_cover.png`. These assets retain Modrinth branding; `COPYING.md` contains the fork branding requirements.
+- Workflow dependencies include `uses:` references, helper actions, and repository settings; root automation under `scripts/` is separate from `.github/` and can also be invoked by package scripts, Cargo scripts, and documentation.
 
 ## Application entry points
 
@@ -265,7 +270,7 @@ The fork-specific implementation is distributed across frontend, Tauri, and Rust
 - Provider metadata, OAuth/device flows, and provider library lifecycle: `packages/app-lib/src/models/astralrinth/` and corresponding state/API modules.
 - Provider icons: `packages/assets/icons/astralrinth/`. Account dialogs use theme-aware component styles; the optional glass override is in `apps/app-frontend/src/assets/stylesheets/liquid-glass.scss`.
 
-Treat this as an end-to-end contract: UI provider IDs, Tauri command names and serialized data, Rust provider metadata, credential storage, and launcher argument construction must remain consistent. When changing one layer, trace the call through the others. Do not substitute Modrinth-account sign-in for Minecraft-account sign-in; these are separate flows.
+UI provider IDs, Tauri command names and serialized data, Rust provider metadata, credential storage, and launcher argument construction form an end-to-end contract. Minecraft-account sign-in and Modrinth-account sign-in are separate flows.
 
 ### AstralRinth launcher self-updates (Xorison)
 
@@ -277,7 +282,7 @@ The fork's launcher update is separate from upstream Modrinth app updates:
 4. `apps/app-frontend/src/components/ui/settings/astralrinth/UpdateSettings.vue` provides the related settings surface.
 5. `apps/app/src/api/utils.rs` registers `plugin:utils|init_update_launcher`; `packages/app-lib/src/util/astralrinth/utils.rs` and `packages/app-lib/src/api/astralrinth/update.rs` download/open the package and handle process exit. The Tauri `api/astralrinth/` module handles authentication, not updates.
 
-Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `app-update-button/`, which represent the upstream app-update UI/state. The upstream provider's action wiring is not the Xorison update path, and its presence does not imply a second active self-update flow. Keep it disconnected unless explicitly re-enabled as a product decision.
+`apps/app-frontend/src/providers/app-update.ts` and `app-update-button/` represent the upstream app-update UI/state. Their action wiring is separate from the active Xorison update path.
 
 ### AstralRinth news service (Xorison)
 
@@ -285,7 +290,7 @@ Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `a
 - `apps/app-frontend/src/providers/astralrinth-news.ts` owns the shared TanStack Query state, injected by `App.vue`. `setupApp()` explicitly calls the provider's `load()` to start a non-blocking news request during frontend initialization; an API failure is presented in the news UI, not treated as a fatal startup failure. Automatic query execution, retries, and mount/focus/reconnect refetches are disabled. Modal open/close and page changes reuse this state without requesting news. The provider passes the query abort signal to the service; the App-owned observer remains while the modal is closed, so closing the modal does not cancel a request, but unmounting the app does.
 - `apps/app-frontend/src/components/ui/astralrinth/news/index.vue` adds an independent sidebar button alongside the unchanged Modrinth news feed. A brand-colored accessible indicator appears when the latest article's age is between zero and four days inclusive; future-dated and older latest articles do not activate it. This is a recency indicator, not unread state: opening the modal does not clear it, and its age condition is reevaluated over time.
 - The scrollable `NewModal` displays two articles per client-side page with shared pagination in its fixed action area. Opening the modal or receiving a changed dataset resets to page one; changing page scrolls the content to the top without an API request. There are no manual refresh or error retry buttons; news loads during startup only. The startup loader uses TanStack Query state to skip an in-flight or already completed request, including failed attempts; no manual refresh state or cooldown is retained.
-- `astralrinth-news-card.vue` renders image/title/summary/date previews with locale-aware dates. A localized `New` badge beside each date uses the provider's shared reactive recency check (zero to four days inclusive), also used by the sidebar indicator; future-dated and older articles have no badge. Banner images retain their proportions without cropping, with maximum width 512px, maximum height 300px, and responsive width limits. Nullable or broken images do not hide the text; only HTTP(S) links and image sources or embedded PNG/JPEG data URIs are accepted. Use HTTPS for hosted images: the app CSP permits arbitrary HTTPS origins but restricts HTTP images to its explicit exceptions. Article links open through the existing app-wide external-link handler. Duplicate IDs are supported by including the list index in card keys. Loading, empty, error, and rate-limit states use the shared localization system; locale JSON files are maintained separately.
+- `astralrinth-news-card.vue` renders image/title/summary/date previews with locale-aware dates. A localized `New` badge beside each date uses the provider's shared reactive recency check (zero to four days inclusive), also used by the sidebar indicator; future-dated and older articles have no badge. Banner images retain their proportions without cropping, with maximum width 512px, maximum height 300px, and responsive width limits. Nullable or broken images do not hide the text; only HTTP(S) links and image sources or embedded PNG/JPEG data URIs are accepted. The app CSP permits arbitrary HTTPS image origins but restricts HTTP images to its explicit exceptions. Article links open through the existing app-wide external-link handler. Duplicate IDs are supported by including the list index in card keys. Loading, empty, error, and rate-limit states use the shared localization system; English and Russian message entries are in `apps/app-frontend/src/locales/en-US/index.json` and `apps/app-frontend/src/locales/ru-RU/index.json`.
 - Every response article must contain `id`, `title`, `summary`, `url`, and `published_at`; `image_url` may be omitted. The client validates string/null types and a finite `Date.parse(published_at)`, normalizes omitted images to `null` for UI callers, removes extra properties, and sorts newest first client-side. The API preserves source order without sorting or pagination. Equal timestamps retain response order; empty strings, duplicate IDs, and future publication dates are not filtered.
 - The external API preserves supplied `image_url` strings and explicit `null` unchanged, omitting the field when absent. Neither the server nor the client helper resolves filenames, loads image files, or encodes/decodes image data. Locally hosted images use public URLs such as `https://xorison.dev/images/news.png`; existing external URLs and data URIs are also preserved. UI rendering applies its own safe-source checks.
 - News JSON is read on every API request. Images are served independently; missing image files do not fail the news endpoint. Browser caching can affect replaced images, so a new filename provides a new image URL. The public image browser at `https://xorison.dev/images/` is a separate static website route, not an API endpoint.
@@ -298,7 +303,7 @@ Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `a
 - Account card/avatar rendering: `apps/app-frontend/src/components/ui/AccountsCard.vue` and `helpers/rendering/player-head.ts`.
 - Backend authentication, provider metadata, and launcher integration: `packages/app-lib/src/models/astralrinth/` plus `packages/app-lib/src/launcher/`.
 
-The current UI lazily acquires/releases baked previews through `BakedSkinButton` and `skin-previews.ts`. Verify exports at the actual import source: rendering helpers have been reorganized over time, and an import that used to exist in `batch-skin-renderer.ts` may no longer be exported there. Keep account-type checks, custom skin capabilities, Ears behavior, and URL/resource cleanup connected when changing the renderer.
+The current UI lazily acquires/releases baked previews through `BakedSkinButton` and `skin-previews.ts`. Rendering helpers have been reorganized over time; older imports from `batch-skin-renderer.ts` may no longer match current exports. Account-type checks, custom skin capabilities, Ears behavior, and URL/resource cleanup are coupled to this rendering lifecycle.
 
 ### Liquid Glass and visual settings
 
@@ -307,34 +312,34 @@ The current UI lazily acquires/releases baked previews through `BakedSkinButton`
 - Persistence: the toggle saves the existing SQLite `advanced_rendering` setting. `apps/app-frontend/src/composables/use-theme.ts` loads/saves the level separately in WebView local storage under `astralrinth-glass-level`. Missing, invalid, or unreadable stored values fall back to `standard`; storage-write failures are ignored, so the level may not survive a restart if storage is unavailable. The level is not synced with account appearance, and neither control adds a database setting or migration.
 - Levels: `matte` uses near-opaque surfaces and 32px blur without glass-surface gradients; `standard` is the default translucent/blurred style with gradients and theme-specific blur; `transparent` lowers background opacity and removes glass backdrop filtering and glass-surface gradients. These settings do not remove unrelated component gradients or decorative app-background accents. Accessibility/unsupported-backdrop-filter fallbacks can still make surfaces opaque.
 - Activation and styles: `apps/app-frontend/src/App.vue` watches `advancedRendering` and `glassLevel`, toggles `html.liquid-glass`, and sets `html[data-glass-level]`; `apps/app-frontend/src/assets/stylesheets/global.scss` imports `liquid-glass.scss`.
-- Appearance UI: `apps/app-frontend/src/components/ui/settings/display/AppearanceSettings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. Keep the AstralRinth Visual control connected when adapting upstream appearance settings.
+- Appearance UI: `apps/app-frontend/src/components/ui/settings/display/AppearanceSettings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. The AstralRinth Visual tab is the app's control surface for this shared setting.
 - Decoration: glass backgrounds and blur for panels, buttons, switches, and input wrappers use negative-z-index pseudo-elements with `pointer-events: none`; menus retain their own decorative `::before`. Native input backgrounds and slider decoration are handled directly where appropriate. Shadows stay on clipping panel hosts so `overflow-clip` does not cut off the outer glass shadow. The override includes opaque fallbacks, contrast/forced-color handling, and reduced-motion rules.
-- Color contract: change background alpha and glass decoration only. Background colors come from the theme's surface tokens or the component's semantic background and are mixed with `transparent`, not another hue. Do not override foreground `color`, `fill`, `stroke`, font styles, theme foreground tokens, or whole-element `opacity`/`filter`; use `backdrop-filter` for glass blur. Existing component interaction and disabled-state styles remain authoritative.
-- Button states: quiet/outlined buttons retain their native backgrounds paired with their native hover/focus colors. Their glass overlay is transparent; outlined buttons additionally disable backdrop filtering on `::after` and use `contain: paint` to confine descendant decoration to the button's own rounded bounds during native hover, pressed, and disabled states. Do not let a control's decorative layer paint over the surrounding panel. Do not fix a background-layer defect by recoloring the icon or text.
-- CSS maintenance: normalize high-specificity branches in grouped `:is(...)` defaults with `:where(...)` where needed so later background variants and their opaque fallback colors can win. Keep opaque/accessibility fallbacks effective across all themes and glass levels. Audit selector usage against app-reachable markup, dynamic class/attribute producers, teleported UI, and browser pseudo-elements; stylesheet definitions or unused component exports alone do not prove a selector is used.
+- Color contract: glass decoration changes background alpha while foreground colors, font styles, and component interaction/disabled states remain owned by the theme and components. Background colors come from theme surface tokens or semantic component backgrounds and are mixed with `transparent`. Blur uses `backdrop-filter`, not whole-element `opacity`/`filter`.
+- Button states: quiet/outlined buttons retain their native backgrounds paired with their native hover/focus colors. Their glass overlay is transparent; outlined buttons additionally disable backdrop filtering on `::after` and use `contain: paint` to confine descendant decoration to the button's own rounded bounds during native hover, pressed, and disabled states. This containment separates button decoration from the surrounding panel without changing icon or text colors.
+- CSS specificity: grouped `:is(...)` defaults can inherit high specificity; `:where(...)` provides zero-specificity branches so background variants and opaque fallbacks can win. Selector reachability includes app markup, dynamic classes/attributes, teleported UI, and browser pseudo-elements.
 
-Treat Liquid Glass as a visual layer, not a replacement for component behavior. Preserve native modal transitions, focus indicators, disabled states, hit areas, and fixed-position menu anchoring. After changing the override or shared component markup, verify mouse, keyboard, scrolling, and nested-menu interactions in the running app; non-intercepting pseudo-elements alone do not prove all interaction paths are unaffected.
+Liquid Glass is a visual layer over native component behavior, including modal transitions, focus indicators, disabled states, hit areas, and fixed-position menu anchoring. Decorative pseudo-elements are non-intercepting; interaction behavior also depends on stacking, containment, and positioning.
 
 ### Other fork behavior
 
 - Startup, launcher branding, and privacy override: `apps/app-frontend/src/App.vue`; the current fork sets telemetry off during app startup.
-- New-icon-editor notification: `apps/app-frontend/src/components/ui/new-icon-editor-notification/`, invoked from the app startup path. It is a user-facing notification and must not be mistaken for an advertisement or discarded as dead UI without tracing its trigger.
+- New-icon-editor notification: `apps/app-frontend/src/components/ui/new-icon-editor-notification/`, invoked from the app startup path. It is a user-facing icon-management notification, separate from removed advertising surfaces.
 - AstralRinth-specific startup/random text and launcher changes may live in shared files such as `packages/app-lib/src/launcher/mod.rs`, not just fork-named modules.
-- Translations are maintained under `apps/app-frontend/src/locales/`; verify English and Russian fork strings when changing message IDs or moving shared UI.
+- Translations are maintained under `apps/app-frontend/src/locales/`, including the English and Russian fork messages.
 - Fork workflows and release automation also live in `.github/`, including the AstralRinth build workflow.
 
 ## Shared upstream contracts and data migrations
 
-The frontend and Rust library mirror several contracts. When touching these, follow the complete data path rather than updating only the visible component:
+The frontend and Rust library mirror several contracts across these data paths:
 
 1. **Settings:** Rust model/defaults and SQLite migration under `packages/app-lib/src/state/` and `packages/app-lib/migrations/` → Tauri settings commands → frontend settings helpers/types → app startup initialization → consumers/settings UI → sync behavior where applicable.
-2. **Events:** Rust event enum and emit/serialization code → generated TypeScript event types/codec → frontend listener/consumer. A Rust event schema change requires regenerated or otherwise demonstrably matching frontend bindings.
+2. **Events:** Rust event enum and emit/serialization code → generated TypeScript event types/codec → frontend listener/consumer. The frontend codec depends on matching the Rust event schema.
 3. **Commands:** Rust Tauri command/plugin registration → permission/capability definitions → frontend `invoke` wrapper and argument/return types. Commands are not available merely because a Rust function exists.
 4. **Minecraft launch/auth:** account credentials and selected external provider → Rust launch context and JVM/auth arguments → native process lifecycle → UI notifications and account state.
 5. **Content and downloads:** frontend install/download manager → Tauri command/event contracts → app-lib job state, cancellation/pause, install, and recovery.
 
-Review database migrations for both fresh installs and upgrades from the actual stable release. New settings with a default can silently change established behavior if no migration maps the old state. In particular, verify window refocus-on-game-close, tab visibility (including old per-instance `visible_tabs`), telemetry, and account/skin-related preferences when changing their representation.
+Fresh-install defaults and upgrades from stable releases are distinct persistence paths. Settings migrations map existing state to new representations; affected preferences include window refocus-on-game-close, tab visibility (including legacy per-instance `visible_tabs`), telemetry, and account/skin-related settings.
 
 ## Baseline and limits
 
-`AR-0.19.202` is an existing local tag used as the AstralRinth release reference in the recent upstream comparison; it does not establish the latest published stable version. It is a comparison point, not proof that every future upstream behavior must remain unchanged. For each upstream update, state explicitly which behavior is preserved, migrated, intentionally replaced, or needs product-owner confirmation. Recheck this file when folder ownership, release/update architecture, or fork-specific integration points change.
+`AR-0.19.202` is an existing local tag used as the AstralRinth release reference in the recent upstream comparison; it does not establish the latest published stable version. It is a comparison point, not proof that every future upstream behavior must remain unchanged. The reference describes the current checkout's architecture and contracts, not an independent audit of the published release or external services.
