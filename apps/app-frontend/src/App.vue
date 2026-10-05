@@ -76,6 +76,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import AccountsCard from '@/components/ui/AccountsCard.vue'
 import AppActionBar from '@/components/ui/AppActionBar.vue'
 import LauncherUpdateModal from '@/components/ui/astralrinth/LauncherUpdateModal.vue'
+import AstralRinthNews from '@/components/ui/astralrinth/news/index.vue'
 import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
 import ErrorModal from '@/components/ui/ErrorModal.vue'
 import FriendsList from '@/components/ui/friends/FriendsList.vue'
@@ -162,6 +163,7 @@ import {
 import {
 	appUpdateState,
 } from '@/providers/app-update.ts'
+import { provideAstralRinthNews, useAstralRinthNews } from '@/providers/astralrinth-news'
 import { createBreadcrumbManager, provideBreadcrumbManager } from '@/providers/breadcrumbs'
 import { createContentInstall, provideContentInstall } from '@/providers/content-install'
 import { provideAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
@@ -186,6 +188,8 @@ debugStartup('App setup entered')
 const appSettings = useAppSettings()
 const appTheme = useTheme()
 const quickInstances = useQuickInstanceLimit()
+const astralRinthNews = useAstralRinthNews()
+provideAstralRinthNews(astralRinthNews)
 
 watch(
 	[() => appTheme.advancedRendering, () => appTheme.glassLevel],
@@ -823,6 +827,8 @@ async function setupApp() {
 				`No critical announcement found at https://api.modrinth.com/appCriticalAnnouncement.json?version=${upstreamVersion}`,
 			)
 		})
+
+	void astralRinthNews.load()
 
 	fetch(`https://modrinth.com/news/feed/articles.json`)
 		.then((response) => response.json())
@@ -2149,6 +2155,9 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 								:sign-in="() => requestSignIn()"
 							/>
 						</suspense>
+					</div>
+					<div class="px-4 pt-4">
+						<AstralRinthNews />
 					</div>
 					<div v-if="news && news.length > 0" class="p-4 flex flex-col items-center">
 						<h3 class="text-base mb-4 text-primary font-medium m-0 text-left w-full">

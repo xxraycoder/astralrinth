@@ -2,9 +2,50 @@
 
 ## Purpose
 
-This document describes the Modrinth monorepo as maintained by the AstralRinth fork, identifies where fork-specific behavior lives, and sets expectations for future upstream merges and AI-assisted changes. It supplements the root [`AGENTS.md`](AGENTS.md); it does not replace project-level instructions.
+This document describes the repository architecture, package responsibilities, application entry points, fork-specific behavior, and shared integration contracts. Read [`AGENTS.md`](AGENTS.md) for working rules, upstream merge procedures, verification commands, and documentation maintenance requirements.
 
 AstralRinth is a fork of Modrinth's codebase, not a separate launcher layered on top. Its desktop launcher shares the upstream app shell, frontend, and Rust app library. A change to an apparently generic Modrinth component, setting, API command, or database model can therefore break a fork-specific flow even when no file named `astralrinth` is edited.
+
+## Architecture
+
+- **Monorepo tooling:** [Turborepo](https://turbo.build/) (`turbo.jsonc`) + [pnpm workspaces](https://pnpm.io/workspaces) (`pnpm-workspace.yaml`)
+- **Frontend:** Vue 3 + Vite for the desktop app, shared Vue components, Tailwind CSS v3; Nuxt 3 in upstream web projects
+- **Desktop backend:** Rust + Tauri, shared launcher library, SQLite persistence
+- **Upstream backend:** Labrinth API, Postgres, and ClickHouse; the Labrinth app is intentionally excluded from this checkout
+
+## Monorepo map
+
+The repository uses pnpm workspaces and Turborepo for JavaScript/TypeScript packages and a Cargo workspace for Rust.
+
+| Path | Responsibility | Fork integration notes |
+| --- | --- | --- |
+| `apps/app-frontend/` | Vue 3 + Vite frontend for the Tauri desktop launcher | Main product surface for account flows, launcher UI, skins, settings, and Xorison release updates. |
+| `apps/app/` | Tauri/Rust desktop host | Registers native plugins, commands, permissions, capabilities, window behavior, and desktop startup. |
+| `packages/app-lib/` | Shared Rust launcher/backend library used by the desktop host | Owns settings persistence/migrations, Minecraft authentication and launching, process lifecycle, app events, and AstralRinth backend modules. |
+| `packages/assets/` | Shared icons, styles, and design assets | Contains AstralRinth logos, provider icons, and fork-specific visual styles. |
+| `packages/ui/` | Shared Modrinth Vue component library | App frontend composes these components; check API changes when replacing wrappers or migrating UI. |
+| `packages/api-client/` | Shared API client | Prefer its current API types/contracts over deprecated utility-package types when touching shared frontend code. |
+| `packages/` (other) | Shared utilities, config, protocol, assets, analytics, and related libraries | Keep packages required by the desktop app or its frontend; verify references before pruning. |
+| `scripts/`, `.github/`, `standards/` | Repository automation, fork-owned CI, and engineering standards | Keep only automation and policies that AstralRinth actively uses; upstream Modrinth workflows are not required just because this is a fork. |
+
+The working tree intentionally excludes upstream projects not needed to build the desktop launcher: `apps/frontend/`, `apps/labrinth/`, `apps/docs/`, `apps/daedalus_client/`, and `apps/app-playground/`. The root `docker-compose.yml` for backend-service development is also excluded. These deletions are a fork-maintenance policy, not evidence that upstream has removed those projects.
+
+### Additional shared packages (`packages/`)
+
+| Package            | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `blog`             | Blog system and changelog data                        |
+| `utils`            | Shared utility functions (mostly deprecated)          |
+| `moderation`       | Moderation utilities                                  |
+| `daedalus`         | Daedalus protocol                                     |
+| `tooling-config`   | ESLint, Prettier, TypeScript configs                  |
+| `ariadne`          | Analytics library                                     |
+| `modrinth-log`     | Logging utilities                                     |
+| `modrinth-maxmind` | MaxMind GeoIP                                         |
+| `modrinth-util`    | General utilities                                     |
+| `muralpay`         | Payment processing                                    |
+| `path-util`        | Path utilities                                        |
+| `sqlx-tracing`     | SQLx query tracing                                    |
 
 ## AstralRinth changes over upstream Modrinth
 
@@ -166,7 +207,7 @@ When rebasing migrations, preserve both fresh-install behavior and upgrades from
 The fork also changes repository operations rather than only application code:
 
 - The root README is replaced with AstralRinth installation, feature, support, and Russian-language documentation. `readme/ru_ru/README.md` is added.
-- `STRUCTURE.md`, `mise.toml`, the AstralRinth issue form, and an AstralRinth desktop build workflow are added.
+- `STRUCTURE.md` documents the repository architecture, fork-specific behavior, and integration contracts; `AGENTS.md` contains agent instructions and links to this guide. The fork also adds `mise.toml`, the AstralRinth issue form, and an AstralRinth desktop build workflow.
 - The build workflow targets Linux x86_64/aarch64, Windows x86_64/aarch64, and macOS x86_64/aarch64, installs the required Rust/Node/pnpm/Java tooling, builds Tauri bundles, marks experimental packages, generates SHA-256 checksum files, and uploads GitHub Actions artifacts. It does not publish GitHub/Xorison releases. It runs on configured branch/tag pushes and manual dispatch, not pull requests; Linux ARM64, Windows ARM64, and macOS x86_64 packages receive the `nightly_expiremental_` filename prefix.
 - The patch removes or replaces many upstream Modrinth workflows for website deployment, Labrinth deployment, app build/release, Crowdin automation, generic CI, PR cancellation, changelog comments, slash commands, and API-client publishing. These removals mean that upstream workflow files should not be restored blindly.
 - `.gitignore` ignores `cmp_*.patch`, allowing local upstream-comparison patches to remain untracked.
@@ -182,23 +223,6 @@ The following upstream changes require an explicit AstralRinth review rather tha
 - Any database query or model change involving `account_type`, external library selections, telemetry, theme defaults, or backup paths.
 
 For each upstream update, classify the result as **preserved**, **adapted**, **intentionally removed**, or **requiring product-owner confirmation**. The fork's behavior is distributed across several layers, so a conflict-free file can still break the feature if its command, event, migration, capability, or generated binding counterpart is not updated.
-
-## Monorepo map
-
-The repository uses pnpm workspaces and Turborepo for JavaScript/TypeScript packages and a Cargo workspace for Rust.
-
-| Path | Responsibility | Fork integration notes |
-| --- | --- | --- |
-| `apps/app-frontend/` | Vue 3 + Vite frontend for the Tauri desktop launcher | Main product surface for account flows, launcher UI, skins, settings, and Xorison release updates. |
-| `apps/app/` | Tauri/Rust desktop host | Registers native plugins, commands, permissions, capabilities, window behavior, and desktop startup. |
-| `packages/app-lib/` | Shared Rust launcher/backend library used by the desktop host | Owns settings persistence/migrations, Minecraft authentication and launching, process lifecycle, app events, and AstralRinth backend modules. |
-| `packages/assets/` | Shared icons, styles, and design assets | Contains AstralRinth logos, provider icons, and fork-specific visual styles. |
-| `packages/ui/` | Shared Modrinth Vue component library | App frontend composes these components; check API changes when replacing wrappers or migrating UI. |
-| `packages/api-client/` | Shared API client | Prefer its current API types/contracts over deprecated utility-package types when touching shared frontend code. |
-| `packages/` (other) | Shared utilities, config, protocol, assets, analytics, and related libraries | Keep packages required by the desktop app or its frontend; verify references before pruning. |
-| `scripts/`, `.github/`, `standards/` | Repository automation, fork-owned CI, and engineering standards | Keep only automation and policies that AstralRinth actively uses; upstream Modrinth workflows are not required just because this is a fork. |
-
-The working tree intentionally excludes upstream projects not needed to build the desktop launcher: `apps/frontend/`, `apps/labrinth/`, `apps/docs/`, `apps/daedalus_client/`, and `apps/app-playground/`. The root `docker-compose.yml` for backend-service development is also excluded. These deletions are a fork-maintenance policy, not evidence that upstream has removed those projects.
 
 ## GitHub repository metadata (`.github/`)
 
@@ -219,7 +243,7 @@ Treat `.github/` as configuration for this repository, not as a place to preserv
 
 When importing upstream changes, review `.github/` as a fork-owned boundary: preserve AstralRinth build/release automation and issue policy, and do not reintroduce upstream CI jobs or helper actions that the fork does not use.
 
-Useful entry points:
+## Application entry points
 
 - `apps/app-frontend/src/main.js`: frontend application bootstrapping, global plugins, error reporting, and mount.
 - `apps/app-frontend/src/App.vue`: desktop application shell, startup state, global navigation, notifications, and cross-cutting wiring.
@@ -254,6 +278,18 @@ The fork's launcher update is separate from upstream Modrinth app updates:
 5. `apps/app/src/api/utils.rs` registers `plugin:utils|init_update_launcher`; `packages/app-lib/src/util/astralrinth/utils.rs` and `packages/app-lib/src/api/astralrinth/update.rs` download/open the package and handle process exit. The Tauri `api/astralrinth/` module handles authentication, not updates.
 
 Do not conflate this with `apps/app-frontend/src/providers/app-update.ts` and `app-update-button/`, which represent the upstream app-update UI/state. The upstream provider's action wiring is not the Xorison update path, and its presence does not imply a second active self-update flow. Keep it disconnected unless explicitly re-enabled as a product decision.
+
+### AstralRinth news service (Xorison)
+
+- `apps/app-frontend/src/helpers/astralrinth/news.ts` exposes `fetchAstralRinthNews(signal?)` and `AstralRinthNewsArticle`. It sends an unauthenticated GET to `${XORISON_API_URL}public/product/astralrinth/news` through the Tauri HTTP plugin, with no query parameters or request body. It supplies the AstralRinth news modal separately from the existing Modrinth news feed.
+- `apps/app-frontend/src/providers/astralrinth-news.ts` owns the shared TanStack Query state, injected by `App.vue`. `setupApp()` explicitly calls the provider's `load()` to start a non-blocking news request during frontend initialization; an API failure is presented in the news UI, not treated as a fatal startup failure. Automatic query execution, retries, and mount/focus/reconnect refetches are disabled. Modal open/close and page changes reuse this state without requesting news. The provider passes the query abort signal to the service; the App-owned observer remains while the modal is closed, so closing the modal does not cancel a request, but unmounting the app does.
+- `apps/app-frontend/src/components/ui/astralrinth/news/index.vue` adds an independent sidebar button alongside the unchanged Modrinth news feed. A brand-colored accessible indicator appears when the latest article's age is between zero and four days inclusive; future-dated and older latest articles do not activate it. This is a recency indicator, not unread state: opening the modal does not clear it, and its age condition is reevaluated over time.
+- The scrollable `NewModal` displays two articles per client-side page with shared pagination in its fixed action area. Opening the modal or receiving a changed dataset resets to page one; changing page scrolls the content to the top without an API request. There are no manual refresh or error retry buttons; news loads during startup only. The startup loader uses TanStack Query state to skip an in-flight or already completed request, including failed attempts; no manual refresh state or cooldown is retained.
+- `astralrinth-news-card.vue` renders image/title/summary/date previews with locale-aware dates. A localized `New` badge beside each date uses the provider's shared reactive recency check (zero to four days inclusive), also used by the sidebar indicator; future-dated and older articles have no badge. Banner images retain their proportions without cropping, with maximum width 512px, maximum height 300px, and responsive width limits. Nullable or broken images do not hide the text; only HTTP(S) links and image sources or embedded PNG/JPEG data URIs are accepted. Use HTTPS for hosted images: the app CSP permits arbitrary HTTPS origins but restricts HTTP images to its explicit exceptions. Article links open through the existing app-wide external-link handler. Duplicate IDs are supported by including the list index in card keys. Loading, empty, error, and rate-limit states use the shared localization system; locale JSON files are maintained separately.
+- Every response article must contain `id`, `title`, `summary`, `url`, and `published_at`; `image_url` may be omitted. The client validates string/null types and a finite `Date.parse(published_at)`, normalizes omitted images to `null` for UI callers, removes extra properties, and sorts newest first client-side. The API preserves source order without sorting or pagination. Equal timestamps retain response order; empty strings, duplicate IDs, and future publication dates are not filtered.
+- The external API preserves supplied `image_url` strings and explicit `null` unchanged, omitting the field when absent. Neither the server nor the client helper resolves filenames, loads image files, or encodes/decodes image data. Locally hosted images use public URLs such as `https://xorison.dev/images/news.png`; existing external URLs and data URIs are also preserved. UI rendering applies its own safe-source checks.
+- News JSON is read on every API request. Images are served independently; missing image files do not fail the news endpoint. Browser caching can affect replaced images, so a new filename provides a new image URL. The public image browser at `https://xorison.dev/images/` is a separate static website route, not an API endpoint.
+- HTTP failures, including `429` and `500` from unreadable or invalid news JSON, throw `AstralRinthNewsError` with `httpStatus` before success-response parsing. Malformed successful responses also throw this error; transport/cancellation errors propagate. The AstralRinth feed remains separate from the Modrinth news filtering; opening its modal does not replace or merge the two feeds.
 
 ### Skins, Ears, and account-specific behavior
 
@@ -298,23 +334,6 @@ The frontend and Rust library mirror several contracts. When touching these, fol
 5. **Content and downloads:** frontend install/download manager → Tauri command/event contracts → app-lib job state, cancellation/pause, install, and recovery.
 
 Review database migrations for both fresh installs and upgrades from the actual stable release. New settings with a default can silently change established behavior if no migration maps the old state. In particular, verify window refocus-on-game-close, tab visibility (including old per-instance `visible_tabs`), telemetry, and account/skin-related preferences when changing their representation.
-
-## Rules for upstream merges and AI agents
-
-1. **Establish the exact baseline first.** Check `git status`, unresolved paths, current branch/commit, remotes, and tags. For release comparison, use the requested AstralRinth release tag (for example `AR-0.19.202`), not only `HEAD`; this checkout can have merge results in the index/worktree while `HEAD` still points at the previous release.
-2. **Inspect both sides of every conflict.** Read the ours and theirs versions and relevant callers. A conflict-free-looking working file may still be unmerged in Git's index. Verify with `git diff --name-only --diff-filter=U`; do not stage files unless explicitly authorized.
-3. **Protect fork behavior additively.** Do not resolve a conflict by choosing the entire upstream file if that drops AstralRinth branches, imports, UI, events, settings, or startup calls. Conversely, do not preserve obsolete APIs if upstream replaced them; reconnect the fork behavior to the new API and validate the full path.
-4. **Trace integrations.** For every fork-specific behavior, confirm its trigger, UI entry point, Tauri command, permission, Rust implementation, state/settings, event listeners, and cleanup as relevant. Search both direct references and dynamically invoked command/event names.
-5. **Treat behavior changes as product decisions.** Compare defaults and migrations against the stable AstralRinth release. Changes such as replacing per-instance navigation settings with global ones or changing whether the launcher refocuses after a game exits are not formatting-only merge resolutions. Document the changed behavior and ask before removing or silently changing a fork capability.
-6. **Do not remove user-facing behavior speculatively.** In particular, preserve Xorison update notifications, the new-icon-editor notification, external/offline account flows, Ears/custom skin functionality, and fork settings unless the user explicitly asks to remove them.
-7. **Respect explicit removals.** Ads and consent UI/native integration were explicitly requested to be removed in this working tree. Do not restore them from upstream during a merge without asking. `PromotionWrapper.vue` was also explicitly requested to be removed; search for callers before restoring or deleting related wrappers.
-8. **Validate after resolution.** Search for conflict markers and missing imports/exports, run focused diagnostics/build checks, and run the app's relevant tests where practical. Report exact checks and failures; do not claim the merge is complete while unresolved Git paths remain.
-9. **Keep changes scoped and safe.** Preserve unrelated staged and unstaged edits. Do not commit, create branches, or stage changes without explicit permission.
-10. **Reapply the repository-pruning policy after every upstream sync.** The omitted website, Labrinth API, docs, playground, Daedalus client, and backend `docker-compose.yml` are intentionally absent from AstralRinth. Upstream updates may modify deleted files (causing modify/delete conflicts) or add new files under these projects. Resolve those paths in favor of deletion, remove any newly reintroduced files, and recheck `Cargo.toml`, `package.json`, workspace/lockfiles, scripts, and CI configuration for references to the excluded projects. Do not restore them merely to make an upstream merge conflict-free.
-
-## Verification commands
-
-Follow root [`AGENTS.md`](AGENTS.md) and project instructions. For the app frontend, its package build script is `pnpm --filter @modrinth/app-frontend build`; repository frontend lint/PR checks should follow the prescribed `pnpm prepr:frontend:app` workflow when requested. Use the prescribed frontend checks for import/type diagnostics after resolving Vue components and frontend/Rust event contracts; do not run standalone `typecheck`/`tsc` or broader pre-PR checks unless requested. For Rust checks, identify the affected crate in `Cargo.toml` and read its project guidance if present.
 
 ## Baseline and limits
 

@@ -428,6 +428,27 @@
   "astralrinth.app.launcher-update-modal.update.title": {
     "message": "Доступна новая версия лаунчера AstralRinth."
   },
+	"astralrinth.app.news.empty": {
+		"message": "Новостей AstralRinth пока нет."
+	},
+	"astralrinth.app.news.error": {
+		"message": "Не удалось загрузить новости AstralRinth."
+	},
+	"astralrinth.app.news.loading": {
+		"message": "Загрузка новостей AstralRinth…"
+	},
+	"astralrinth.app.news.rate-limited": {
+		"message": "Слишком много запросов."
+	},
+	"astralrinth.app.news.recent-available": {
+		"message": "Есть свежие новости"
+	},
+	"astralrinth.app.news.new": {
+		"message": "Новое"
+	},
+	"astralrinth.app.news.title": {
+		"message": "Новости AstralRinth"
+	},
   "astralrinth.app.minecraft-account.error.input-offline.description": {
     "message": "Произошла ошибка при добавлении офлайн-аккаунта. Пожалуйста, выполните рекомендации ниже."
   },
