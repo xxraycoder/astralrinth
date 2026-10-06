@@ -33,7 +33,7 @@ export async function getOS() {
 }
 
 // This code is modified by AstralRinth
-export async function initUpdateLauncher(downloadUrl, filename, osType, autoUpdateSupported) {
+export async function initUpdateLauncher(downloadUrl, filename, osType) {
   console.log('Downloading build', downloadUrl, filename, osType)
   return await invoke('plugin:utils|init_update_launcher', { downloadUrl, filename, osType })
 }

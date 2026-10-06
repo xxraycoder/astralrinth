@@ -74,6 +74,7 @@ Read the applicable standards in `standards/` before editing the relevant area.
 - Keep skin editing gated to Microsoft accounts. With no selected account, preserve the sign-in prompt and all shared authentication methods; do not restore demo editing. Verify no-account, Microsoft, offline, and external-provider states after changing these gates.
 - After changing AstralRinth news, verify startup loading, the age-based indicator, and client-side pagination. There must be no manual refresh/retry buttons; opening the news modal must not trigger another request.
 - For Rust checks, identify the affected crate in `Cargo.toml` and read its project guidance if present.
+- After changing AstralRinth-specific Rust behavior, run the global fork test selection from the repository root: `cargo test -p theseus --lib astralrinth -- --nocapture`. This selects library tests whose names/module paths contain `astralrinth`; it does not cover every fork integration or live authentication/launch flow. Run relevant tests outside that selection when shared Rust code is affected; use `cargo test -p theseus --lib` when broader app-library regression coverage is warranted.
 - After changing external-provider library catalogs, verify flat remote assets, nullable latest-injector metadata, missing download URLs without automatic fallback, and continued use of existing local selections (including legacy files).
 
 ## Documentation maintenance

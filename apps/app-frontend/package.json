@@ -1,7 +1,7 @@
 {
 	"name": "@modrinth/app-frontend",
 	"private": true,
-	"version": "0.21.601",
+	"version": "0.21.801",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",

@@ -98,3 +98,4 @@ packages/tooling-config/script-utils/import-sort.js
 
 # AstralRinth ignores
 cmp_*.patch
+.pnpm-store
