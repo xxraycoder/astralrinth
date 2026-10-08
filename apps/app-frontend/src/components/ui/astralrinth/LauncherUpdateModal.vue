@@ -221,13 +221,13 @@ defineExpose({
 			>
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.latestReleaseTag) }}</strong>
-					<span class="break-words text-contrast">{{ releaseTag }}</span>
+					<span class="ms-1 break-words text-contrast">{{ releaseTag }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.latestReleaseTitle) }}</strong>
-					<span class="break-words text-contrast">{{ releaseTitle }}</span>
+					<span class="ms-1 break-words text-contrast">{{ releaseTitle }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.installedVersion) }}</strong>
-					<span class="break-words text-contrast">v{{ props.version }}</span>
+					<span class="ms-1 break-words text-contrast">v{{ props.version }}</span>
 				</p>
 				<a
 					class="inline-flex text-link hover:underline focus-visible:underline"

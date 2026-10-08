@@ -1,6 +1,6 @@
 [tools]
 cmake = "latest"
 node = "24.15.0"
-pnpm = "10.33.2"
+pnpm = "12.8.1"
 rust = "1.95.0"
-turbo = "2.8.2"
+turbo = "2.11.5"
