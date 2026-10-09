@@ -274,6 +274,7 @@ function handleSort(column: ContentCardTableSortColumn) {
 		<div
 			v-if="items.length > 0 && virtualized"
 			ref="listContainer"
+			data-virtualized-content
 			role="rowgroup"
 			class="relative w-full"
 			:class="flat ? '' : 'rounded-b-[20px]'"

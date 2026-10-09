@@ -143,6 +143,11 @@ html.liquid-glass[data-glass-level='matte'] {
 	--glass-surface-image: none;
 }
 
+/** Avoid backdrop-filter churn on controls mounted and repositioned during virtual scrolling. */
+html.liquid-glass [data-virtualized-content] {
+	--glass-backdrop: none;
+}
+
 html.liquid-glass[data-glass-level='transparent'] {
 	--glass-opacity: 0.45;
 	--glass-opacity-strong: 0.65;
