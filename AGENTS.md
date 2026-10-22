@@ -71,6 +71,7 @@ Read the applicable standards in `standards/` before editing the relevant area.
 
 - Run focused checks relevant to the changed code and report the exact commands and results. Do not run broad repository checks automatically for every change.
 - Use the frontend type-check command documented in [`STRUCTURE.md`](STRUCTURE.md#development-tooling-and-commands) for Vue/TypeScript validation without a build.
+- Keep TanStack queries/mutations for local SQLite, filesystem, and native-only operations explicitly offline-capable (`networkMode: 'always'`). Do not change remote or mixed download/authentication operations to this mode globally. After changing this boundary, run the frontend offline-query regression test and verify cold offline startup, local navigation, and reconnection in the app.
 - After changing Vue components or frontend/Rust event contracts, verify imports, exports, and matching types/bindings.
 - Keep skin editing gated to Microsoft accounts. With no selected account, preserve the sign-in prompt and all shared authentication methods; do not restore demo editing. Verify no-account, Microsoft, offline, and external-provider states after changing these gates.
 - After changing AstralRinth news, verify startup loading, the age-based indicator, and client-side pagination. There must be no manual refresh/retry buttons; opening the news modal must not trigger another request.

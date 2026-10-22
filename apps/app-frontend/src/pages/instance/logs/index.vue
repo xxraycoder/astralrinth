@@ -37,6 +37,7 @@ const {
 
 const consoleHydrationQuery = useQuery({
 	queryKey: computed(() => instanceKeys.console(instanceId.value)),
+	networkMode: 'always',
 	queryFn: async () => {
 		await hydrate()
 		return true

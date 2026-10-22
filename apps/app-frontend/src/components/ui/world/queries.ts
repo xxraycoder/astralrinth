@@ -15,6 +15,7 @@ export const recentWorldsKey = ['worlds', 'recent'] as const
 export function recentWorldsQueryOptions(limit: number) {
 	return queryOptions({
 		queryKey: [...recentWorldsKey, limit, ['normal', 'favorite']] as const,
+		networkMode: 'always',
 		queryFn: () =>
 			traceStartupStep('Load recent worlds', () =>
 				get_recent_worlds(limit, ['normal', 'favorite']),

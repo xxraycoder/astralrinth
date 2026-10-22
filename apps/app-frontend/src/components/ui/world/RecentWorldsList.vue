@@ -378,6 +378,7 @@ type ProcessMetadata = {
 
 const processesQuery = useQuery({
 	queryKey: ['processes', 'list'],
+	networkMode: 'always',
 	queryFn: (): Promise<ProcessMetadata[]> => get_all(),
 })
 const runningInstances = computed(() =>

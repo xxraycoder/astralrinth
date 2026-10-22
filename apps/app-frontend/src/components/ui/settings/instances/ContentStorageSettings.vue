@@ -44,6 +44,7 @@ const {
 	isPending: calculating,
 	error: storeUsageError,
 } = useQuery({
+	networkMode: 'always',
 	queryKey: storeUsageKey,
 	queryFn: async () => {
 		const [usage] = await Promise.all([
@@ -66,6 +67,7 @@ watch(storeUsageError, (error) => {
 })
 const runningProcessesKey = ['processes', 'running'] as const
 const { data: runningProcesses, error: runningProcessesError } = useQuery({
+	networkMode: 'always',
 	queryKey: runningProcessesKey,
 	queryFn: getRunningProcesses,
 })
@@ -239,6 +241,7 @@ function runAction(action: 'clear' | 'repair') {
 }
 
 const cacheLimitMutation = useMutation({
+	networkMode: 'always',
 	mutationFn: (bytes: number) => invoke('plugin:settings|store_set_cache_limit', { bytes }),
 	onSuccess: (_result, bytes) => {
 		queryClient.setQueryData<StoreUsage>(storeUsageKey, (usage) =>

@@ -315,6 +315,7 @@ const { progress, version: downloadingVersion } = injectAppUpdateDownloadProgres
 
 const { data: appInfo } = useQuery({
 	queryKey: ['app-info'],
+	networkMode: 'always',
 	queryFn: async () => ({
 		version: await getVersion(),
 		osPlatform: getOsPlatform(),
@@ -324,6 +325,7 @@ const { data: appInfo } = useQuery({
 })
 
 const developerModeMutation = useMutation({
+	networkMode: 'always',
 	mutationKey: appSettingsKeys.update,
 	scope: { id: 'app-settings' },
 	mutationFn: async (enabled: boolean) => {
@@ -453,12 +455,16 @@ const messages = defineMessages({
 					<IconButton
 						v-if="isUpdateAvailable"
 						v-tooltip.bottom="
-							formatMessage(isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo)
+							formatMessage(
+								isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo,
+							)
 						"
 						type="quiet"
 						size="sm"
 						:label="
-							formatMessage(isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo)
+							formatMessage(
+								isUpdateInstalling ? messages.updateInstalling : messages.viewUpdateInfo,
+							)
 						"
 						:loading="isUpdateInstalling"
 						@click="showUpdateModal()"

@@ -60,6 +60,7 @@ Retained packages include backend-oriented libraries, not only desktop launcher 
 - The desktop development entry point is `pnpm app:dev --cache=local:r` from the repository root. `local:r` uses the local Turborepo cache in read-only mode, but the `dev` task itself is uncached. Install the tools specified by `mise.toml` and make `mise` available: Tauri's frontend hooks invoke `mise exec`. The app library also invokes Gradle during compilation; the build workflow uses Java 21.
 - Before starting local app development, prepare `packages/app-lib/.env` from the appropriate checked-in environment variant (`.env.local` or `.env.prod`). Its `build.rs` reads the active `.env` through `dotenvy`; the development command does not create it automatically. The build workflow copies `.env.prod` to `.env`.
 - Frontend type checking without a build is `pnpm --filter @modrinth/app-frontend tsc:check` from the repository root, or `pnpm tsc:check` from `apps/app-frontend/`. The package script runs `vue-tsc --noEmit`.
+- Focused offline-query scheduling coverage is `node --test tests/offline-local-queries.test.mjs` from `apps/app-frontend/`. It checks local query factories and native-only component query/mutation options against the installed TanStack version without starting Tauri.
 - Frontend ESLint and Prettier are available through the app frontend's package tooling. Its `lint` script checks the whole frontend; `pnpm exec eslint <file...>` and `pnpm exec prettier --check <file...>` from `apps/app-frontend/` support file-scoped checks.
 - Rust crate membership and features are defined in the root and package `Cargo.toml` files. Frontend tool versions and workspace dependencies are defined in `package.json`, `pnpm-workspace.yaml`, and `mise.toml`. Root tooling and mise specify pnpm 12.8.1, Turbo 2.11.5, and Node 24.15.0 (the root engine permits newer Node versions). The frontend inherits the root package-manager version. Rust is pinned to 1.95.0 in both mise and `rust-toolchain.toml`; CMake uses the latest mise release.
 
@@ -113,6 +114,8 @@ AstralRinth adds a complete provider-library lifecycle that does not exist in th
 - Asset names are restricted to safe JAR file names, preventing path traversal through remote release metadata or persisted selections. Provider-library downloads check HTTP success but do not verify cryptographic signatures or checksums.
 
 ### Offline Minecraft launch behavior
+
+Local launcher queries for instance lists, processes, screenshots, worlds, filesystem navigation, logs, app settings, memory, and local game/sync settings explicitly use TanStack `networkMode: 'always'`, as do selected native-only settings and screenshot mutations. This prevents connectivity detection from pausing local work or leaving awaited route queries unresolved. Remote-service queries retain their existing network behavior; no global query default is changed. This scheduling support does not eliminate backend manifest-cache requirements, account-profile requests, or authentication/skin synchronization dependencies during game launch, and does not make remote services available offline.
 
 The offline flow changes both authentication and launch arguments:
 

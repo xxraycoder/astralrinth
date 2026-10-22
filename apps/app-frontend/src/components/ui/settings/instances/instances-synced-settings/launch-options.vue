@@ -47,6 +47,7 @@ type LaunchSettingsUpdate = Pick<
 const settingsQuery = useQuery(appSettingsQueryOptions())
 const settings = ref<LaunchSettings | null>(null)
 const mutation = useMutation({
+	networkMode: 'always',
 	mutationKey: appSettingsKeys.update,
 	scope: { id: 'app-settings' },
 	mutationFn: async (changes: LaunchSettingsUpdate) => {
