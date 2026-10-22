@@ -245,6 +245,11 @@ html.liquid-glass [role='menu']:hover::before {
 	border-color: var(--glass-border-strong);
 }
 
+/** TabbedModal sets an opaque surface on its dialog, so the glass layer adds only a second border and tints the header. */
+html.liquid-glass .modal-body.\!bg-surface-3::after {
+	display: none;
+}
+
 html.liquid-glass .app-grid-layout {
 	background-image:
 		radial-gradient(circle at 5% 0%, var(--glass-accent-a), transparent 38%),
