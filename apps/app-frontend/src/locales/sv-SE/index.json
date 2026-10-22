@@ -287,6 +287,18 @@
   "app.content.sync-resource-packs-disabled": {
     "message": "Aktivera synkronisering av resurs­paket i appens inställningar först."
   },
+  "app.debug-export.canceling": {
+    "message": "Avbryter exportering…"
+  },
+  "app.debug-export.exporting": {
+    "message": "Exporterar…"
+  },
+  "app.debug-export.finishing": {
+    "message": "Slutför…"
+  },
+  "app.debug-export.preparing": {
+    "message": "Förbereder filer…"
+  },
   "app.download-manager.active": {
     "message": "Aktiv"
   },
@@ -1631,9 +1643,6 @@
   "app.settings.default-instance-options.height.title": {
     "message": "Höjd"
   },
-  "app.settings.default-instance-options.java-and-memory.title": {
-    "message": "Java och minne"
-  },
   "app.settings.default-instance-options.java-arguments.description": {
     "message": "Argument som skickas till Java när en instans startas."
   },
@@ -1642,9 +1651,6 @@
   },
   "app.settings.default-instance-options.java-arguments.title": {
     "message": "Java-argument"
-  },
-  "app.settings.default-instance-options.launch-hooks.title": {
-    "message": "Körningsparametrar"
   },
   "app.settings.default-instance-options.memory-allocation.description": {
     "message": "Maximalt minne tillgängligt för varje instans."
@@ -1678,9 +1684,6 @@
   },
   "app.settings.default-instance-options.width.title": {
     "message": "Bredd"
-  },
-  "app.settings.default-instance-options.window.title": {
-    "message": "Fönster"
   },
   "app.settings.default-instance-options.wrapper-hook.description": {
     "message": "Kommando som används för att kapsla in Minecrafts startprocess."
@@ -2438,14 +2441,8 @@
   "app.settings.resource-management.app-cache.confirm.description": {
     "message": "Appen kan laddas in långsammare tills cachen är återuppbyggd."
   },
-  "app.settings.resource-management.app-cache.confirm.title": {
-    "message": "Rensa app-cachen?"
-  },
   "app.settings.resource-management.app-cache.description": {
     "message": "Rensa cachad data och ladda ner den igen från Modrinth. Appen kan laddas in långsammare tills cachen är återuppbyggd."
-  },
-  "app.settings.resource-management.app-cache.purge": {
-    "message": "Rensa cache"
   },
   "app.settings.resource-management.app-cache.title": {
     "message": "App-cache"
@@ -2518,9 +2515,6 @@
   },
   "app.settings.resource-management.store.verified": {
     "message": "Verifiering slutförd"
-  },
-  "app.settings.sidebar.label.instances": {
-    "message": "Instanser"
   },
   "app.settings.synced-options.choose-sync-source.data-packs-title": {
     "message": "Välj källa för datapaket"
@@ -2701,12 +2695,6 @@
   },
   "app.settings.tabs.privacy": {
     "message": "Integritet"
-  },
-  "app.settings.tabs.resource-management": {
-    "message": "Resurshantering"
-  },
-  "app.settings.tabs.synced-options": {
-    "message": "Synkroniserade inställningar"
   },
   "app.sidebar.playing-as": {
     "message": "Spelar som"
@@ -3659,18 +3647,6 @@
   "instance.settings.tabs.installation.locked": {
     "message": "Installationsinställningar är otillgängligt medan den här instansen är låst."
   },
-  "instance.settings.tabs.java.custom-environment-variables": {
-    "message": "Ställ in miljövariabler separat för den här instansen."
-  },
-  "instance.settings.tabs.java.custom-java-arguments": {
-    "message": "Ställ in Java-argument separat för den här instansen."
-  },
-  "instance.settings.tabs.java.custom-java-installation": {
-    "message": "Välj en annan Java-installation för den här instansen."
-  },
-  "instance.settings.tabs.java.custom-memory-allocation": {
-    "message": "Ställ in minnestilldelning separat för den här instansen."
-  },
   "instance.settings.tabs.java.enter-environment-variables": {
     "message": "Ange miljövariabler..."
   },
@@ -3725,9 +3701,6 @@
   "instance.settings.tabs.window": {
     "message": "Anpassade fönsterinställningar"
   },
-  "instance.settings.tabs.window.custom-window-settings": {
-    "message": "Konfigurera helskärm och upplösningen vid start separat för den här instansen."
-  },
   "instance.settings.tabs.window.fullscreen": {
     "message": "Helskärm"
   },
@@ -3766,15 +3739,6 @@
   },
   "instance.shared-instance.publish-review.added-label": {
     "message": "Lade till"
-  },
-  "instance.shared-instance.publish-review.admonition-header": {
-    "message": "Skicka uppdatering till spelare"
-  },
-  "instance.shared-instance.publish-review.config-title-v2": {
-    "message": "Välj konfigurationsfiler"
-  },
-  "instance.shared-instance.publish-review.description": {
-    "message": "Granska innehållsändringar och välj vilka konfigurationsfiler att inkludera i den här uppdateringen."
   },
   "instance.shared-instance.publish-review.header": {
     "message": "Granska ändringar"

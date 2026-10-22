@@ -69,8 +69,8 @@ const PRODUCT_SCOPES: Record<
 		catalogScopes: ['apps/app-frontend', 'packages/ui'],
 	},
 	website: {
-		sourceDirectories: ['apps/frontend/src', 'packages/moderation/src', 'packages/ui/src'],
-		catalogScopes: ['packages/ui', 'packages/moderation', 'apps/frontend'],
+		sourceDirectories: ['packages/moderation/src', 'packages/ui/src'],
+		catalogScopes: ['packages/ui', 'packages/moderation'],
 	},
 }
 
@@ -762,12 +762,7 @@ function main() {
 	const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 	// Directories to scan for Vue files
-	const scanDirs = [
-		'apps/frontend/src',
-		'apps/app-frontend/src',
-		'packages/ui/src',
-		'packages/moderation/src',
-	]
+	const scanDirs = ['apps/app-frontend/src', 'packages/ui/src', 'packages/moderation/src']
 
 	if (!jsonOutput && !quiet) {
 		console.log()

@@ -10,12 +10,12 @@ import { Button } from '#ui/components/base/buttons'
 import { injectModrinthClient, injectNotificationManager } from '../../providers'
 import AttributionGroupFilePicker from './AttributionGroupFilePicker.vue'
 import {
+	type ExternalLicenseStatus,
 	MODERATOR_ATTRIBUTION_KIND_LABELS,
 	moderatorAttributionGroupTitle,
 	parseInitialAttribution,
 } from './external-project-utils'
 import ExternalProjectLookupCard from './ExternalProjectLookupCard.vue'
-import type { ExternalLicenseStatus } from './types.ts'
 
 const props = defineProps<{
 	group: Labrinth.Attribution.Internal.AttributionGroup

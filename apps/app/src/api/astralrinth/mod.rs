@@ -119,8 +119,6 @@ fn parse_oauth_url(url: &str) -> Result<Url> {
 /// Adapts an OAuth-flow failure to the serializable Tauri API error type.
 fn other_error(
     message: impl Into<String>,
-) -> crate::api::TheseusSerializableError {
-    theseus::ErrorKind::OtherError(message.into())
-        .as_error()
-        .into()
+) -> crate::api::CommandError {
+	anyhow::Error::msg(message.into()).into()
 }

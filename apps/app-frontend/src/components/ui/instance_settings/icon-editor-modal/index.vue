@@ -460,8 +460,8 @@ const messages = defineMessages({
 							/>
 							<button
 								v-tooltip="{
-									content: formatMessage(option.name),
-									delay: { show: 500, hide: 0 },
+									text: formatMessage(option.name),
+									delay: 500,
 								}"
 								class="icon-option icon-outline relative aspect-square cursor-pointer overflow-hidden rounded-[20px] border-0 bg-transparent p-0"
 								:class="{ 'icon-outline-selected': selectedSymbol === option.id }"

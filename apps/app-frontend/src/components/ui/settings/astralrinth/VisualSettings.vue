@@ -9,15 +9,15 @@ import {
 	useSavable,
 	useVIntl,
 } from '@modrinth/ui'
-import { computed, inject, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
 import { GLASS_LEVEL_OPTIONS, type GlassLevel, useTheme } from '@/composables/use-theme.ts'
+import { injectAppSettingsModal } from '@/features/settings/app-settings-modal/context'
 import { get, set } from '@/helpers/settings.ts'
-import { appSettingsModalContextKey } from '@/providers/app-settings-modal'
 
 const theme = useTheme()
-const settingsModal = inject(appSettingsModalContextKey, null)
+const settingsModal = injectAppSettingsModal()
 const { formatMessage } = useVIntl()
 const { handleError } = injectNotificationManager()
 
@@ -105,7 +105,7 @@ async function saveVisualSettings(): Promise<void> {
 }
 
 onMounted(() => {
-	settingsModal?.registerUnsavedChangesController({
+	settingsModal.registerUnsavedChangesController({
 		hasChanges: () => hasChanges.value,
 		getOriginal: () => saved.value,
 		getModified: () => changes.value,
@@ -116,7 +116,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-	settingsModal?.registerUnsavedChangesController(null)
+	settingsModal.registerUnsavedChangesController(null)
 })
 </script>
 

@@ -150,7 +150,7 @@
     "message": "Без имени над скином"
   },
   "app.appearance-settings.minimize-launcher.description": {
-    "message": "Сворачивать Modrinth App при запуске Minecraft."
+    "message": "Сворачивать AstralRinth при запуске Minecraft."
   },
   "app.appearance-settings.minimize-launcher.title": {
     "message": "Сворачивание приложения"
@@ -185,6 +185,108 @@
   "app.auth-servers.unreachable.header": {
     "message": "Нет связи с серверами аутентификации"
   },
+	"app.file-download.canceling": {
+		"message": "Отмена скачивания…"
+	},
+	"app.file-download.preparing": {
+		"message": "Подготовка к скачиванию…"
+	},
+	"app.file-download.waiting": {
+		"message": "Ожидание ответа сервера…"
+	},
+	"app.icon-editor.apply-icons-modal.apply-error": {
+		"message": "Не удалось назначить случайные значки сборкам."
+	},
+	"app.icon-editor.apply-icons-modal.apply-success": {
+		"message": "{num, plural, one {Случайный значок назначен для # сборки.} few {Случайные значки назначены для # сборок.} many {Случайные значки назначены для # сборок.} other {Случайные значки назначены для # сборки.}}"
+	},
+	"app.icon-editor.apply-icons-modal.badge": {
+		"message": "Новое в этом обновлении"
+	},
+	"app.icon-editor.apply-icons-modal.close": {
+		"message": "Закрыть"
+	},
+	"app.icon-editor.apply-icons-modal.description": {
+		"message": "Создавайте собственные значки для сборок прямо в AstralRinth. Сочетайте фоны с символами из Minecraft и популярных модов!"
+	},
+	"app.icon-editor.apply-icons-modal.instances-without-icons": {
+		"message": "{count, plural, one {У # сборки ещё нет значка. Назначить ей случайный значок для начала?} few {У # сборок ещё нет значков. Назначить им случайные значки для начала?} many {У # сборок ещё нет значков. Назначить им случайные значки для начала?} other {У # сборки ещё нет значков. Назначить им случайные значки для начала?}}"
+	},
+	"app.icon-editor.apply-icons-modal.random-icons": {
+		"message": "Случайные значки"
+	},
+	"app.icon-editor.apply-icons-modal.skip": {
+		"message": "Пропустить"
+	},
+	"app.icon-editor.apply-icons-modal.title": {
+		"message": "Редактор значков"
+	},
+	"app.icon-editor.notification.close": {
+		"message": "Закрыть"
+	},
+	"app.icon-editor.notification.description": {
+		"message": "Придайте сборкам индивидуальность!"
+	},
+	"app.icon-editor.notification.dismiss": {
+		"message": "Скрыть"
+	},
+	"app.icon-editor.notification.title": {
+		"message": "Новый редактор значков"
+	},
+	"app.icon-editor.notification.view-update": {
+		"message": "Что нового"
+	},
+	"app.instance.mods.projects-were-added": {
+		"message": "Добавлено проектов: {count}"
+	},
+	"app.instance.share.invite-modal.user-limit-reached": {
+		"message": "Достигнут лимит участников этой сборки: {limit}."
+	},
+	"app.modal.install-to-play.unavailable-description": {
+		"message": "Версию сборки, которую использует этот сервер, сейчас нельзя скачать. Возможно, она снята с публикации или находится на проверке. Попробуйте позже или свяжитесь с владельцем сервера."
+	},
+	"app.modal.install-to-play.unavailable-header": {
+		"message": "Сборка этого сервера недоступна"
+	},
+	"app.settings.sidebar.label.instance-defaults": {
+		"message": "Настройки сборок по умолчанию"
+	},
+	"app.settings.sidebar.label.system": {
+		"message": "Система"
+	},
+	"app.settings.tabs.java-and-memory": {
+		"message": "Java и память"
+	},
+	"app.settings.tabs.launch-hooks": {
+		"message": "Команды запуска"
+	},
+	"app.settings.tabs.resources": {
+		"message": "Ресурсы"
+	},
+	"app.settings.tabs.syncing": {
+		"message": "Синхронизация"
+	},
+	"app.settings.tabs.troubleshooting": {
+		"message": "Устранение неполадок"
+	},
+	"app.settings.tabs.window": {
+		"message": "Окно"
+	},
+	"app.settings.troubleshooting.clear-cache": {
+		"message": "Очистить кеш"
+	},
+	"app.settings.troubleshooting.clear-cache.confirm.title": {
+		"message": "Очистить кеш приложения?"
+	},
+	"app.shared-instance-publish.preparing": {
+		"message": "Подготовка обновления…"
+	},
+	"app.shared-instance-publish.pushed": {
+		"message": "Обновление отправлено"
+	},
+	"app.shared-instance-publish.uploading": {
+		"message": "Отправка обновления…"
+	},
   "astralrinth.app.launcher-update.available.action": {
     "message": "Посмотреть обновление"
   },
@@ -522,7 +624,7 @@
     "message": "Главная и контент"
   },
   "app.behavior-settings.refocus-on-game-close.description": {
-    "message": "Выводить Modrinth App на передний план при закрытии игры."
+    "message": "Выводить AstralRinth на передний план при закрытии игры."
   },
   "app.behavior-settings.refocus-on-game-close.title": {
     "message": "Возврат фокуса при закрытии Minecraft"
@@ -616,6 +718,18 @@
   },
   "app.content.sync-resource-packs-disabled": {
     "message": "Сначала включите синхронизацию наборов ресурсов."
+  },
+  "app.debug-export.canceling": {
+    "message": "Отмена экспорта..."
+  },
+  "app.debug-export.exporting": {
+    "message": "Экспорт..."
+  },
+  "app.debug-export.finishing": {
+    "message": "Завершение..."
+  },
+  "app.debug-export.preparing": {
+    "message": "Подготовка файлов..."
   },
   "app.download-manager.active": {
     "message": "Активные"
@@ -738,13 +852,13 @@
     "message": "Страница игры"
   },
   "app.features-settings.quick-instances.description": {
-    "message": "Выберите максимальное количество недавних сборок, отображаемых в левой боковой панели. Вы также можете изменить это, перетаскивая разделитель."
+    "message": "Выберите максимальное количество недавних экземпляров, отображаемых в левой части панели. Вы также можете изменить это, перетаскивая разделитель."
   },
   "app.features-settings.quick-instances.title": {
     "message": "Количество сборок в боковой панели"
   },
   "app.features-settings.show-all-screenshots.description": {
-    "message": "Показать кнопку на левой боковой панели для просмотра скриншотов всех ваших сборок."
+    "message": "Покажите кнопку на левой части панели для просмотра скриншотов всех ваших экземпляров."
   },
   "app.features-settings.show-all-screenshots.title": {
     "message": "Показать все скриншоты в боковой панели"
@@ -762,10 +876,10 @@
     "message": "Показывать вкладку Скриншоты в сборках"
   },
   "app.features-settings.show-skin-selector.description": {
-    "message": "Показать кнопку на левой боковой панели, чтобы открыть настройки скина."
+    "message": "Показать кнопку на левой Боковой панели, чтобы открыть настройки персонажа."
   },
   "app.features-settings.show-skin-selector.title": {
-    "message": "Выбор скина в боковой панели"
+    "message": "Выбор персонажа в боковой панели"
   },
   "app.features-settings.show-worlds-tab.title": {
     "message": "Показывать вкладку Миры в сборках"
@@ -810,7 +924,7 @@
     "message": "Посмотреть сборку"
   },
   "app.hosting.update-required.description": {
-    "message": "Обновитесь, чтобы использовать Modrinth Hosting через Modrinth App"
+    "message": "Обновитесь, чтобы использовать Modrinth Hosting через AstralRinth"
   },
   "app.hosting.update-required.download": {
     "message": "Скачать и обновить"
@@ -819,7 +933,7 @@
     "message": "Восторженный Modrinth Bot"
   },
   "app.hosting.update-required.title": {
-    "message": "Обновите Modrinth App"
+    "message": "Обновите AstralRinth"
   },
   "app.install.phase.downloading_content": {
     "message": "Скачивание контента"
@@ -1946,9 +2060,6 @@
   "app.settings.default-instance-options.height.title": {
     "message": "Высота"
   },
-  "app.settings.default-instance-options.java-and-memory.title": {
-    "message": "Java и память"
-  },
   "app.settings.default-instance-options.java-arguments.description": {
     "message": "Аргументы, передаваемые Java при запуске игры."
   },
@@ -1957,9 +2068,6 @@
   },
   "app.settings.default-instance-options.java-arguments.title": {
     "message": "Аргументы Java"
-  },
-  "app.settings.default-instance-options.launch-hooks.title": {
-    "message": "Команды запуска"
   },
   "app.settings.default-instance-options.memory-allocation.description": {
     "message": "Максимальный объём памяти, выделяемый игре."
@@ -1993,9 +2101,6 @@
   },
   "app.settings.default-instance-options.width.title": {
     "message": "Ширина"
-  },
-  "app.settings.default-instance-options.window.title": {
-    "message": "Окно"
   },
   "app.settings.default-instance-options.wrapper-hook.description": {
     "message": "Команда, оборачивающая процесс запуска Minecraft."
@@ -3024,13 +3129,13 @@
     "message": "Некоторые из ваших экземпляров не поддерживают эту настройку"
   },
   "app.settings.java-installations.location.title": {
-    "message": "Расположение Java {version}"
+    "message": "Расположение Java {version, number}"
   },
   "app.settings.operating-system.macos": {
     "message": "macOS"
   },
   "app.settings.privacy.discord-rich-presence.description": {
-    "message": "Показывать Modrinth App в текущей активности Discord. Не влияет на Rich Presence модов. Требуется перезапуск."
+    "message": "Показывать AstralRinth в текущей активности Discord. Не влияет на Rich Presence модов. Требуется перезапуск."
   },
   "app.settings.privacy.discord-rich-presence.title": {
     "message": "Discord Rich Presence"
@@ -3050,14 +3155,8 @@
   "app.settings.resource-management.app-cache.confirm.description": {
     "message": "Приложение может замедлиться, пока кеш не восстановится."
   },
-  "app.settings.resource-management.app-cache.confirm.title": {
-    "message": "Очистить кеш приложения?"
-  },
   "app.settings.resource-management.app-cache.description": {
     "message": "Удаляет кешированные данные и повторно скачивает их с Modrinth. Приложение может замедлиться, пока кеш не восстановится."
-  },
-  "app.settings.resource-management.app-cache.purge": {
-    "message": "Очистить кеш"
   },
   "app.settings.resource-management.app-cache.title": {
     "message": "Кеш приложения"
@@ -3075,13 +3174,22 @@
     "message": "Выбрать каталог приложения"
   },
   "app.settings.resource-management.app-directory.description": {
-    "message": "Здесь Modrinth App хранит сборки и другие файлы. Изменения вступят в силу после перезапуска."
+    "message": "Здесь AstralRinth хранит сборки и другие файлы. Изменения вступят в силу после перезапуска."
   },
   "app.settings.resource-management.app-directory.select": {
     "message": "Выбор нового каталога приложения"
   },
   "app.settings.resource-management.app-directory.title": {
     "message": "Каталог приложения"
+  },
+  "app.settings.resource-management.debug-info.description": {
+    "message": "Экспортировать журналы приложения и диагностические данные в ZIP-файл, чтобы поделиться ими с поддержкой AstralRinth."
+  },
+  "app.settings.resource-management.debug-info.export": {
+    "message": "Экспорт отладочной информации"
+  },
+  "app.settings.resource-management.debug-info.title": {
+    "message": "Информация отладки"
   },
   "app.settings.resource-management.maximum-concurrent-downloads.description": {
     "message": "Количество одновременно скачиваемых файлов. Уменьшите, если скачивание работает нестабильно. Требуется перезапуск."
@@ -3125,9 +3233,6 @@
   "app.settings.resource-management.store.description": {
     "message": "Экономьте место, используя общие файлы игры и контент в сборках."
   },
-  "app.settings.resource-management.store.empty": {
-    "message": "Установите контент, чтобы отслеживать объём занятого места."
-  },
   "app.settings.resource-management.store.issues": {
     "message": "Посмотреть {count, plural, one {# проблему} few {# проблемы} other {# проблем}}"
   },
@@ -3166,9 +3271,6 @@
   },
   "app.settings.resource-management.store.verified": {
     "message": "Проверка завершена"
-  },
-  "app.settings.sidebar.label.instances": {
-    "message": "Сборки"
   },
   "app.settings.synced-options.choose-sync-source.command-history-description": {
     "message": "Выберете, из какой сборки копировать историю команд. Эта история нужна только для первоначальной синхронизации, после чего её можно изменить."
@@ -3410,12 +3512,6 @@
   "app.settings.tabs.privacy": {
     "message": "Конфиденциальность"
   },
-  "app.settings.tabs.resource-management": {
-    "message": "Управление ресурсами"
-  },
-  "app.settings.tabs.synced-options": {
-    "message": "Глобальные настройки"
-  },
   "app.sidebar.playing-as": {
     "message": "Сейчас играет"
   },
@@ -3591,7 +3687,7 @@
     "message": "Показать"
   },
   "app.survey.body": {
-    "message": "Не хотите ответить на несколько вопросов о вашем опыте с Modrinth App?"
+    "message": "Не хотите ответить на несколько вопросов о вашем опыте с AstralRinth?"
   },
   "app.survey.footer": {
     "message": "Этот отзыв будет доставлен напрямую команде Modrinth и поможет разрабатывать будущие обновления!"
@@ -3735,13 +3831,13 @@
     "message": "Синхронизированные наборы ресурсов"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Скачивание версии Modrinth App {version} завершено. Перезапустите приложение, чтобы обновить его, или оно обновится автоматически после закрытия."
+    "message": "Скачивание версии AstralRinth {version} завершено. Перезапустите приложение, чтобы обновить его, или оно обновится автоматически после закрытия."
   },
   "app.update-popup.body.linux": {
-    "message": "Доступна версия Modrinth App {version}. Обновите приложение через менеджер пакетов, чтобы получить последние улучшения и исправления!"
+    "message": "Доступна версия AstralRinth {version}. Обновите приложение через менеджер пакетов, чтобы получить последние улучшения и исправления!"
   },
   "app.update-popup.body.metered": {
-    "message": "Версия Modrinth App {version} доступна для скачивания! Используется сеть с лимитным тарифным планом, поэтому скачивание не началось автоматически."
+    "message": "Версия AstralRinth {version} доступна для скачивания! Используется сеть с лимитным тарифным планом, поэтому скачивание не началось автоматически."
   },
   "app.update-popup.changelog": {
     "message": "Список изменений"
@@ -4253,6 +4349,9 @@
   "instance.server-modal.resource-pack": {
     "message": "Набор ресурсов"
   },
+	"instance.settings.defaults.open-app-settings": {
+		"message": "Настроить значения по умолчанию"
+	},
   "instance.settings.sharing.active-invites.actions": {
     "message": "Действия"
   },
@@ -4292,6 +4391,12 @@
   "instance.settings.sharing.revoke-invite.header": {
     "message": "Отзыв приглашения"
   },
+	"instance.settings.sidebar.label.game": {
+		"message": "Игра"
+	},
+	"instance.settings.sidebar.label.instance": {
+		"message": "Сборка"
+	},
   "instance.settings.synced-options.data-override": {
     "message": "Отключить это переопределение для редактирования синхронизированных данных."
   },
@@ -4409,9 +4514,12 @@
   "instance.settings.tabs.general.update-channel.select": {
     "message": "Выберите канал обновления"
   },
-  "instance.settings.tabs.hooks.description": {
-    "message": "Выполнение системных команд конкретной сборки до и после запуска игры."
-  },
+	"instance.settings.tabs.hooks.default-settings-description": {
+		"message": "Сборка использует команды запуска по умолчанию, если вы не переопределите их здесь."
+	},
+	"instance.settings.tabs.hooks.label": {
+		"message": "Команды запуска"
+	},
   "instance.settings.tabs.hooks.post-exit": {
     "message": "После выхода"
   },
@@ -4472,18 +4580,9 @@
   "instance.settings.tabs.installation.locked": {
     "message": "Параметры установки недоступны, пока сборка заблокирована."
   },
-  "instance.settings.tabs.java.custom-environment-variables": {
-    "message": "Настройка переменных среды отдельно для этой сборки."
-  },
-  "instance.settings.tabs.java.custom-java-arguments": {
-    "message": "Настройка аргументов Java отдельно для этой сборки."
-  },
-  "instance.settings.tabs.java.custom-java-installation": {
-    "message": "Выбрать другую установку Java в сборке."
-  },
-  "instance.settings.tabs.java.custom-memory-allocation": {
-    "message": "Настройка выделения памяти отдельно для этой сборки."
-  },
+	"instance.settings.tabs.java.default-settings-description": {
+		"message": "Сборка использует настройки Java и памяти по умолчанию, если вы не переопределите их здесь."
+	},
   "instance.settings.tabs.java.enter-environment-variables": {
     "message": "Введите переменные среды..."
   },
@@ -4508,9 +4607,9 @@
   "instance.settings.tabs.java.java-path-placeholder": {
     "message": "/путь/к/java"
   },
-  "instance.settings.tabs.settings-overrides": {
-    "message": "Переопределения"
-  },
+	"instance.settings.tabs.java.label": {
+		"message": "Java и память"
+	},
   "instance.settings.tabs.sharing": {
     "message": "Доступ"
   },
@@ -4571,12 +4670,15 @@
   "instance.settings.tabs.synced-options.shared-settings.description": {
     "message": "Включить принудительное разделение, чтобы хранить синхронизированные настройки отдельно для этой сборки."
   },
+	"instance.settings.tabs.syncing": {
+		"message": "Синхронизация"
+	},
   "instance.settings.tabs.window": {
     "message": "Переопределение настроек окна"
   },
-  "instance.settings.tabs.window.custom-window-settings": {
-    "message": "Настройка полноэкранного режима и разрешения при запуске для этой сборки."
-  },
+	"instance.settings.tabs.window.default-settings-description": {
+		"message": "Сборка использует настройки окна по умолчанию, если вы не переопределите их здесь."
+	},
   "instance.settings.tabs.window.fullscreen": {
     "message": "Полноэкранный режим"
   },
@@ -4592,6 +4694,9 @@
   "instance.settings.tabs.window.height.enter": {
     "message": "Введите высоту..."
   },
+	"instance.settings.tabs.window.label": {
+		"message": "Окно"
+	},
   "instance.settings.tabs.window.width": {
     "message": "Ширина"
   },
@@ -4604,6 +4709,9 @@
   "instance.shared-instance.error.title": {
     "message": "Произошла ошибка"
   },
+	"instance.shared-instance.file-not-allowed.title": {
+		"message": "Недопустимый тип файла"
+	},
   "instance.shared-instance.network-error.text": {
     "message": "Не удалось подключиться к API сборок"
   },
@@ -4616,17 +4724,23 @@
   "instance.shared-instance.publish-review.added-label": {
     "message": "Добавлен"
   },
-  "instance.shared-instance.publish-review.admonition-header": {
-    "message": "Отправка изменений игрокам"
-  },
-  "instance.shared-instance.publish-review.config-title-v2": {
-    "message": "Выберите файлы настройки"
-  },
-  "instance.shared-instance.publish-review.description": {
-    "message": "Ознакомьтесь с изменениями в содержимом и выберите файлы конфигурации, которые следует включить в это обновление."
-  },
+	"instance.shared-instance.publish-review.changes-description": {
+		"message": "Проверьте изменения, обнаруженные с момента последнего обновления. Они будут автоматически включены при отправке."
+	},
+	"instance.shared-instance.publish-review.changes-tab": {
+		"message": "Изменения"
+	},
+	"instance.shared-instance.publish-review.file-type-not-allowed": {
+		"message": "У вас нет разрешения на отправку файлов этого типа."
+	},
+	"instance.shared-instance.publish-review.files-description": {
+		"message": "Помимо обнаруженных изменений можно включить отдельные файлы. Выберите дополнительные файлы для публикации."
+	},
+	"instance.shared-instance.publish-review.files-tab": {
+		"message": "Файлы"
+	},
   "instance.shared-instance.publish-review.header": {
-    "message": "Обзор изменений"
+    "message": "Отправить обновление"
   },
   "instance.shared-instance.publish-review.publish-button": {
     "message": "Отправить изменения"
@@ -4634,6 +4748,15 @@
   "instance.shared-instance.publish-review.removed-label": {
     "message": "Удалён"
   },
+	"instance.shared-instance.publish-review.storage-over-limit": {
+		"message": "Лимит превышен на {size}. Снимите выбор с некоторых файлов, чтобы отправить обновление."
+	},
+	"instance.shared-instance.publish-review.storage-title": {
+		"message": "Доступное хранилище"
+	},
+	"instance.shared-instance.publish-review.storage-usage": {
+		"message": "{used} из {limit}"
+	},
   "instance.shared-instance.tooltip": {
     "message": "Контент сборки управляется другим пользователем."
   },

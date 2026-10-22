@@ -51,8 +51,9 @@ function returnHome() {
 
 /** Opens the selected provider's own skin-management page. */
 function openExternalProviderSkins() {
-	if (externalAuthProvider.value) {
-		void openUrl(externalAuthProvider.value.skinManagementUrl)
+	const skinManagementUrl = externalAuthProvider.value?.skinManagementUrl
+	if (skinManagementUrl) {
+		void openUrl(skinManagementUrl)
 	}
 }
 </script>
@@ -97,12 +98,14 @@ function openExternalProviderSkins() {
 				</p>
 				<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
 					<Button
-						v-if="externalAuthProvider"
+						v-if="externalAuthProvider?.skinManagementUrl"
 						type="colored"
 						color="brand"
 						@click.stop="openExternalProviderSkins"
 					>
-						{{ formatMessage(messages.externalAction, { providerName: externalAuthProvider.name }) }}
+						{{
+							formatMessage(messages.externalAction, { providerName: externalAuthProvider.name })
+						}}
 						<ExternalIcon aria-hidden="true" />
 					</Button>
 					<Button

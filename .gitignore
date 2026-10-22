@@ -54,7 +54,6 @@ Thumbs.db
 .cache
 
 # frontend generated files
-apps/frontend/src/generated
 /packages/ui/src/layouts/wrapped/settings/language-settings/language-settings-coverage.generated.ts
 
 .turbo
@@ -77,16 +76,10 @@ app-playground-data/*
 .claude/
 .letta
 
-# labrinth demo fixtures
-apps/labrinth/fixtures/demo
-
 *storybook.log
 storybook-static
 
 .wrangler/
-
-# frontend robots.txt
-apps/frontend/src/public/robots.txt
 
 # Oh My Code
 .omc/
@@ -95,6 +88,7 @@ apps/frontend/src/public/robots.txt
 /test_result.md
 
 packages/tooling-config/script-utils/import-sort.js
+references/
 
 # AstralRinth ignores
 cmp_*.patch

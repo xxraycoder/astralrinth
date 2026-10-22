@@ -1,3 +1,5 @@
+![AstralRinth](../assets/icons/astralrinth/astralrinth-logo.svg)
+
 # @modrinth/api-client
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-c78aff?style=for-the-badge)](https://www.typescriptlang.org/)

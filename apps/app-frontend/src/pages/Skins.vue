@@ -24,15 +24,14 @@ import { arrayBufferToBase64 } from '@modrinth/utils'
 import { useQuery } from '@tanstack/vue-query'
 import { type DragDropEvent, getCurrentWebview } from '@tauri-apps/api/webview'
 import { computedAsync } from '@vueuse/core'
-import type { Ref } from 'vue'
-import { computed, inject, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 
 import EarsModIcon from '@/assets/skins/ears-mod.png'
-import type AccountsCard from '@/components/ui/AccountsCard.vue'
 import UnsupportedSkinAccount from '@/components/ui/astralrinth/skin/UnsupportedSkinAccount.vue'
 import EditSkinModal from '@/components/ui/skin/EditSkinModal.vue'
 import VirtualSkinSectionList from '@/components/ui/skin/VirtualSkinSectionList.vue'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
+import { injectMinecraftAccounts } from '@/features/minecraft-accounts/context'
 import { check_reachable, get_default_user, users } from '@/helpers/auth'
 import { cleanupUnusedPreviews } from '@/helpers/rendering/skin-previews'
 import type { Cape, Skin, SkinTextureUrl } from '@/helpers/skins.ts'
@@ -52,8 +51,11 @@ import {
 	set_custom_skin_order,
 } from '@/helpers/skins.ts'
 import { hasPride26Badge } from '@/helpers/user-campaigns.ts'
-import { loadExternalAuthProviders } from '@/models/astralrinth/authentication'
-import { useRootBreadcrumb } from '@/providers/breadcrumbs'
+import {
+	loadExternalAuthProviders,
+	type MinecraftCredential,
+} from '@/models/astralrinth/authentication'
+import { useRootBreadcrumb } from '@/shared/breadcrumbs'
 import { appMessages } from '@/utils/app-messages'
 
 useRootBreadcrumb({
@@ -224,8 +226,8 @@ const skins = ref<Skin[]>([])
 const capes = ref<Cape[]>([])
 const offline = ref(!navigator.onLine)
 
-const accountsCard = inject('accountsCard') as Ref<typeof AccountsCard>
-const currentUser = ref(undefined)
+const minecraftAccounts = injectMinecraftAccounts()
+const currentUser = ref<MinecraftCredential>()
 const currentUserId = ref<string | undefined>(undefined)
 
 const username = computed(() => currentUser.value?.profile?.name ?? undefined)
@@ -388,8 +390,13 @@ async function deleteSkin() {
 }
 
 async function loadCapes() {
+	if (!isMicrosoftAccount.value) return
+	const profileId = currentUserId.value
+
 	try {
-		capes.value = (await get_available_capes()) ?? []
+		const loadedCapes = (await get_available_capes()) ?? []
+		if (!isMicrosoftAccount.value || currentUserId.value !== profileId) return
+		capes.value = loadedCapes
 	} catch (error) {
 		if (currentUser.value && error instanceof Error) {
 			handleError(error)
@@ -398,8 +405,12 @@ async function loadCapes() {
 }
 
 async function loadSkins() {
+	if (!isMicrosoftAccount.value) return
+	const profileId = currentUserId.value
+
 	try {
 		const loadedSkins = (await get_available_skins()) ?? []
+		if (!isMicrosoftAccount.value || currentUserId.value !== profileId) return
 		const loadedEquippedSkin = loadedSkins.find((s) => s.is_equipped)
 		const locallyKnownEquippedSkin =
 			originalSelectedSkin.value &&
@@ -575,7 +586,7 @@ function setLocallyEquippedSkin(skinToApply: Skin) {
 	originalSelectedSkin.value =
 		skins.value.find((skin) => skinsMatch(skin, skinToApply)) ?? skinToApply
 	selectedSkin.value = originalSelectedSkin.value
-	void accountsCard.value?.setEquippedSkin(originalSelectedSkin.value)
+	void minecraftAccounts.value?.setEquippedSkin(originalSelectedSkin.value)
 }
 
 function insertLocalSkin(savedSkin: Skin) {
@@ -631,7 +642,7 @@ function updateLocalSkin(savedSkin: Skin, applied: boolean, previousSkin?: Skin)
 
 		originalSelectedSkin.value = locallyEquippedSkin
 		selectedSkin.value = locallyEquippedSkin
-		void accountsCard.value?.setEquippedSkin(locallyEquippedSkin)
+		void minecraftAccounts.value?.setEquippedSkin(locallyEquippedSkin)
 	} else {
 		const locallySavedSkin =
 			skins.value.find((skin) => skin.texture_key === savedSkin.texture_key) ?? savedSkin
@@ -722,7 +733,7 @@ async function preserveExternalSkins(skinsToPersist: Skin[]) {
 
 		if (skinsMatchIgnoringSource(originalSelectedSkin.value, skin)) {
 			originalSelectedSkin.value = preservedSkin
-			void accountsCard.value?.setEquippedSkin(preservedSkin)
+			void minecraftAccounts.value?.setEquippedSkin(preservedSkin)
 		}
 
 		preservedSkins.push(preservedSkin)
@@ -741,7 +752,7 @@ function schedulePendingSkinRefresh() {
 	pendingSkinRefreshTimeout = window.setTimeout(async () => {
 		pendingSkinRefreshTimeout = null
 
-		if (isUnmounted) {
+		if (isUnmounted || !isMicrosoftAccount.value || currentUserId.value !== pendingProfileId) {
 			return
 		}
 
@@ -757,8 +768,8 @@ function schedulePendingSkinRefresh() {
 			return
 		}
 
-		if (accountsCard.value) {
-			await accountsCard.value.refreshValues()
+		if (minecraftAccounts.value) {
+			await minecraftAccounts.value.refreshValues()
 		}
 
 		await loadCapes()
@@ -827,7 +838,9 @@ async function loadCurrentUser() {
 }
 
 function showAccountLoginModal() {
-	accountsCard.value?.showAccountLoginModal()
+	if (minecraftAccounts.value?.loginDisabled) return
+
+	minecraftAccounts.value?.showAccountLoginModal()
 }
 
 function openAddSkinFileBrowser() {
@@ -1051,7 +1064,11 @@ async function checkUserChanges() {
 	try {
 		const defaultId = await get_default_user()
 		if (defaultId !== currentUserId.value) {
-			await accountsCard.value?.refreshValues()
+			if (pendingSkinRefreshTimeout !== null) {
+				window.clearTimeout(pendingSkinRefreshTimeout)
+				pendingSkinRefreshTimeout = null
+			}
+			await minecraftAccounts.value?.refreshValues()
 			await loadCurrentUser()
 			if (isMicrosoftAccount.value) {
 				await loadCapes()
@@ -1292,7 +1309,13 @@ if (isMicrosoftAccount.value) {
 					</p>
 				</div>
 			</div>
-			<Button v-show="accountsCard" type="colored" color="brand" @click="showAccountLoginModal">
+			<Button
+				v-show="minecraftAccounts"
+				type="colored"
+				color="brand"
+				:disabled="minecraftAccounts?.loginDisabled"
+				@click="showAccountLoginModal"
+			>
 				{{ formatMessage(messages.signInMethodsButton) }}
 			</Button>
 		</div>

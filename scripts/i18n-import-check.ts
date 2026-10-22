@@ -316,11 +316,7 @@ function main() {
 
 	const rootDir = path.resolve(__dirname, '..')
 
-	const dirsToScan = [
-		path.join(rootDir, 'apps/frontend/src'),
-		path.join(rootDir, 'apps/app-frontend/src'),
-		path.join(rootDir, 'packages'),
-	]
+	const dirsToScan = [path.join(rootDir, 'apps/app-frontend/src'), path.join(rootDir, 'packages')]
 
 	console.log()
 	process.stdout.write(theme.muted('  Scanning for i18n import issues... '))

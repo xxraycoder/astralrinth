@@ -4,6 +4,7 @@ import { Avatar, ButtonLink, defineMessages, FormattedTag, useVIntl } from '@mod
 import { computed } from 'vue'
 
 import { getInstanceIconUrl } from '@/helpers/instance'
+import type { GameInstance } from '@/helpers/types'
 
 const { formatMessage } = useVIntl()
 const messages = defineMessages({
@@ -13,14 +14,7 @@ const messages = defineMessages({
 	},
 })
 
-type Instance = {
-	game_version: string
-	loader: string
-	path: string
-	install_stage: string
-	icon_path?: string
-	name: string
-}
+type Instance = Pick<GameInstance, 'id' | 'game_version' | 'loader' | 'icon_path' | 'name'>
 
 const props = withDefaults(
 	defineProps<{

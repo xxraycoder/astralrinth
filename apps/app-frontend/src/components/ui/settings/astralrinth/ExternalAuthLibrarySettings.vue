@@ -331,10 +331,10 @@ onUnmounted(() => {
 					<div class="flex min-w-0 flex-1 flex-col gap-2 text-sm font-semibold text-contrast">
 						<span>{{ formatMessage(messages.version) }}</span>
 						<DropdownSelect
-							v-model="library.selectedAssetName"
+							:model-value="library.selectedAssetName ?? undefined"
 							:name="`external-auth-library-${library.provider.id}`"
 							:options="library.assetNames"
-							:disabled="library.busy || refreshing"
+							:disabled="!!library.busy || refreshing"
 							@change="selectLibrary(library, $event.option)"
 						/>
 					</div>
@@ -343,7 +343,7 @@ onUnmounted(() => {
 						color="brand"
 						:disabled="
 							!library.remoteAssetNames.includes(library.selectedAssetName ?? '') ||
-							library.busy ||
+							!!library.busy ||
 							refreshing
 						"
 						@click="installLibrary(library)"

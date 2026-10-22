@@ -150,7 +150,7 @@
     "message": "Hide nametag"
   },
   "app.appearance-settings.minimize-launcher.description": {
-    "message": "Minimize Modrinth App when Minecraft starts."
+    "message": "Minimize AstralRinth when Minecraft starts."
   },
   "app.appearance-settings.minimize-launcher.title": {
     "message": "Minimize app"
@@ -185,6 +185,48 @@
   "app.auth-servers.unreachable.header": {
     "message": "Cannot reach authentication servers"
   },
+	"app.icon-editor.apply-icons-modal.apply-error": {
+		"message": "Failed to apply random icons to instances."
+	},
+	"app.icon-editor.apply-icons-modal.apply-success": {
+		"message": "Randomized icon for {num, plural, one {# instance} other {# instances}}."
+	},
+	"app.icon-editor.apply-icons-modal.badge": {
+		"message": "New this update"
+	},
+	"app.icon-editor.apply-icons-modal.close": {
+		"message": "Close"
+	},
+	"app.icon-editor.apply-icons-modal.description": {
+		"message": "Create custom icons for your instances right in AstralRinth. Mix and match backgrounds with symbols from Minecraft and popular mods!"
+	},
+	"app.icon-editor.apply-icons-modal.instances-without-icons": {
+		"message": "{count, plural, one {# instance doesn’t} other {# instances don’t}} have icons yet. Want us to give {count, plural, one {it} other {them}} random ones to get started?"
+	},
+	"app.icon-editor.apply-icons-modal.random-icons": {
+		"message": "Random icons"
+	},
+	"app.icon-editor.apply-icons-modal.skip": {
+		"message": "Skip"
+	},
+	"app.icon-editor.apply-icons-modal.title": {
+		"message": "Custom icon editor"
+	},
+	"app.icon-editor.notification.close": {
+		"message": "Close"
+	},
+	"app.icon-editor.notification.description": {
+		"message": "Personalize your instances!"
+	},
+	"app.icon-editor.notification.dismiss": {
+		"message": "Dismiss"
+	},
+	"app.icon-editor.notification.title": {
+		"message": "New icon editor"
+	},
+	"app.icon-editor.notification.view-update": {
+		"message": "View update"
+	},
   "astralrinth.app.launcher-update.available.action": {
     "message": "View update"
   },
@@ -522,7 +564,7 @@
     "message": "Home and content"
   },
   "app.behavior-settings.refocus-on-game-close.description": {
-    "message": "Bring Modrinth App to the foreground when Minecraft exits."
+    "message": "Bring AstralRinth to the foreground when Minecraft exits."
   },
   "app.behavior-settings.refocus-on-game-close.title": {
     "message": "Refocus app when Minecraft closes"
@@ -794,6 +836,15 @@
   "app.features-settings.sync-across-devices.title": {
     "message": "Sync features across devices"
   },
+  "app.file-download.canceling": {
+    "message": "Canceling download…"
+  },
+  "app.file-download.preparing": {
+    "message": "Preparing download…"
+  },
+  "app.file-download.waiting": {
+    "message": "Waiting for the server…"
+  },
   "app.home.jump-back-in.actions.label": {
     "message": "Instance actions"
   },
@@ -822,7 +873,7 @@
     "message": "View instance"
   },
   "app.hosting.update-required.description": {
-    "message": "You need to update to use Modrinth Hosting through the Modrinth App"
+    "message": "You need to update to use Modrinth Hosting through AstralRinth"
   },
   "app.hosting.update-required.download": {
     "message": "Download to update"
@@ -831,7 +882,7 @@
     "message": "Excited Modrinth Bot"
   },
   "app.hosting.update-required.title": {
-    "message": "Modrinth App update required"
+    "message": "AstralRinth update required"
   },
   "app.install.phase.downloading_content": {
     "message": "Downloading content"
@@ -1637,6 +1688,12 @@
   "app.modal.install-to-play.shared-instance-unknown-files-description": {
     "message": "This shared instance contains files that aren’t published on Modrinth. We strongly recommend only installing files from sources you trust."
   },
+  "app.modal.install-to-play.unavailable-description": {
+    "message": "The modpack version this server uses can't be downloaded right now. It may be unpublished or under review. Try again later, or contact the server owner."
+  },
+  "app.modal.install-to-play.unavailable-header": {
+    "message": "This server's modpack isn't available"
+  },
   "app.modal.install-to-play.unknown-files-description": {
     "message": "This server modpack contains files that aren’t published on Modrinth. We strongly recommend only installing files from sources you trust."
   },
@@ -1979,9 +2036,6 @@
   "app.settings.default-instance-options.height.title": {
     "message": "Height"
   },
-  "app.settings.default-instance-options.java-and-memory.title": {
-    "message": "Java and memory"
-  },
   "app.settings.default-instance-options.java-arguments.description": {
     "message": "Arguments passed to Java when launching an instance."
   },
@@ -1990,9 +2044,6 @@
   },
   "app.settings.default-instance-options.java-arguments.title": {
     "message": "Java arguments"
-  },
-  "app.settings.default-instance-options.launch-hooks.title": {
-    "message": "Launch hooks"
   },
   "app.settings.default-instance-options.memory-allocation.description": {
     "message": "Maximum memory available to each instance."
@@ -2026,9 +2077,6 @@
   },
   "app.settings.default-instance-options.width.title": {
     "message": "Width"
-  },
-  "app.settings.default-instance-options.window.title": {
-    "message": "Window"
   },
   "app.settings.default-instance-options.wrapper-hook.description": {
     "message": "Command used to wrap the Minecraft launch process."
@@ -3063,7 +3111,7 @@
     "message": "macOS"
   },
   "app.settings.privacy.discord-rich-presence.description": {
-    "message": "Show Modrinth App as your current activity on Discord. This does not affect Rich Presence added to instances by mods. Requires an app restart."
+    "message": "Show AstralRinth as your current activity on Discord. This does not affect Rich Presence added to instances by mods. Requires an app restart."
   },
   "app.settings.privacy.discord-rich-presence.title": {
     "message": "Discord Rich Presence"
@@ -3083,14 +3131,8 @@
   "app.settings.resource-management.app-cache.confirm.description": {
     "message": "The app may load more slowly until the cache is rebuilt."
   },
-  "app.settings.resource-management.app-cache.confirm.title": {
-    "message": "Purge the app cache?"
-  },
   "app.settings.resource-management.app-cache.description": {
     "message": "Clear cached data and download it again from Modrinth. The app may load more slowly until the cache is rebuilt."
-  },
-  "app.settings.resource-management.app-cache.purge": {
-    "message": "Purge cache"
   },
   "app.settings.resource-management.app-cache.title": {
     "message": "App cache"
@@ -3108,7 +3150,7 @@
     "message": "Browse for an app directory"
   },
   "app.settings.resource-management.app-directory.description": {
-    "message": "Where Modrinth App stores instances and other files. Changes take effect after restarting the app."
+    "message": "Where AstralRinth stores instances and other files. Changes take effect after restarting the app."
   },
   "app.settings.resource-management.app-directory.select": {
     "message": "Select a new app directory"
@@ -3117,7 +3159,7 @@
     "message": "App directory"
   },
   "app.settings.resource-management.debug-info.description": {
-    "message": "Export app logs and diagnostic data to a ZIP file to share with Modrinth support."
+    "message": "Export app logs and diagnostic data to a ZIP file to share with AstralRinth support."
   },
   "app.settings.resource-management.debug-info.export": {
     "message": "Export debug info"
@@ -3167,9 +3209,6 @@
   "app.settings.resource-management.store.description": {
     "message": "Save space by reusing game installs, mods and packs across your instances."
   },
-  "app.settings.resource-management.store.empty": {
-    "message": "Install mods or packs to see your storage usage here."
-  },
   "app.settings.resource-management.store.issues": {
     "message": "View {count, plural, one {# issue} other {# issues}}"
   },
@@ -3209,8 +3248,11 @@
   "app.settings.resource-management.store.verified": {
     "message": "Verification complete"
   },
-  "app.settings.sidebar.label.instances": {
-    "message": "Instances"
+  "app.settings.sidebar.label.instance-defaults": {
+    "message": "Instance defaults"
+  },
+  "app.settings.sidebar.label.system": {
+    "message": "System"
   },
   "app.settings.synced-options.choose-sync-source.command-history-description": {
     "message": "Choose which instance to copy your command history from. This history is only used for the initial sync, and you can edit it from any instance afterward."
@@ -3303,7 +3345,7 @@
     "message": "These settings changed elsewhere"
   },
   "app.settings.synced-options.game-settings.custom-empty": {
-    "message": "Settings added by mods will appear here after Modrinth finds them in one of your instances."
+    "message": "Settings added by mods will appear here after AstralRinth finds them in one of your instances."
   },
   "app.settings.synced-options.game-settings.description": {
     "message": "Use the same game options across your instances."
@@ -3443,20 +3485,47 @@
   "app.settings.tabs.features": {
     "message": "Features"
   },
+  "app.settings.tabs.java-and-memory": {
+    "message": "Java and memory"
+  },
   "app.settings.tabs.java-installations": {
     "message": "Java installations"
   },
   "app.settings.tabs.language": {
     "message": "Language"
   },
+  "app.settings.tabs.launch-hooks": {
+    "message": "Launch hooks"
+  },
   "app.settings.tabs.privacy": {
     "message": "Privacy"
   },
-  "app.settings.tabs.resource-management": {
-    "message": "Resource management"
+  "app.settings.tabs.resources": {
+    "message": "Resources"
   },
-  "app.settings.tabs.synced-options": {
-    "message": "Synced settings"
+  "app.settings.tabs.syncing": {
+    "message": "Syncing"
+  },
+  "app.settings.tabs.troubleshooting": {
+    "message": "Troubleshooting"
+  },
+  "app.settings.tabs.window": {
+    "message": "Window"
+  },
+  "app.settings.troubleshooting.clear-cache": {
+    "message": "Clear cache"
+  },
+  "app.settings.troubleshooting.clear-cache.confirm.title": {
+    "message": "Clear the app cache?"
+  },
+  "app.shared-instance-publish.preparing": {
+    "message": "Preparing update…"
+  },
+  "app.shared-instance-publish.pushed": {
+    "message": "Update pushed"
+  },
+  "app.shared-instance-publish.uploading": {
+    "message": "Pushing update…"
   },
   "app.sidebar.playing-as": {
     "message": "Playing as"
@@ -3633,7 +3702,7 @@
     "message": "Toggle on"
   },
   "app.survey.body": {
-    "message": "Would you mind answering a few questions about your experience with Modrinth App?"
+    "message": "Would you mind answering a few questions about your experience with AstralRinth?"
   },
   "app.survey.footer": {
     "message": "This feedback will go directly to the Modrinth team and help guide future updates!"
@@ -3777,13 +3846,13 @@
     "message": "Synced resource packs"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} has finished downloading. Reload to update now, or automatically when you close Modrinth App."
+    "message": "AstralRinth v{version} has finished downloading. Reload to update now, or automatically when you close AstralRinth."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} is available. Use your package manager to update for the latest features and fixes!"
+    "message": "AstralRinth v{version} is available. Use your package manager to update for the latest features and fixes!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} is available now! Since you're on a metered network, we didn't automatically download it."
+    "message": "AstralRinth v{version} is available now! Since you're on a metered network, we didn't automatically download it."
   },
   "app.update-popup.changelog": {
     "message": "Changelog"
@@ -3981,7 +4050,7 @@
     "message": "Unlink shared instance"
   },
   "installation-settings.unpublish-shared-instance.modal.admonition-body": {
-    "message": "This deletes the shared instance from Modrinth's servers. People using it in the Modrinth App will stop receiving updates, but your local instance and its content will stay on this device."
+    "message": "This deletes the shared instance from Modrinth's servers. People using it in AstralRinth will stop receiving updates, but your local instance and its content will stay on this device."
   },
   "installation-settings.unpublish-shared-instance.modal.admonition-header": {
     "message": "Unpublishing shared instance"
@@ -4298,6 +4367,9 @@
   "instance.server-modal.resource-pack": {
     "message": "Resource pack"
   },
+  "instance.settings.defaults.open-app-settings": {
+    "message": "Manage default settings"
+  },
   "instance.settings.sharing.active-invites.actions": {
     "message": "Actions"
   },
@@ -4336,6 +4408,12 @@
   },
   "instance.settings.sharing.revoke-invite.header": {
     "message": "Revoke invite"
+  },
+  "instance.settings.sidebar.label.game": {
+    "message": "Game"
+  },
+  "instance.settings.sidebar.label.instance": {
+    "message": "Instance"
   },
   "instance.settings.synced-options.data-override": {
     "message": "Turn off this override to edit synced data."
@@ -4454,8 +4532,11 @@
   "instance.settings.tabs.general.update-channel.select": {
     "message": "Select update channel"
   },
-  "instance.settings.tabs.hooks.description": {
-    "message": "Run instance-specific system commands before and after launching the game."
+  "instance.settings.tabs.hooks.default-settings-description": {
+    "message": "Your instance uses the default launch hooks unless you override them here."
+  },
+  "instance.settings.tabs.hooks.label": {
+    "message": "Launch hooks"
   },
   "instance.settings.tabs.hooks.post-exit": {
     "message": "Post-exit"
@@ -4517,17 +4598,8 @@
   "instance.settings.tabs.installation.locked": {
     "message": "Installation settings are unavailable while this instance is locked."
   },
-  "instance.settings.tabs.java.custom-environment-variables": {
-    "message": "Set environment variables separately for this instance."
-  },
-  "instance.settings.tabs.java.custom-java-arguments": {
-    "message": "Set Java arguments separately for this instance."
-  },
-  "instance.settings.tabs.java.custom-java-installation": {
-    "message": "Choose a different Java installation for this instance."
-  },
-  "instance.settings.tabs.java.custom-memory-allocation": {
-    "message": "Set the memory allocation separately for this instance."
+  "instance.settings.tabs.java.default-settings-description": {
+    "message": "Your instance uses the default Java and memory settings unless you override them here."
   },
   "instance.settings.tabs.java.enter-environment-variables": {
     "message": "Enter environmental variables..."
@@ -4553,8 +4625,8 @@
   "instance.settings.tabs.java.java-path-placeholder": {
     "message": "/path/to/java"
   },
-  "instance.settings.tabs.settings-overrides": {
-    "message": "Sync overrides"
+  "instance.settings.tabs.java.label": {
+    "message": "Java and memory"
   },
   "instance.settings.tabs.sharing": {
     "message": "Sharing"
@@ -4616,11 +4688,14 @@
   "instance.settings.tabs.synced-options.shared-settings.description": {
     "message": "Enable an override to keep a synced setting separate for this instance."
   },
+  "instance.settings.tabs.syncing": {
+    "message": "Syncing"
+  },
   "instance.settings.tabs.window": {
     "message": "Custom window settings"
   },
-  "instance.settings.tabs.window.custom-window-settings": {
-    "message": "Configure fullscreen and launch resolution separately for this instance."
+  "instance.settings.tabs.window.default-settings-description": {
+    "message": "Your instance uses the default window settings unless you override them here."
   },
   "instance.settings.tabs.window.fullscreen": {
     "message": "Fullscreen"
@@ -4637,6 +4712,9 @@
   "instance.settings.tabs.window.height.enter": {
     "message": "Enter height..."
   },
+  "instance.settings.tabs.window.label": {
+    "message": "Window"
+  },
   "instance.settings.tabs.window.width": {
     "message": "Width"
   },
@@ -4648,6 +4726,9 @@
   },
   "instance.shared-instance.error.title": {
     "message": "Something has gone wrong"
+  },
+  "instance.shared-instance.file-not-allowed.title": {
+    "message": "File type not allowed"
   },
   "instance.shared-instance.network-error.text": {
     "message": "Unable to connect to shared instances API"
@@ -4661,23 +4742,38 @@
   "instance.shared-instance.publish-review.added-label": {
     "message": "Added"
   },
-  "instance.shared-instance.publish-review.admonition-header": {
-    "message": "Push update to players"
+  "instance.shared-instance.publish-review.changes-description": {
+    "message": "Review the changes we've detected since your last update. These will automatically be included when you push."
   },
-  "instance.shared-instance.publish-review.config-title-v2": {
-    "message": "Select config files"
+  "instance.shared-instance.publish-review.changes-tab": {
+    "message": "Changes"
   },
-  "instance.shared-instance.publish-review.description": {
-    "message": "Review the content changes and choose any config files to include in this update."
+  "instance.shared-instance.publish-review.file-type-not-allowed": {
+    "message": "You're not allowed to push this file type."
+  },
+  "instance.shared-instance.publish-review.files-description": {
+    "message": "You can also include individual files alongside the detected changes. Select any additional files you'd like to publish."
+  },
+  "instance.shared-instance.publish-review.files-tab": {
+    "message": "Files"
   },
   "instance.shared-instance.publish-review.header": {
-    "message": "Review changes"
+    "message": "Push update"
   },
   "instance.shared-instance.publish-review.publish-button": {
     "message": "Push update"
   },
   "instance.shared-instance.publish-review.removed-label": {
     "message": "Removed"
+  },
+  "instance.shared-instance.publish-review.storage-over-limit": {
+    "message": "{size} over the limit. Deselect some files to push this update."
+  },
+  "instance.shared-instance.publish-review.storage-title": {
+    "message": "Storage allowance"
+  },
+  "instance.shared-instance.publish-review.storage-usage": {
+    "message": "{used} of {limit}"
   },
   "instance.shared-instance.tooltip": {
     "message": "This instance's content is being managed by someone else."

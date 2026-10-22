@@ -21,7 +21,11 @@
 
 		<div class="flex flex-col gap-6 px-6 pb-6">
 			<div class="flex justify-end gap-2">
-				<ButtonLink class="min-w-0 flex-1" href="https://support.modrinth.com" @click="modal?.hide()">
+				<ButtonLink
+					class="min-w-0 flex-1"
+					href="https://support.modrinth.com"
+					@click="modal?.hide()"
+				>
 					<MessagesSquareIcon />
 					{{ formatMessage(messages.getSupport) }}
 				</ButtonLink>
@@ -29,7 +33,7 @@
 					type="colored"
 					color="brand"
 					class="min-w-0 flex-1"
-					:disabled="loadingSignIn"
+					:disabled="!minecraftAccounts || minecraftAccounts.loginDisabled"
 					@click="showAccountLoginModal"
 				>
 					<LogInIcon />
@@ -52,16 +56,13 @@
 <script setup lang="ts">
 import { LogInIcon, MessagesSquareIcon } from '@modrinth/assets'
 import { Button, ButtonLink, defineMessages, NewModal, useVIntl } from '@modrinth/ui'
-import { inject, type Ref, ref } from 'vue'
+import { ref } from 'vue'
 
 import steveImage from '@/assets/steve-look-up-left.webp'
-import type AccountsCard from '@/components/ui/AccountsCard.vue'
-import { handleSevereError } from '@/composables/use-error.js'
-import { trackEvent } from '@/helpers/analytics'
-import { login as loginFlow, set_default_user } from '@/helpers/auth.js'
+import { injectMinecraftAccounts } from '@/features/minecraft-accounts/context'
 
 const { formatMessage } = useVIntl()
-const accountsCard = inject('accountsCard') as Ref<InstanceType<typeof AccountsCard> | null>
+const minecraftAccounts = injectMinecraftAccounts()
 
 const messages = defineMessages({
 	header: {
@@ -96,14 +97,15 @@ const messages = defineMessages({
 })
 
 const modal = ref<InstanceType<typeof NewModal>>()
-const loadingSignIn = ref(false)
 
 function show() {
 	modal.value?.show()
 }
 
 function showAccountLoginModal() {
-	accountsCard.value?.showAccountLoginModal()
+	if (!minecraftAccounts.value || minecraftAccounts.value.loginDisabled) return
+
+	minecraftAccounts.value.showAccountLoginModal()
 	modal.value?.hide()
 }
 

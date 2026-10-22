@@ -546,8 +546,8 @@ async fn configure_external_launch(
         Ok(path) => path,
         Err(error) => {
             if !matches!(
-                error.raw.as_ref(),
-                crate::ErrorKind::ExternalAuthLibraryNotInstalled { .. }
+				error.downcast_ref::<crate::ErrorKind>(),
+				Some(crate::ErrorKind::ExternalAuthLibraryNotInstalled { .. })
             ) {
                 return Err(error);
             }
@@ -646,7 +646,7 @@ fn oauth_response_error(
 
 /// Creates a domain error for an external-authentication failure.
 fn other_error(message: impl Into<String>) -> crate::Error {
-    crate::ErrorKind::OtherError(message.into()).as_error()
+	anyhow::Error::msg(message.into())
 }
 
 #[derive(Deserialize)]

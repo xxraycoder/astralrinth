@@ -1238,6 +1238,9 @@
   "external-files.permissions-card.editor.save": {
     "defaultMessage": "Sauvegarder"
   },
+  "external-files.permissions-card.editor.select-license-label": {
+    "defaultMessage": "Rechercher des licences…"
+  },
   "external-files.permissions-card.editor.type-label": {
     "defaultMessage": "Motif de l'autorisation"
   },
@@ -1279,6 +1282,9 @@
   },
   "external-files.permissions-card.last-updated": {
     "defaultMessage": "Dernière modification le {date} par {user}"
+  },
+  "external-files.permissions-card.license.all-rights": {
+    "defaultMessage": "Tous droits réservés/Aucune licence"
   },
   "external-files.permissions-card.license.unknown": {
     "defaultMessage": "Inconnu"
@@ -3335,6 +3341,9 @@
   "profile.error.not-found": {
     "defaultMessage": "Utilisateur introuvable"
   },
+  "profile.force-password-reset.admonition-body": {
+    "defaultMessage": "Le mot de passe de {username} sera immédiatement supprimé, et la session sera fermée sur tous les appareils. Un lien permettant de définir un nouveau mot de passe sera envoyé à l’adresse e-mail ci-dessous. Si vous modifiez l’adresse e-mail, elle remplacera celle associée au compte. Le lien expirera au bout de 24 heures et pourra être utilisé même si le compte est verrouillé."
+  },
   "profile.force-password-reset.button": {
     "defaultMessage": "Réinitialiser le mot de passe"
   },
@@ -3379,6 +3388,18 @@
   },
   "profile.official-account.bio": {
     "defaultMessage": "Le compte utilisateur officiel de Modrinth. Obtenez de l’aide via <support-link></support-link> ou par e-mail à <email></email>"
+  },
+  "profile.reset-2fa.admonition-title": {
+    "defaultMessage": "Voulez-vous vraiment réinitialiser l’authentification à deux facteurs ?"
+  },
+  "profile.reset-2fa.button": {
+    "defaultMessage": "Réinitialiser l'A2F"
+  },
+  "profile.reset-2fa.error-title": {
+    "defaultMessage": "Échec de la réinitialisation de l’authentification à deux facteurs"
+  },
+  "profile.reset-2fa.success-title": {
+    "defaultMessage": "Authentification à deux facteurs réinitialisée"
   },
   "profile.unblock-user.error-description": {
     "defaultMessage": "Une erreur s'est produite pendant le déblocage de cet utilisateur. Veuillez réessayer."
@@ -5105,12 +5126,6 @@
   "servers.backups.admonition.restoring-backup.title": {
     "defaultMessage": "Restauration de la sauvegarde"
   },
-  "servers.backups.bulk-bar.aria-label": {
-    "defaultMessage": "Actions groupées pour {count, plural, one {une sauvegarde sélectionnée} other {# sauvegardes sélectionnées}}"
-  },
-  "servers.backups.bulk-bar.deleting": {
-    "defaultMessage": "Suppression de {total, plural, one {# sauvegarde} other {# sauvegardes}}..."
-  },
   "servers.backups.bulk-bar.selected-count": {
     "defaultMessage": "{count, plural, one {# sauvegarde sélectionnée} other {# sauvegardes sélectionnées}}"
   },
@@ -5135,50 +5150,11 @@
   "servers.backups.empty.heading": {
     "defaultMessage": "Aucune sauvegarde"
   },
-  "servers.backups.filtered-empty.clear-filters": {
-    "defaultMessage": "Effacer les filtres"
-  },
-  "servers.backups.filtered-empty.description": {
-    "defaultMessage": "Essayez un filtre différent ou effacez les filtres pour voir toutes les sauvegardes."
-  },
-  "servers.backups.filtered-empty.heading": {
-    "defaultMessage": "Aucune sauvegarde ne correspond aux filtres sélectionnés"
-  },
   "servers.backups.item.auto": {
     "defaultMessage": "Auto"
   },
-  "servers.backups.item.backup-schedule": {
-    "defaultMessage": "Planification de sauvegarde"
-  },
-  "servers.backups.item.creator-avatar-alt": {
-    "defaultMessage": "Avatar de {username}"
-  },
-  "servers.backups.item.creator.support": {
-    "defaultMessage": "Support"
-  },
-  "servers.backups.item.manual-backup": {
-    "defaultMessage": "Sauvegarde manuelle"
-  },
-  "servers.backups.item.rename": {
-    "defaultMessage": "Renommer"
-  },
-  "servers.backups.item.restore": {
-    "defaultMessage": "Restaurer"
-  },
-  "servers.backups.select-backup-aria": {
-    "defaultMessage": "Sélectionner une sauvegarde {name}"
-  },
   "servers.backups.toolbar.create-backup": {
     "defaultMessage": "Sauvegarder"
-  },
-  "servers.backups.toolbar.filter-auto": {
-    "defaultMessage": "Auto"
-  },
-  "servers.backups.toolbar.filter-manual": {
-    "defaultMessage": "Manuelle"
-  },
-  "servers.backups.toolbar.select-all": {
-    "defaultMessage": "Tout sélectionner"
   },
   "servers.busy.backup-creating": {
     "defaultMessage": "Création d'une sauvegarde en cours"

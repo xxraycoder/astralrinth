@@ -12,11 +12,11 @@ import AttributionGroupFilePicker from './AttributionGroupFilePicker.vue'
 import {
 	attributionKindToDefaultExternalStatus,
 	buildExternalLicenseProofFromAttribution,
+	type ExternalLicenseStatus,
 	groupLinkForExternalLicense,
 	moderatorAttributionGroupTitle,
 	parseInitialAttribution,
 } from './external-project-utils'
-import type { ExternalLicenseStatus } from './types.ts'
 
 const props = defineProps<{
 	group: Labrinth.Attribution.Internal.AttributionGroup

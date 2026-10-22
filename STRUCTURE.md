@@ -59,10 +59,11 @@ Retained packages include backend-oriented libraries, not only desktop launcher 
 
 - The desktop development entry point is `pnpm app:dev --cache=local:r` from the repository root. `local:r` uses the local Turborepo cache in read-only mode, but the `dev` task itself is uncached. Install the tools specified by `mise.toml` and make `mise` available: Tauri's frontend hooks invoke `mise exec`. The app library also invokes Gradle during compilation; the build workflow uses Java 21.
 - Before starting local app development, prepare `packages/app-lib/.env` from the appropriate checked-in environment variant (`.env.local` or `.env.prod`). Its `build.rs` reads the active `.env` through `dotenvy`; the development command does not create it automatically. The build workflow copies `.env.prod` to `.env`.
-- Frontend type checking without a build is `pnpm --filter @modrinth/app-frontend tsc:check` from the repository root, or `pnpm tsc:check` from `apps/app-frontend/`. The package script runs `vue-tsc --noEmit`.
+- Frontend type checking without a build is `pnpm --filter @modrinth/app-frontend tsc:check` from the repository root, or `pnpm tsc:check` from `apps/app-frontend/`. The package script runs `vue-tsc --noEmit -p tsconfig.app.json`; the root TypeScript config is a reference container, not an application source check.
+- Account chooser and skin account-switch regression coverage is `node --test tests/account-skin-contracts.test.mjs` from `apps/app-frontend/`; it exercises component functions without Tauri.
 - Focused offline-query scheduling coverage is `node --test tests/offline-local-queries.test.mjs` from `apps/app-frontend/`. It checks local query factories and native-only component query/mutation options against the installed TanStack version without starting Tauri.
 - Frontend ESLint and Prettier are available through the app frontend's package tooling. Its `lint` script checks the whole frontend; `pnpm exec eslint <file...>` and `pnpm exec prettier --check <file...>` from `apps/app-frontend/` support file-scoped checks.
-- Rust crate membership and features are defined in the root and package `Cargo.toml` files. Frontend tool versions and workspace dependencies are defined in `package.json`, `pnpm-workspace.yaml`, and `mise.toml`. Root tooling and mise specify pnpm 12.8.1, Turbo 2.11.5, and Node 24.15.0 (the root engine permits newer Node versions). The frontend inherits the root package-manager version. Rust is pinned to 1.95.0 in both mise and `rust-toolchain.toml`; CMake uses the latest mise release.
+- Rust crate membership and features are defined in the root and package `Cargo.toml` files. Frontend tool versions and workspace dependencies are defined in `package.json`, `pnpm-workspace.yaml`, and `mise.toml`. Root tooling and mise specify pnpm 12.11.2 and Node 24.15.0 (the root engine permits newer Node versions). Turbo is pinned to 2.11.6 in mise, matching the lockfile resolution within the root dependency range `^2.11.5`. The frontend inherits the root package-manager version. Rust is pinned to 1.95.0 in both mise and `rust-toolchain.toml`; CMake uses the latest mise release.
 
 ## AstralRinth changes over upstream Modrinth
 
@@ -95,7 +96,7 @@ AstralRinth expands the upstream Minecraft account model. This is separate from 
 The main contract crosses these layers:
 
 1. `apps/app-frontend/src/models/astralrinth/authentication.ts` defines provider metadata, frontend account types, provider loading, OAuth invocation, and library commands.
-2. `apps/app-frontend/src/components/ui/AccountsCard.vue` and `components/ui/astralrinth/accounts/` render account methods and errors.
+2. `apps/app-frontend/src/features/minecraft-accounts/accounts-card.vue` and `components/ui/astralrinth/accounts/` render account methods and errors.
 3. `apps/app/src/api/auth.rs` and `apps/app/src/api/astralrinth/mod.rs` expose Tauri commands and own the OAuth verification window.
 4. `packages/app-lib/src/models/astralrinth/authentication.rs` owns provider registration, OAuth, token validation, credential persistence, and launch configuration.
 5. `packages/app-lib/src/state/minecraft_auth.rs` stores `account_type`, refreshes credentials, and serializes the extended record.
@@ -143,7 +144,7 @@ The upstream Tauri updater is replaced for the fork's own launcher distribution:
 - Microsoft accounts retain in-app skin and cape loading, editing, applying, and deletion.
 - Offline and external accounts are treated as read-only for Mojang skin operations.
 - External providers can expose their own skin-management URL; `UnsupportedSkinAccount.vue` offers a provider-specific link instead of trying to call Mojang endpoints.
-- The edit modal, file input, delete confirmation, initial cape/skin loading, and account-change loading are gated to Microsoft accounts. This is not enforced on every callback path: a delayed refresh scheduled after applying a skin calls both loaders without rechecking the selected account type, and account switching does not cancel that timer. The frontend gates are not a general native account-type enforcement boundary.
+- The edit modal, file input, delete confirmation, initial cape/skin loading, and account-change loading are gated to Microsoft accounts. Loaders discard responses if the selected profile changes while awaiting them. Delayed refreshes recheck account capability/profile, and account switching cancels the timer. These frontend gates are not a general native account-type enforcement boundary.
 - Without a selected account, the skin page shows a sign-in prompt with the shared account-method chooser (Microsoft, offline, and external providers). There is no demo-editing mode or demo-account type; `EditSkinModal.vue` has no demo prop.
 - Ears and custom skin rendering remain part of the shared launcher behavior alongside these account checks.
 
@@ -221,7 +222,7 @@ SQL migrations classify existing account rows, but the legacy JSON importer requ
 ### Localization and user-facing text
 
 - New AstralRinth message namespaces cover external authentication, offline accounts, unsupported skins, library management, update dialogs, update diagnostics, and settings.
-- English and Russian contain the principal fork translations; the patch also updates or removes corresponding keys in the other generated locale files. Coverage is incomplete: all 14 new-icon-editor notification/modal message IDs are absent from both app locales and rely on default-message fallback; the modal description also retains “Modrinth App”.
+- English and Russian contain the principal fork translations; the v0.22.0 integration adds the 14 icon-editor notification/modal IDs and reorganized settings messages to both locales, updates fork branding, and preserves the intentional advertising/consent-key deletions. Changed ICU placeholders and rich-text tags are checked across the app catalogs.
 - Existing Modrinth App labels in settings, authentication errors, startup errors, and support text are replaced with AstralRinth wording where the desktop app is fork-owned.
 - Support and release links are redirected to Xorison/AstralRinth endpoints in the relevant fork UI, although some upstream support links remain for generic Minecraft or Modrinth functionality.
 
@@ -261,9 +262,9 @@ These features depend on matching commands, events, migrations, capabilities, an
 
 ### Assets and upstream automation
 
-- `.github/assets/` currently contains `api_cover.png`, `app_cover.png`, `monorepo_cover.png`, and `web_cover.png`. `apps/app/README.md` references `app_cover.png`. These assets retain Modrinth branding; `COPYING.md` contains the fork branding requirements.
+- Upstream cover/social-preview artwork under `.github/assets/` is removed rather than redistributed. Retained package/app README banners and `.idea/icon.svg` use the existing `packages/assets/icons/astralrinth/astralrinth-logo.svg`; `COPYING.md` contains the branding requirements.
 - Workflow dependencies include `uses:` references, helper actions, and repository settings; root automation under `scripts/` is separate from `.github/` and can also be invoked by package scripts, Cargo scripts, and documentation.
-- Some retained scripts are legacy/backend utilities, not ready-to-use desktop-development automation. `clone-labrinth-projects.mjs`, `seed-db.sh`, and `reset-db.sh` assume deleted Labrinth fixtures/environment files; `import-projects.py` assumes a running `labrinth-postgres` Podman container. Some website-specific tooling references remain despite project pruning.
+- The unreferenced `clone-labrinth-projects.mjs`, `seed-db.sh`, `reset-db.sh`, and `import-projects.py` backend utilities are removed with the omitted projects. Cargo and pnpm explicitly exclude the omitted app workspaces; i18n scanners target retained source trees.
 
 ## Application entry points
 
@@ -281,7 +282,7 @@ The fork-specific implementation is distributed across frontend, Tauri, and Rust
 ### External Minecraft authentication and provider libraries
 
 - Frontend provider model and command adapters: `apps/app-frontend/src/models/astralrinth/authentication.ts`.
-- Account flows and error/input dialogs: `apps/app-frontend/src/components/ui/astralrinth/accounts/`, called from `apps/app-frontend/src/components/ui/AccountsCard.vue`.
+- Account flows and error/input dialogs: `apps/app-frontend/src/components/ui/astralrinth/accounts/`, called from `apps/app-frontend/src/features/minecraft-accounts/accounts-card.vue`.
 - Provider/library settings UI: `apps/app-frontend/src/components/ui/settings/astralrinth/ExternalAuthLibrarySettings.vue` and the AstralRinth settings page.
 - Tauri commands and OAuth verification window: `apps/app/src/api/astralrinth/mod.rs`.
 - Provider metadata, OAuth/device flows, and provider library lifecycle: `packages/app-lib/src/models/astralrinth/` and corresponding state/API modules.
@@ -317,19 +318,19 @@ The fork's launcher update is separate from upstream Modrinth app updates:
 
 - Skin page and fork account UI: `apps/app-frontend/src/pages/Skins.vue` and `apps/app-frontend/src/components/ui/astralrinth/skin/UnsupportedSkinAccount.vue`.
 - Ears controls and skin rendering: `apps/app-frontend/src/helpers/rendering/`, `apps/app-frontend/src/components/ui/skin/`, and the skin page.
-- Account card/avatar rendering: `apps/app-frontend/src/components/ui/AccountsCard.vue` and `helpers/rendering/player-head.ts`.
+- Account card/avatar rendering: `apps/app-frontend/src/features/minecraft-accounts/accounts-card.vue` and `helpers/rendering/player-head.ts`.
 - Backend authentication, provider metadata, and launcher integration: `packages/app-lib/src/models/astralrinth/` plus `packages/app-lib/src/launcher/`.
 
 The current UI lazily acquires/releases baked previews through `BakedSkinButton` and `skin-previews.ts`. Rendering helpers have been reorganized over time; older imports from `batch-skin-renderer.ts` may no longer match current exports. Account-type checks, custom skin capabilities, Ears behavior, and URL/resource cleanup are coupled to this rendering lifecycle.
 
 ### Liquid Glass and visual settings
 
-- Settings registration: `apps/app-frontend/src/components/ui/modal/AppSettingsModal.vue`; the AstralRinth Visual tab is marked as beta.
+- Settings registration: `apps/app-frontend/src/features/settings/app-settings-modal/index.vue`; the AstralRinth Visual tab is marked as beta.
 - Controls and save/reset: `apps/app-frontend/src/components/ui/settings/astralrinth/VisualSettings.vue` edits `useTheme().advancedRendering` and `glassLevel` through the modal's unsaved-changes/save/reset flow. The three-position slider is disabled while Liquid Glass is off or a save is in progress; edits apply after saving, not as a live preview.
 - Persistence: the toggle saves the existing SQLite `advanced_rendering` setting. `apps/app-frontend/src/composables/use-theme.ts` loads/saves the level separately in WebView local storage under `astralrinth-glass-level`. Missing, invalid, or unreadable stored values fall back to `standard`; storage-write failures are ignored, so the level may not survive a restart if storage is unavailable. The level is not synced with account appearance, and neither control adds a database setting or migration.
 - Levels: `matte` uses near-opaque surfaces and 32px blur without glass-surface gradients; `standard` is the default translucent/blurred style with gradients and theme-specific blur; `transparent` lowers background opacity and removes glass backdrop filtering and glass-surface gradients. These settings do not remove unrelated component gradients or decorative app-background accents. Accessibility/unsupported-backdrop-filter fallbacks can still make surfaces opaque.
 - Activation and styles: `apps/app-frontend/src/App.vue` watches `advancedRendering` and `glassLevel`, toggles `html.liquid-glass`, and sets `html[data-glass-level]`; `apps/app-frontend/src/assets/stylesheets/global.scss` imports `liquid-glass.scss`.
-- Appearance UI: `apps/app-frontend/src/components/ui/settings/display/AppearanceSettings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. The AstralRinth Visual tab is the app's control surface for this shared setting.
+- Appearance UI: `apps/app-frontend/src/features/settings/display/appearance-settings.vue` hides the upstream Advanced rendering control to avoid exposing the same setting twice. The AstralRinth Visual tab is the app's control surface for this shared setting.
 - Decoration: glass backgrounds and blur for panels, buttons, switches, and input wrappers use negative-z-index pseudo-elements with `pointer-events: none`; menus retain their own decorative `::before`. Native input backgrounds and slider decoration are handled directly where appropriate. Shadows stay on clipping panel hosts so `overflow-clip` does not cut off the outer glass shadow. The override includes opaque fallbacks, contrast/forced-color handling, and reduced-motion rules.
 - Color contract: glass decoration changes background alpha while foreground colors, font styles, and component interaction/disabled states remain owned by the theme and components. Background colors come from theme surface tokens or semantic component backgrounds and are mixed with `transparent`. Blur uses `backdrop-filter`, not whole-element `opacity`/`filter`.
 - Button states: quiet/outlined buttons retain their native backgrounds paired with their native hover/focus colors. Their glass overlay is transparent; outlined buttons additionally disable backdrop filtering on `::after` and use `contain: paint` to confine descendant decoration to the button's own rounded bounds during native hover, pressed, and disabled states. This containment separates button decoration from the surrounding panel without changing icon or text colors.
@@ -357,6 +358,19 @@ The frontend and Rust library mirror several contracts across these data paths:
 5. **Content and downloads:** frontend install/download manager → Tauri command/event contracts → app-lib job state, cancellation/pause, install, and recovery.
 
 Fresh-install defaults and upgrades from stable releases are distinct persistence paths. Settings migrations map existing state to new representations; affected preferences include window refocus-on-game-close, tab visibility (including legacy per-instance `visible_tabs`), telemetry, and account/skin-related settings. Compared with `AR-0.19.202`'s unconditional launcher refocus after game exit, current process handling requires `refocus_on_game_close`. Its migration preserves an explicit feature flag but defaults missing flags to `false`, so upgrades without that flag no longer automatically refocus the launcher.
+
+## v0.22.0 integration
+
+The in-progress integration targets upstream `v0.22.0` (`51e57afd9de95bd5df2f8a7119afc06f7c820491`). Its fork release comparison point is `AR-0.21.801` (`b34874f0fba223faf52098657dbb554ee01eb03b`), with pre-merge HEAD `2ec3523f41b89dc2304eae18ed573330f8783bc9`. This is separate from the older historical comparison below.
+
+- **Adapted:** `App.vue` composes the extracted `app/shell/sidebar/` and `app/shell/title-bar/`, with route-loading/scroll-restoration state in `app/runtime/`. Settings live under `features/settings/` and instance settings under `features/instances/settings-modal/`. The settings modal's typed context owns unsaved-change controllers; `settings-actions.ts` connects instance-default links to the relocated modal.
+- **Preserved:** `features/minecraft-accounts/context.ts` exposes `MinecraftAccountsActions`, including `showAccountLoginModal`. The sidebar adapts the account card's exposed actions, while required-account dialogs and the skin page open the shared Microsoft/offline/external chooser. The Modrinth feed/filter moved to `features/news/queries.ts`; the separate Xorison feed, launcher-update notifications, icon-editor notification, direct `info` event, telemetry override, Liquid Glass settings, and fork Discord presentation remain connected.
+- **Adapted:** library errors use `anyhow` with typed `ErrorKind` downcasts. Native `CommandError` serialization preserves `external_auth_library_not_installed` through added context; Microsoft authentication error UI now selects structured backend codes rather than parsing text. New external-save and shared-instance command registrations, build permissions, and event bindings must remain aligned. Rust service state now separates database/process/presence ownership.
+- **Preserved:** backup inspection failures abort before migrations; failed SQLite `VACUUM INTO` snapshots do not fall back to unchecked raw DB/WAL copies. The `astralrinth_backup_failure_prevents_migrations` library test covers the initialization boundary.
+- **Intentionally not adopted:** upstream startup deletion of old per-item API caches. Installed-content and linked-modpack views need stale metadata when disconnected. The cache-expiry index migration is retained, but no automatic expiry deletion runs. Explicit user cache clearing remains available.
+- **Intentionally removed:** reintroduced advertising/consent implementations, sidebar promotion, deleted campaign/onboarding UI, omitted app projects and their workspace/lockfile entries, obsolete backend utilities, and upstream cover artwork. The unused website-only `PageLoadingBar` and its reintroduced export remain absent. Onboarding state initialization and existing non-removed campaign functionality remain.
+
+Validation includes focused offline/account-skin regression tests, catalog/ICU checks, scoped formatting/linting, lockfile/metadata checks, Rust parsing, command/permission/event comparisons, and SQLite fixtures. Meaningful app-source TypeScript checking currently reports remaining frontend/shared-package diagnostics; it is not a passing build. Rust library/native tests stop in the Gradle build script because Java is unavailable. Live authentication/launch, offline startup/reconnection, platform handoffs, and glass interaction checks remain required. No merge completion is implied while Git's index retains unmerged entries.
 
 ## Baseline and limits
 

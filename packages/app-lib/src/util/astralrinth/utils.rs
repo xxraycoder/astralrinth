@@ -48,14 +48,14 @@ impl ExternalAuthLibraryAsset {
 		self.browser_download_url
 			.as_deref()
 			.filter(|url| !url.trim().is_empty())
-			.ok_or_else(|| {
+			.ok_or_else(|| -> crate::Error {
 				crate::ErrorKind::ParseError {
 					reason: format!(
 											"Library asset has no download URL: {}",
 											self.name,
 										),
 				}
-				.as_error()
+				.into()
 			})
 	}
 }
@@ -142,11 +142,11 @@ pub async fn install_authlib_injector_library(
 		.find(|asset| {
 			asset.name == asset_name && is_authlib_injector_asset_name(&asset.name)
 		})
-        .ok_or_else(|| {
+        .ok_or_else(|| -> crate::Error {
             crate::ErrorKind::ParseError {
                 reason: format!("Library asset not found: {asset_name}"),
             }
-            .as_error()
+            .into()
         })?;
     install_authlib_injector_asset(provider_id, library, asset).await?;
 
@@ -239,7 +239,7 @@ fn missing_external_auth_library(provider_name: &str) -> crate::Error {
     crate::ErrorKind::ExternalAuthLibraryNotInstalled {
         provider_name: provider_name.to_string(),
     }
-    .as_error()
+    .into()
 }
 
 fn validate_library_asset_name(asset_name: &str) -> Result<()> {
@@ -256,7 +256,7 @@ fn validate_library_asset_name(asset_name: &str) -> Result<()> {
         return Err(crate::ErrorKind::InputError(format!(
             "Invalid external authentication library asset: {asset_name}",
         ))
-        .as_error());
+        .into());
     }
 
     Ok(())
@@ -297,17 +297,17 @@ fn latest_authlib_injector_asset(
 	release: ExternalAuthLibraryRelease,
 ) -> Result<ExternalAuthLibraryAsset> {
 	let latest = release.latest_injector;
-	let name = latest.name.ok_or_else(|| {
+	let name = latest.name.ok_or_else(|| -> crate::Error {
 		crate::ErrorKind::ParseError {
 			reason: "No latest external authentication library was found".to_string(),
 		}
-		.as_error()
+		.into()
 	})?;
 	if !is_authlib_injector_asset_name(&name) {
 		return Err(crate::ErrorKind::InputError(format!(
 			"Invalid remote authentication library asset: {name}",
 		))
-		.as_error());
+		.into());
 	}
 	let asset = ExternalAuthLibraryAsset {
 		name,
@@ -356,12 +356,12 @@ async fn write_file_to_libraries(
     let state = State::get().await?;
     let output_path = state.directories.libraries_dir().join(relative_path);
 
-    fs::write(&output_path, bytes).await.map_err(|error| {
+    fs::write(&output_path, bytes).await.map_err(|error| -> crate::Error {
         tracing::error!(error = %error, "[AR] Library save failed");
         crate::ErrorKind::IOErrorOccurred {
             error: format!("Failed to save file: {error}"),
         }
-        .as_error()
+        .into()
     })
 }
 
@@ -376,7 +376,7 @@ async fn fetch_bytes_from_url(url: &str) -> Result<bytes::Bytes> {
         client.get(url).send(),
     )
     .await
-    .map_err(|_| {
+    .map_err(|_| -> crate::Error {
         tracing::error!(
             timeout_seconds = TIMEOUT_SECONDS,
             "[AR] Download timed out"
@@ -387,14 +387,14 @@ async fn fetch_bytes_from_url(url: &str) -> Result<bytes::Bytes> {
             )
             .to_string(),
         }
-        .as_error()
+        .into()
     })?
-    .map_err(|error| {
+    .map_err(|error| -> crate::Error {
         tracing::error!(error = %error, "[AR] Download request failed");
         crate::ErrorKind::NetworkErrorOccurred {
             error: format!("Request error: {error}"),
         }
-        .as_error()
+        .into()
     })?;
 
     if !response.status().is_success() {
@@ -403,15 +403,15 @@ async fn fetch_bytes_from_url(url: &str) -> Result<bytes::Bytes> {
         return Err(crate::ErrorKind::NetworkErrorOccurred {
             error: format!("Failed to download file: HTTP {status}"),
         }
-        .as_error());
+        .into());
     }
 
-    response.bytes().await.map_err(|error| {
+    response.bytes().await.map_err(|error| -> crate::Error {
         tracing::error!(error = %error, "[AR] Download read failed");
         crate::ErrorKind::NetworkErrorOccurred {
             error: format!("Failed to read response bytes: {error}"),
         }
-        .as_error()
+        .into()
     })
 }
 

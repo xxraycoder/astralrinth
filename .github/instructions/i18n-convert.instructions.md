@@ -78,9 +78,6 @@ Please follow these rules precisely:
 
 - Do not change logic, layout, reactivity, or bindings—only refactor strings into i18n.
 
-Use existing patterns from our codebase:
-
-- Variables/plurals: see `apps/frontend/src/pages/frog.vue`
-- Rich-text link tags: see `apps/frontend/src/error.vue`
+Use existing variable, plural, and rich-text patterns from the retained app and shared UI components in `apps/app-frontend/src/` and `packages/ui/src/`.
 
 When you finish, there should be no hard-coded English strings left in the template—everything comes from `formatMessage` or `<IntlFormatted>`.

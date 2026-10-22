@@ -8,11 +8,12 @@ use discord_rich_presence::{
     activity::{Activity, Assets, Button, Timestamps}, // This code is modified by AstralRinth
     DiscordIpc, DiscordIpcClient,
 };
-use rand::seq::SliceRandom; // This code is modified by AstralRinth
+use rand::seq::SliceRandom;
+use sqlx::SqlitePool;
 use tokio::sync::RwLock;
 
+use crate::state::ProcessManager;
 use crate::util::astralrinth::utils;
-use crate::State;
 
 pub struct DiscordGuard {
     client: Arc<RwLock<DiscordIpcClient>>,
@@ -82,10 +83,10 @@ impl DiscordGuard {
         &self,
         msg: &str,
         reconnect_if_fail: bool,
+        pool: &SqlitePool,
     ) -> crate::Result<()> {
         // Check if discord is disabled, and if so, clear the activity instead
-        let state = State::get().await?;
-        let settings = crate::state::Settings::get(&state.pool).await?;
+        let settings = crate::state::Settings::get(pool).await?;
         if !settings.discord_rpc {
             Ok(self.clear_activity(true).await?)
         } else {
@@ -180,23 +181,23 @@ impl DiscordGuard {
         Ok(())
     }
 
-    /// Clear the activity, but if there is a running profile, set the activity to that instead
+	/// Restores AstralRinth's inactive presence, even when another instance is running.
     pub async fn clear_to_default(
         &self,
         reconnect_if_fail: bool,
+        pool: &SqlitePool,
+		_process_manager: &ProcessManager,
     ) -> crate::Result<()> {
-        let state = State::get().await?;
-
-        let settings = crate::state::Settings::get(&state.pool).await?;
+        let settings = crate::state::Settings::get(pool).await?;
         if !settings.discord_rpc {
             println!("Discord is disabled, clearing activity");
             return self.clear_activity(true).await;
         }
 
-        let selected_phrase =
-            INACTIVE_STATE.choose(&mut rand::thread_rng()).unwrap();
-        self.set_activity(&format!("{}", selected_phrase), reconnect_if_fail)
-            .await?;
+		let selected_phrase =
+			INACTIVE_STATE.choose(&mut rand::thread_rng()).unwrap();
+		self.set_activity(selected_phrase, reconnect_if_fail, pool)
+			.await?;
         Ok(())
     }
 }

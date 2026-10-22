@@ -1,5 +1,6 @@
-use sqlx::ConnectOptions;
+use crate::ErrorKind;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
+use sqlx::ConnectOptions;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -99,10 +100,10 @@ pub(crate) async fn maybe_backup_existing_app_db(
 
     if let Err(err) = create_sqlite_snapshot(&mut conn, &backup_path).await {
         tracing::error!(
-            "Failed to create pre-migration app database backup at {}: {err}",
-            backup_path.display()
-        );
-        return Err(err);
+			"Failed to create pre-migration app database backup at {}: {err}",
+			backup_path.display()
+		);
+		return Err(err);
     }
 
     tracing::info!(
@@ -129,8 +130,8 @@ pub fn app_db_backup_dir() -> crate::Result<PathBuf> {
     }
 
     let base = dirs::data_local_dir().or_else(dirs::data_dir).ok_or(
-        crate::ErrorKind::FSError(
-            "Could not find valid data dir for app database backups"
+        ErrorKind::FSError(
+            "could not find valid data dir for app database backups"
                 .to_string(),
         ),
     )?;
@@ -247,7 +248,7 @@ async fn create_sqlite_snapshot(
 ) -> crate::Result<()> {
     let backup_path = backup_path
         .to_str()
-        .ok_or_else(|| crate::ErrorKind::UTFError(backup_path.to_path_buf()))?;
+        .ok_or(ErrorKind::UTFError(backup_path.to_path_buf()))?;
 
     sqlx::query!("VACUUM INTO ?", backup_path)
         .execute(&mut *conn)

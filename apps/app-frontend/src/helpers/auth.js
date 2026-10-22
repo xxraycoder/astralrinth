@@ -13,9 +13,13 @@ import { invoke } from '@tauri-apps/api/core'
 //   await authenticate_await_completion()
 // }
 
-// This code function is modified by AstralRinth
+/**
+ * Creates a local Minecraft account.
+ * @param {string} name
+ * @returns {Promise<import('@/models/astralrinth/authentication').MinecraftCredential>}
+ */
 export async function offline_login(name) {
-  return await invoke('plugin:auth|offline_login', { name: name })
+	return await invoke('plugin:auth|offline_login', { name })
 }
 
 /**
@@ -30,9 +34,7 @@ export async function check_reachable() {
  * Authenticate a user with Hydra - part 1.
  * This begins the authentication flow quasi-synchronously.
  *
- * @returns {Promise<DeviceLoginSuccess>} A DeviceLoginSuccess object with two relevant fields:
- * @property {string} verification_uri - The URL to go to complete the flow.
- * @property {string} user_code - The code to enter on the verification_uri page.
+ * @returns {Promise<import('@/models/astralrinth/authentication').MinecraftCredential | null>}
  */
 export async function login() {
 	return await invoke('plugin:auth|login')
@@ -64,7 +66,7 @@ export async function remove_user(user) {
 
 /**
  * Returns a list of users
- * @returns {Promise<Credential[]>}
+ * @returns {Promise<import('@/models/astralrinth/authentication').MinecraftCredential[]>}
  */
 export async function users() {
 	return await invoke('plugin:auth|get_users')

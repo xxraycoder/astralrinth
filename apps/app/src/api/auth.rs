@@ -4,6 +4,7 @@ use crate::api::astralrinth::{
     get_external_auth_providers, install_external_auth_library,
     select_external_auth_library,
 };
+use anyhow::Context;
 use chrono::{Duration, Utc};
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager, Runtime, UserAttentionType};
@@ -59,14 +60,11 @@ pub async fn login<R: Runtime>(
     let window = tauri::WebviewWindowBuilder::new(
         &app,
         "signin",
-        tauri::WebviewUrl::External(flow.auth_request_uri.parse().map_err(
-            |_| {
-                theseus::ErrorKind::OtherError(
-                    "Error parsing auth redirect URL".to_string(),
-                )
-                .as_error()
-            },
-        )?),
+        tauri::WebviewUrl::External(
+            flow.auth_request_uri
+                .parse()
+                .context("error parsing auth redirect URL")?,
+        ),
     )
     .title("Sign into AstralRinth")
     .always_on_top(true)

@@ -125,18 +125,6 @@
   "app.action-bar.view-logs": {
     "message": "Lihat catatan"
   },
-  "app.ads-consent.accept": {
-    "message": "Terima semua"
-  },
-  "app.ads-consent.manage": {
-    "message": "Kelola preferensi"
-  },
-  "app.ads-consent.reject": {
-    "message": "Tolak semua"
-  },
-  "app.ads-consent.title": {
-    "message": "Privasi anda dan bagaimana iklan mendukung Modrinth"
-  },
   "app.appearance-settings.compact-mode.title": {
     "message": "Mode ringkas"
   },
@@ -544,9 +532,6 @@
   },
   "app.settings.tabs.privacy": {
     "message": "Privasi"
-  },
-  "app.settings.tabs.resource-management": {
-    "message": "Manajemen sumber"
   },
   "app.skins.add-button": {
     "message": "Tambah rupa"

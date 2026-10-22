@@ -5225,12 +5225,6 @@
   "servers.backups.admonition.restoring-backup.title": {
     "defaultMessage": "Restaurando desde respaldo"
   },
-  "servers.backups.bulk-bar.aria-label": {
-    "defaultMessage": "{count, plural, one {Acciones masivas para un respaldo seleccionado} other {Acciones masivas para # respaldos seleccionados}}"
-  },
-  "servers.backups.bulk-bar.deleting": {
-    "defaultMessage": "Eliminando {total, plural, one {# respaldo} other {# respaldos}}..."
-  },
   "servers.backups.bulk-bar.selected-count": {
     "defaultMessage": "{count, plural, one {# respaldo seleccionado} other {# respaldos seleccionados}}"
   },
@@ -5255,50 +5249,11 @@
   "servers.backups.empty.heading": {
     "defaultMessage": "Aún no hay respaldos"
   },
-  "servers.backups.filtered-empty.clear-filters": {
-    "defaultMessage": "Limpiar filtros"
-  },
-  "servers.backups.filtered-empty.description": {
-    "defaultMessage": "Prueba con otro filtro o desactiva los filtros para ver todos los respaldos."
-  },
-  "servers.backups.filtered-empty.heading": {
-    "defaultMessage": "Ningún respaldo coincide"
-  },
   "servers.backups.item.auto": {
     "defaultMessage": "Auto"
   },
-  "servers.backups.item.backup-schedule": {
-    "defaultMessage": "Respaldo programado"
-  },
-  "servers.backups.item.creator-avatar-alt": {
-    "defaultMessage": "Avatar de {username}"
-  },
-  "servers.backups.item.creator.support": {
-    "defaultMessage": "Soporte"
-  },
-  "servers.backups.item.manual-backup": {
-    "defaultMessage": "Respaldo manual"
-  },
-  "servers.backups.item.rename": {
-    "defaultMessage": "Renombrar"
-  },
-  "servers.backups.item.restore": {
-    "defaultMessage": "Restaurar"
-  },
-  "servers.backups.select-backup-aria": {
-    "defaultMessage": "Selecciona el respaldo {name}"
-  },
   "servers.backups.toolbar.create-backup": {
     "defaultMessage": "Crear respaldo"
-  },
-  "servers.backups.toolbar.filter-auto": {
-    "defaultMessage": "Automático"
-  },
-  "servers.backups.toolbar.filter-manual": {
-    "defaultMessage": "Manual"
-  },
-  "servers.backups.toolbar.select-all": {
-    "defaultMessage": "Seleccionar todo"
   },
   "servers.busy.backup-creating": {
     "defaultMessage": "Creación de respaldo en curso"
@@ -5320,6 +5275,9 @@
   },
   "servers.download.unavailable.title": {
     "defaultMessage": "Descarga no disponible"
+  },
+  "servers.files.server-locked": {
+    "defaultMessage": "Este servidor está bloqueado y sus archivos son de solo lectura."
   },
   "servers.files.zip-created": {
     "defaultMessage": "ZIP creado"
@@ -5537,6 +5495,33 @@
   "servers.listing.using-project-label": {
     "defaultMessage": "Usando {projectTitle}"
   },
+  "servers.lock.modal.error-text": {
+    "defaultMessage": "Ha ocurrido un error bloqueando de este servidor. Por favor intente nuevamente."
+  },
+  "servers.lock.modal.error-title": {
+    "defaultMessage": "Error al bloquear servidor"
+  },
+  "servers.lock.modal.header": {
+    "defaultMessage": "Bloquear {name}"
+  },
+  "servers.lock.modal.lock-button": {
+    "defaultMessage": "Bloquear servidor"
+  },
+  "servers.lock.modal.reason-placeholder": {
+    "defaultMessage": "Visible para otros administradores"
+  },
+  "servers.lock.modal.success-text": {
+    "defaultMessage": "{name} ha sido bloqueado."
+  },
+  "servers.lock.modal.success-title": {
+    "defaultMessage": "Servidor bloqueado"
+  },
+  "servers.lock.modal.warning-body": {
+    "defaultMessage": "{name} será de solo lectura para su propietario y miembros hasta que sea desbloqueado por un administrador."
+  },
+  "servers.lock.modal.warning-header": {
+    "defaultMessage": "Este servidor será de solo lectura"
+  },
   "servers.manage.checking-for-new-servers": {
     "defaultMessage": "Buscando nuevos servidores..."
   },
@@ -5572,6 +5557,21 @@
   },
   "servers.manage.handle-error.title": {
     "defaultMessage": "Ha ocurrido un error"
+  },
+  "servers.manage.lock-server": {
+    "defaultMessage": "Bloquear servidor"
+  },
+  "servers.manage.locked.badge": {
+    "defaultMessage": "Bloqueado"
+  },
+  "servers.manage.locked.badge-tooltip": {
+    "defaultMessage": "Bloqueado desde {date}"
+  },
+  "servers.manage.locked.body": {
+    "defaultMessage": "El equipo de soporte ha bloqueado este servidor, no podrás realizar ningún cambio. <support-link>Contacta al equipo de soporte</support-link> si crees que es un error."
+  },
+  "servers.manage.locked.header": {
+    "defaultMessage": "Servidor bloqueado por el equipo de soporte"
   },
   "servers.manage.new-server-button": {
     "defaultMessage": "Nuevo servidor"
@@ -5629,6 +5629,21 @@
   },
   "servers.manage.shared-servers-title": {
     "defaultMessage": "Servidores compartidos"
+  },
+  "servers.manage.unlock-server": {
+    "defaultMessage": "Desbloquear servidor"
+  },
+  "servers.manage.unlock.error-text": {
+    "defaultMessage": "Ha ocurrido un error desbloqueando este servidor. Por favor intente nuevamente."
+  },
+  "servers.manage.unlock.error-title": {
+    "defaultMessage": "Error al desbloquear servidor"
+  },
+  "servers.manage.unlock.success-text": {
+    "defaultMessage": "{name} ha sido desbloqueado."
+  },
+  "servers.manage.unlock.success-title": {
+    "defaultMessage": "Servidor desbloqueado"
   },
   "servers.manage.your-servers-title": {
     "defaultMessage": "Tus servidores"

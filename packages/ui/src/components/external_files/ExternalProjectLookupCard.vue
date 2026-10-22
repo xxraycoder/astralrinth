@@ -13,7 +13,7 @@ import { IconButton } from '#ui/components/base/buttons'
 import CopyCode from '../base/CopyCode.vue'
 import FloatingMenu from '../floating/FloatingMenu.vue'
 import ExternalProjectLicenseStateTag from './ExternalProjectLicenseStateTag.vue'
-import type { ExternalLicenseStatus } from './types.ts'
+import type { ExternalLicenseStatus } from './external-project-utils'
 
 const props = defineProps<{
 	title: string | null

@@ -64,7 +64,7 @@ Support: [AstralRinth Telegram channel](https://xorison.dev/product/astralrinth/
 
 AstralRinth is an independent Modrinth-based project. Please comply with Minecraft's terms and the terms of any account or authentication service you use. We encourage players to own a legitimate Minecraft license.
 
-For technical documentation, see the [repository guide](STRUCTURE.md).
+For technical documentation, see the [repository guide](STRUCTURE.md). Package licenses and branding restrictions are documented in the [copying guidelines](COPYING.md).
 
 # Support Our Project (Crypto Wallets)
 

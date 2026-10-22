@@ -1,6 +1,11 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - '!apps/frontend'
+  - '!apps/labrinth'
+  - '!apps/docs'
+  - '!apps/daedalus_client'
+  - '!apps/app-playground'
 minimumReleaseAge: 10080 # 7 days
 strictPeerDependencies: false
 autoInstallPeers: true

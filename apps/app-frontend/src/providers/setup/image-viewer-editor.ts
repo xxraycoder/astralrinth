@@ -5,8 +5,6 @@ import {
 } from '@modrinth/ui'
 import { readFile } from '@tauri-apps/plugin-fs'
 
-// import { release_ads_window_hold, take_ads_window_hold } from '@/helpers/ads.js'
-
 export function setupImageViewerEditorProvider() {
 	provideImageViewerEditor({
 		async loadEditorData(source: ImageViewerEditorSource): Promise<ImageViewerEditorData> {

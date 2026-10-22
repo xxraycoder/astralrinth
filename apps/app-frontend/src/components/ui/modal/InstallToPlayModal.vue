@@ -138,6 +138,22 @@
 				</div>
 			</div>
 		</div>
+		<div v-else class="flex w-full flex-col gap-6">
+			<Admonition type="critical" :header="formatMessage(messages.unavailableHeader)">
+				{{ formatMessage(messages.unavailableDescription) }}
+			</Admonition>
+
+			<div class="flex w-full items-center justify-between gap-2">
+				<Button type="quiet" color="red" @click="handleReport">
+					<ReportIcon />
+					{{ formatMessage(commonMessages.reportButton) }}
+				</Button>
+				<Button @click="hide">
+					<XIcon />
+					{{ formatMessage(commonMessages.closeButton) }}
+				</Button>
+			</div>
+		</div>
 	</NewModal>
 
 	<ManagedContentModal
@@ -223,10 +239,15 @@ const externalFileRows = computed<ExternalFileRow[]>(() =>
 
 async function fetchData(versionId: string) {
 	// cache is making version null for some reason so bypassing for now
-	const version = await get_version(versionId, 'bypass')
+	const version: Labrinth.Versions.v2.Version | null = await get_version(versionId, 'bypass')
 	modpackVersion.value = version
 
-	if (version?.project_id) {
+	if (!version) {
+		console.warn(`InstallToPlayModal: modpack version ${versionId} is unavailable`)
+		return
+	}
+
+	if (version.project_id) {
 		requiredContentProject.value = await get_project(version.project_id, 'bypass')
 		externalFiles.value = [
 			...new Set(
@@ -235,7 +256,7 @@ async function fetchData(versionId: string) {
 						(dependency) =>
 							dependency.dependency_type === 'embedded' &&
 							!dependency.project_id &&
-							!dependency.version_id &&
+							(!('version_id' in dependency) || !dependency.version_id) &&
 							dependency.file_name,
 					)
 					.flatMap((dependency) => (dependency.file_name ? [dependency.file_name] : [])),
@@ -245,8 +266,9 @@ async function fetchData(versionId: string) {
 }
 
 async function handleAccept() {
-	hide()
 	const serverProjectId = project.value?.id
+	if (!serverProjectId) return
+	hide()
 	startInstallingServer(serverProjectId)
 	try {
 		await installServerProject(serverProjectId)
@@ -275,7 +297,7 @@ async function openViewContents() {
 	try {
 		// Ensure version data is available — the useQuery may not have resolved yet
 		const versionId = modpackVersionId.value
-		const version =
+		const version: Labrinth.Versions.v2.Version | null =
 			modpackVersion.value ?? (versionId ? await get_version(versionId, 'must_revalidate') : null)
 
 		const deps = version?.dependencies ?? []
@@ -285,7 +307,7 @@ async function openViewContents() {
 			.filter((id: string | undefined): id is string => !!id)
 
 		const versionIds = deps
-			.map((d: { version_id?: string }) => d.version_id)
+			.map((dependency) => ('version_id' in dependency ? dependency.version_id : undefined))
 			.filter((id: string | undefined): id is string => !!id)
 
 		const projects: Labrinth.Projects.v2.Project[] =
@@ -297,15 +319,15 @@ async function openViewContents() {
 		const projectMap = new Map(projects.map((p: Labrinth.Projects.v2.Project) => [p.id, p]))
 
 		const contentItems: ContentItem[] = deps.map(
-			(dep: Labrinth.Versions.v2.Dependency): ContentItem => {
+			(dep: Labrinth.Versions.v2.Dependency, index): ContentItem => {
 				const depProject = dep.project_id ? projectMap.get(dep.project_id) : null
-				// @ts-expect-error - version_id is missing from the type for some reason
-				const depVersion = dep.version_id
-					? // @ts-expect-error - version_id is missing from the type for some reason
-						versions.find((v: Labrinth.Versions.v2.Version) => v.id === dep.version_id)
+				const dependencyVersionId = 'version_id' in dep ? dep.version_id : undefined
+				const depVersion = dependencyVersionId
+					? versions.find((version) => version.id === dependencyVersionId)
 					: null
 
 				return {
+					id: `dependency-${index}`,
 					file_name: dep.file_name ?? depProject?.title ?? 'Unknown',
 					project_type: depProject?.project_type ?? 'mod',
 					has_update: false,
@@ -349,7 +371,18 @@ async function show(
 	externalFiles.value = []
 	onInstallComplete.value = callback
 
-	if (modpackVersionIdVal) await fetchData(modpackVersionIdVal)
+	if (modpackVersionIdVal) {
+		try {
+			await fetchData(modpackVersionIdVal)
+		} catch (error) {
+			console.error(
+				`InstallToPlayModal: failed to load modpack version ${modpackVersionIdVal}`,
+				error,
+			)
+		}
+	} else {
+		console.warn(`InstallToPlayModal: server project ${projectVal.id} has no modpack version`)
+	}
 
 	modal.value?.show(e)
 	await nextTick()
@@ -414,6 +447,15 @@ const messages = defineMessages({
 	dontInstall: {
 		id: 'app.modal.install-to-play.external-files-dont-install',
 		defaultMessage: "Don't install",
+	},
+	unavailableHeader: {
+		id: 'app.modal.install-to-play.unavailable-header',
+		defaultMessage: "This server's modpack isn't available",
+	},
+	unavailableDescription: {
+		id: 'app.modal.install-to-play.unavailable-description',
+		defaultMessage:
+			"The modpack version this server uses can't be downloaded right now. It may be unpublished or under review. Try again later, or contact the server owner.",
 	},
 })
 

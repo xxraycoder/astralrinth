@@ -7,4 +7,4 @@ export { default as AttributionModerationDbBadge } from './AttributionModeration
 export { default as AttributionStatusTag } from './AttributionStatusTag.vue'
 export { default as ExternalProjectLookupCard } from './ExternalProjectLookupCard.vue'
 export { default as ExternalProjectPermissionsCard } from './ExternalProjectPermissionsCard.vue'
-export type { ExternalLicenseStatus } from './types.ts'
+export type { ExternalLicenseStatus } from './external-project-utils'

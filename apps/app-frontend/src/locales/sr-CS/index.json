@@ -605,9 +605,6 @@
   "app.settings.tabs.privacy": {
     "message": "Privatnost"
   },
-  "app.settings.tabs.resource-management": {
-    "message": "Upravljanje resursima"
-  },
   "app.skins.add-button": {
     "message": "Dodaj skin"
   },
