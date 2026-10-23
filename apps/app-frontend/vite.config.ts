@@ -49,7 +49,7 @@ export default defineConfig({
 		],
 	},
 	define: {
-		__ASTRALRINTH_APP_BUILD__: JSON.stringify(process.env.ASTRALRINTH_APP_BUILD ?? 'unknown'),
+		__ASTRALRINTH_APP_SHORT_COMMIT__: JSON.stringify(process.env.ASTRALRINTH_APP_SHORT_COMMIT ?? 'unknown'),
 		__ASTRALRINTH_APP_COMMIT__: JSON.stringify(process.env.ASTRALRINTH_APP_COMMIT ?? 'unknown'),
 	},
 	plugins: [

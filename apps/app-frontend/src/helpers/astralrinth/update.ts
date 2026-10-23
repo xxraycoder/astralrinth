@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 import { getOS, initUpdateLauncher } from '@/helpers/utils.js'
 
-declare const __ASTRALRINTH_APP_BUILD__: string
+declare const __ASTRALRINTH_APP_SHORT_COMMIT__: string
 declare const __ASTRALRINTH_APP_COMMIT__: string
 
 const systems = ['macos', 'windows', 'linux'] as const
@@ -57,7 +57,7 @@ export const latestLauncherRelease = ref<{
 	data: null,
 	httpStatus: null,
 })
-export const APP_BUILD = __ASTRALRINTH_APP_BUILD__
+export const APP_SHORT_COMMIT = __ASTRALRINTH_APP_SHORT_COMMIT__
 export const APP_COMMIT = __ASTRALRINTH_APP_COMMIT__
 
 const currentOS = ref('')

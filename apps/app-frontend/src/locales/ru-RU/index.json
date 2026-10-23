@@ -407,9 +407,6 @@
 	"astralrinth.app.settings.updates.arch": {
 		"message": "Архитектура"
 	},
-	"astralrinth.app.settings.updates.app-build": {
-		"message": "Сборка"
-	},
 	"astralrinth.app.settings.updates.app-commit": {
 		"message": "Коммит"
 	},

@@ -6,5 +6,5 @@ rust = "1.95.0"
 turbo = "2.11.6"
 
 [env]
-ASTRALRINTH_APP_BUILD = "{{ exec(command='git rev-list --count HEAD') }}"
+ASTRALRINTH_APP_SHORT_COMMIT = "{{ exec(command='git rev-parse --short HEAD') }}"
 ASTRALRINTH_APP_COMMIT = "{{ exec(command='git rev-parse HEAD') }}"

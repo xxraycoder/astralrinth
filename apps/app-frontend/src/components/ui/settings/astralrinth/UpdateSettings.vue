@@ -7,7 +7,6 @@ import { computed, onMounted } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
 import {
-	APP_BUILD,
 	APP_COMMIT,
 	latestLauncherRelease,
 	LAUNCHER_RELEASE_API,
@@ -83,10 +82,6 @@ const messages = defineMessages({
 	librariesApiUrl: {
 		id: 'astralrinth.app.settings.updates.libraries-api-url',
 		defaultMessage: 'Libraries provider API URL',
-	},
-	appBuild: {
-		id: 'astralrinth.app.settings.updates.app-build',
-		defaultMessage: 'Build',
 	},
 	appCommit: {
 		id: 'astralrinth.app.settings.updates.app-commit',
@@ -224,15 +219,7 @@ const httpStatus = computed(() => {
 					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ httpStatus }}</dd>
 				</div>
 				<div
-					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
-				>
-					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
-						{{ formatMessage(messages.appBuild) }}
-					</dt>
-					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ APP_BUILD }}</dd>
-				</div>
-				<div
-					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+					class="glass-surface glass-surface--subtle col-span-2 rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
 				>
 					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
 						{{ formatMessage(messages.appCommit) }}

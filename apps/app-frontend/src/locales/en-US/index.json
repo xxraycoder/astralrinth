@@ -347,9 +347,6 @@
 	"astralrinth.app.settings.updates.arch": {
 		"message": "Architecture"
 	},
-	"astralrinth.app.settings.updates.app-build": {
-		"message": "Build"
-	},
 	"astralrinth.app.settings.updates.app-commit": {
 		"message": "Commit"
 	},

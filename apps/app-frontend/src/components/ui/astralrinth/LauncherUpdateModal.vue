@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
 import {
-	APP_BUILD,
+	APP_SHORT_COMMIT,
 	APP_COMMIT,
 	downloadLatestRelease,
 	getAvailableInstallers,
@@ -230,7 +230,7 @@ defineExpose({
 					<span class="ms-1 break-words text-contrast">{{ releaseTitle }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.installedVersion) }}</strong>
-					<span class="ms-1 break-words text-contrast">v{{ props.version }}+{{ APP_BUILD }}</span>
+					<span class="ms-1 break-words text-contrast">v{{ props.version }}+{{ APP_SHORT_COMMIT }}</span>
 					<span class="text-secondary"> ({{ APP_COMMIT }})</span>
 				</p>
 				<a
@@ -314,7 +314,7 @@ defineExpose({
 			>
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.localVersion) }}</strong>
-					<span class="break-words text-contrast">v{{ props.version }}+{{ APP_BUILD }}</span>
+					<span class="break-words text-contrast">v{{ props.version }}+{{ APP_SHORT_COMMIT }}</span>
 				</p>
 			</div>
 
