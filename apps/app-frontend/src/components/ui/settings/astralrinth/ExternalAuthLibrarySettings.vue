@@ -204,7 +204,12 @@ async function refreshLibraries(): Promise<void> {
 }
 
 async function selectLibrary(library: Library, assetName: string): Promise<void> {
-	if (library.busy || assetName === library.savedAssetName) {
+	if (library.busy) {
+		return
+	}
+
+	library.selectedAssetName = assetName
+	if (assetName === library.savedAssetName || !library.localAssetNames.includes(assetName)) {
 		return
 	}
 
