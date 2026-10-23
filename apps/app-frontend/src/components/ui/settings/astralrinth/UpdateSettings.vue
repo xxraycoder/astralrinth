@@ -6,8 +6,12 @@ import { arch, platform } from '@tauri-apps/plugin-os'
 import { computed, onMounted } from 'vue'
 
 import AstralRinthSettingsPage from '@/components/ui/settings/astralrinth/AstralRinthSettingsPage.vue'
-import { latestLauncherRelease, LAUNCHER_RELEASE_API } from '@/helpers/astralrinth/update'
-
+import {
+	APP_BUILD,
+	APP_COMMIT,
+	latestLauncherRelease,
+	LAUNCHER_RELEASE_API,
+} from '@/helpers/astralrinth/update'
 import {
 	externalAuthProviders,
 	loadExternalAuthProviders,
@@ -79,6 +83,14 @@ const messages = defineMessages({
 	librariesApiUrl: {
 		id: 'astralrinth.app.settings.updates.libraries-api-url',
 		defaultMessage: 'Libraries provider API URL',
+	},
+	appBuild: {
+		id: 'astralrinth.app.settings.updates.app-build',
+		defaultMessage: 'Build',
+	},
+	appCommit: {
+		id: 'astralrinth.app.settings.updates.app-commit',
+		defaultMessage: 'Commit',
 	},
 	noUpdateInformation: {
 		id: 'astralrinth.app.settings.updates.no-update-information',
@@ -210,6 +222,22 @@ const httpStatus = computed(() => {
 						{{ formatMessage(messages.httpStatus) }}
 					</dt>
 					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ httpStatus }}</dd>
+				</div>
+				<div
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+				>
+					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
+						{{ formatMessage(messages.appBuild) }}
+					</dt>
+					<dd class="m-0 mt-1 text-xl font-bold text-contrast">{{ APP_BUILD }}</dd>
+				</div>
+				<div
+					class="glass-surface glass-surface--subtle rounded-xl border border-solid border-surface-5 bg-surface-2 p-3"
+				>
+					<dt class="text-xs font-semibold uppercase tracking-wide text-secondary">
+						{{ formatMessage(messages.appCommit) }}
+					</dt>
+					<dd class="m-0 mt-1 break-all text-base font-semibold text-contrast">{{ APP_COMMIT }}</dd>
 				</div>
 
 				<div

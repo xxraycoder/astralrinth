@@ -4,6 +4,8 @@ import { computed, ref, watch } from 'vue'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
 import {
+	APP_BUILD,
+	APP_COMMIT,
 	downloadLatestRelease,
 	getAvailableInstallers,
 	isUpdateInstalling,
@@ -48,7 +50,7 @@ const messages = defineMessages({
 	updateDescription: {
 		id: 'astralrinth.app.launcher-update-modal.update.description',
 		defaultMessage:
-			'You are using an older version. We recommend updating now for the latest fixes and improvements.',
+			'Your launcher does not match the latest release from Xorison Development. We recommend updating now.',
 	},
 	updateNoticeTitle: {
 		id: 'astralrinth.app.launcher-update-modal.update.notice-title',
@@ -222,12 +224,14 @@ defineExpose({
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.latestReleaseTag) }}</strong>
 					<span class="ms-1 break-words text-contrast">{{ releaseTag }}</span>
+					<span class="text-secondary"> ({{ latestLauncherRelease.data?.tag.commit.sha }})</span>
 					<br />
 					<strong>{{ formatMessage(messages.latestReleaseTitle) }}</strong>
 					<span class="ms-1 break-words text-contrast">{{ releaseTitle }}</span>
 					<br />
 					<strong>{{ formatMessage(messages.installedVersion) }}</strong>
-					<span class="ms-1 break-words text-contrast">v{{ props.version }}</span>
+					<span class="ms-1 break-words text-contrast">v{{ props.version }}+{{ APP_BUILD }}</span>
+					<span class="text-secondary"> ({{ APP_COMMIT }})</span>
 				</p>
 				<a
 					class="inline-flex text-link hover:underline focus-visible:underline"
@@ -310,7 +314,7 @@ defineExpose({
 			>
 				<p class="m-0">
 					<strong>{{ formatMessage(messages.localVersion) }}</strong>
-					<span class="break-words text-contrast">v{{ props.version }}</span>
+					<span class="break-words text-contrast">v{{ props.version }}+{{ APP_BUILD }}</span>
 				</p>
 			</div>
 

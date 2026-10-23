@@ -1623,7 +1623,7 @@
     "message": "Cũ nhất"
   },
   "app.settings.app-version": {
-    "message": "Ứng dụng Modrinth {version}"
+    "message": "AstralRinth {version}"
   },
   "app.settings.default-instance-options.environment-variables.description": {
     "message": "Các biến môi trường được thiết lập khi khởi chạy một bản cài đặt."

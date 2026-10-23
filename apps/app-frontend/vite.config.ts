@@ -48,6 +48,10 @@ export default defineConfig({
 			},
 		],
 	},
+	define: {
+		__ASTRALRINTH_APP_BUILD__: JSON.stringify(process.env.ASTRALRINTH_APP_BUILD ?? 'unknown'),
+		__ASTRALRINTH_APP_COMMIT__: JSON.stringify(process.env.ASTRALRINTH_APP_COMMIT ?? 'unknown'),
+	},
 	plugins: [
 		vue(),
 		svgLoader({

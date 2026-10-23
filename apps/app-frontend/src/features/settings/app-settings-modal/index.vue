@@ -57,6 +57,7 @@ import SyncingSettings from '@/features/settings/syncing/syncing-settings.vue'
 import ResourceManagementSettings from '@/features/settings/system/resource-management-settings/index.vue'
 import TroubleshootingSettings from '@/features/settings/system/troubleshooting-settings.vue'
 import {
+	APP_BUILD,
 	isUpdateAvailable,
 	isUpdateInstalling,
 	latestLauncherRelease,
@@ -501,7 +502,7 @@ const messages = defineMessages({
 					</button>
 					<div v-if="appInfo" class="max-w-[200px]">
 						<p class="m-0">
-							{{ formatMessage(messages.appVersion, { version: appInfo.version }) }}
+							{{ formatMessage(messages.appVersion, { version: appInfo.version + '+' + APP_BUILD }) }}
 						</p>
 						<p class="m-0">
 							<span v-if="appInfo.osPlatform === 'macos'">{{ formatMessage(messages.macos) }}</span>

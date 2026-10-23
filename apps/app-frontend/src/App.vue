@@ -93,7 +93,7 @@ import { provideSettingsActions } from '@/features/settings/settings-actions'
 import NewUpdateModal from '@/features/updates/new-update-modal/index.vue'
 import { getAccountAppearance, rememberAccountAppearance } from '@/helpers/account-appearance.ts'
 import { trackEvent } from '@/helpers/analytics'
-import { fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
+import { APP_COMMIT, fetchRemote, isUpdateAvailable } from '@/helpers/astralrinth/update'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user, get_user_many, get_version } from '@/helpers/cache.js'
 import { gameSettingsQueryOptions } from '@/helpers/game-options'
@@ -442,6 +442,13 @@ onMounted(async () => {
 			],
 		})
 	}
+	if (APP_COMMIT === 'unknown') {
+		addNotification({
+			title: formatMessage(messages.launcherUpdateFetchUnavailableTitle),
+			text: formatMessage(messages.launcherUpdateFetchUnavailableText),
+			type: 'error',
+		})
+	}
 
 	document.querySelector('body').addEventListener('click', handleClick)
 	document.querySelector('body').addEventListener('auxclick', handleAuxClick)
@@ -469,6 +476,15 @@ const messages = defineMessages({
 		id: 'app.auth-servers.unreachable.body',
 		defaultMessage:
 			'Minecraft authentication servers may be down right now. Check your internet connection and try again later.',
+	},
+	launcherUpdateFetchUnavailableTitle: {
+		id: 'astralrinth.app.launcher-update.fetch-unavailable.title',
+		defaultMessage: 'Update fetch unavailable',
+	},
+	launcherUpdateFetchUnavailableText: {
+		id: 'astralrinth.app.launcher-update.fetch-unavailable.text',
+		defaultMessage:
+			'Could not verify the launcher build commit, so update availability cannot be checked.',
 	},
 	launcherUpdateAvailableTitle: {
 		id: 'astralrinth.app.launcher-update.available.title',

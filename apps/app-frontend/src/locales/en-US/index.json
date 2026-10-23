@@ -233,6 +233,12 @@
   "astralrinth.app.launcher-update.available.text": {
     "message": "New version of AstralRinth is available for download."
   },
+  "astralrinth.app.launcher-update.fetch-unavailable.text": {
+    "message": "Could not verify the launcher build commit, so update availability cannot be checked."
+  },
+  "astralrinth.app.launcher-update.fetch-unavailable.title": {
+    "message": "Update fetch unavailable"
+  },
   "astralrinth.app.launcher-update.available.title": {
     "message": "Launcher update available"
   },
@@ -341,6 +347,12 @@
 	"astralrinth.app.settings.updates.arch": {
 		"message": "Architecture"
 	},
+	"astralrinth.app.settings.updates.app-build": {
+		"message": "Build"
+	},
+	"astralrinth.app.settings.updates.app-commit": {
+		"message": "Commit"
+	},
 	"astralrinth.app.settings.updates.system-information-unavailable": {
 		"message": "System information is unavailable."
 	},
@@ -432,7 +444,7 @@
     "message": "Cancel"
   },
   "astralrinth.app.launcher-update-modal.update.description": {
-    "message": "You are using an older version. We recommend updating now for the latest fixes and improvements."
+    "message": "Your launcher does not match the latest release from Xorison Development. We recommend updating now."
   },
   "astralrinth.app.launcher-update-modal.update.download-action": {
     "message": "Download update"

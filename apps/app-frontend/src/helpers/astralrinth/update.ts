@@ -1,10 +1,11 @@
-import { getVersion } from '@tauri-apps/api/app'
-import { isTauri } from '@tauri-apps/api/core'
 import { fetch } from '@tauri-apps/plugin-http'
 import { arch } from '@tauri-apps/plugin-os'
 import { ref } from 'vue'
 
-import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
+import { getOS, initUpdateLauncher } from '@/helpers/utils.js'
+
+declare const __ASTRALRINTH_APP_BUILD__: string
+declare const __ASTRALRINTH_APP_COMMIT__: string
 
 const systems = ['macos', 'windows', 'linux'] as const
 
@@ -17,10 +18,28 @@ type LauncherReleaseAsset = {
 	download_count: number
 }
 
-type LauncherRelease = {
-	tag_name: string
+type LauncherReleaseTag = {
 	name: string
+	message: string
+	id: string
+	commit: {
+		url: string
+		sha: string
+		created: string
+	}
+	zipball_url: string
+	tarball_url: string
+	archive_download_count: {
+		zip: number
+		tar_gz: number
+	}
+}
+
+type LauncherRelease = {
+	tag_name?: string
+	name?: string
 	total_downloads: number
+	tag: LauncherReleaseTag
 	assets: Record<LauncherArchitecture, Record<LauncherOperatingSystem, LauncherReleaseAsset[]>>
 }
 
@@ -38,10 +57,10 @@ export const latestLauncherRelease = ref<{
 	data: null,
 	httpStatus: null,
 })
+export const APP_BUILD = __ASTRALRINTH_APP_BUILD__
+export const APP_COMMIT = __ASTRALRINTH_APP_COMMIT__
 
 const currentOS = ref('')
-
-const isDeveloper = isTauri() && (await isDev())
 
 const blacklistBeginPrefixes = ['dev', 'nightly']
 
@@ -63,34 +82,14 @@ export async function fetchRemote(): Promise<void> {
 		latestLauncherRelease.value.data = remoteData
 
 		if (systems.includes(currentOS.value as (typeof systems)[number])) {
-			const rawLocalVersion = await getVersion()
-			const localVersion = normalizeVersion(rawLocalVersion)
-			const remoteVersion = normalizeVersion(remoteData.tag_name)
-			const versionComparison = compareVersions(remoteVersion, localVersion)
-			isUpdateAvailable.value = versionComparison > 0
-
-			if (isDeveloper) {
-				console.debug('Raw local version is', rawLocalVersion)
-				console.debug('Normalized local version is', localVersion)
-				console.debug('Raw remote version is', remoteData.tag_name)
-				console.debug('Normalized remote version is', remoteVersion)
-				console.debug('Local version parts are', parseVersionParts(localVersion))
-				console.debug('Remote version parts are', parseVersionParts(remoteVersion))
-				console.debug('Version comparison result is', versionComparison)
-			}
+			const remoteCommit = remoteData.tag.commit.sha.toLowerCase()
+			const localCommitHash = APP_COMMIT.toLowerCase()
+			isUpdateAvailable.value =
+				localCommitHash !== 'unknown' &&
+				remoteCommit.length > 0 &&
+				!remoteCommit.startsWith(localCommitHash)
 		} else {
 			isUpdateAvailable.value = false
-
-			if (isDeveloper) {
-				console.debug('Skipped update comparison for unsupported OS', currentOS.value)
-			}
-		}
-
-		if (isDeveloper) {
-			console.debug('Update available state is', isUpdateAvailable.value)
-			console.debug('Remote version is', remoteData.tag_name)
-			console.debug('Remote title is', remoteData.name)
-			console.debug('Operating System is', currentOS.value)
 		}
 	} catch (error) {
 		console.error('Failed to fetch remote releases:', error)
@@ -112,9 +111,6 @@ export async function downloadLatestRelease(
 	}
 
 	const installer = selectedInstaller ?? null
-	if (isDeveloper) {
-		console.debug(installer)
-	}
 	if (!installer) {
 		isUpdateInstalling.value = false
 		return false
@@ -149,10 +145,6 @@ function getInstallers(builds: LauncherReleaseAsset[]): LauncherReleaseAsset[] {
 			return false
 		}
 
-		if (isDeveloper) {
-			console.debug(build.name, build.browser_download_url)
-		}
-
 		return true
 	})
 }
@@ -169,39 +161,4 @@ function resolveArchitecture(architecture: string): LauncherArchitecture | null 
 		default:
 			return null
 	}
-}
-
-function normalizeVersion(version: string): string {
-	return version.trim().replace(/^v/i, '')
-}
-
-function compareVersions(left: string, right: string): number {
-	const leftParts = parseVersionParts(left)
-	const rightParts = parseVersionParts(right)
-	const maxLength = Math.max(leftParts.length, rightParts.length)
-
-	for (let index = 0; index < maxLength; index += 1) {
-		const leftPart = leftParts[index] ?? 0
-		const rightPart = rightParts[index] ?? 0
-
-		if (leftPart !== rightPart) {
-			if (isDeveloper) {
-				console.debug('Version parts differ at index', index, leftPart, rightPart)
-			}
-			return leftPart - rightPart
-		}
-	}
-
-	if (isDeveloper) {
-		console.debug('Version parts are equal', leftParts, rightParts)
-	}
-
-	return 0
-}
-
-function parseVersionParts(version: string): number[] {
-	return normalizeVersion(version)
-		.split(/[.-]/)
-		.map((part) => Number.parseInt(part, 10))
-		.filter((part) => !Number.isNaN(part))
 }

@@ -293,6 +293,12 @@
   "astralrinth.app.launcher-update.available.text": {
     "message": "Новая версия AstralRinth уже доступна для загрузки."
   },
+  "astralrinth.app.launcher-update.fetch-unavailable.text": {
+    "message": "Не удалось проверить коммит сборки лаунчера, поэтому наличие обновлений проверить нельзя."
+  },
+  "astralrinth.app.launcher-update.fetch-unavailable.title": {
+    "message": "Не удалось получить информацию об обновлении"
+  },
   "astralrinth.app.launcher-update.available.title": {
     "message": "Доступно обновление лаунчера"
   },
@@ -401,6 +407,12 @@
 	"astralrinth.app.settings.updates.arch": {
 		"message": "Архитектура"
 	},
+	"astralrinth.app.settings.updates.app-build": {
+		"message": "Сборка"
+	},
+	"astralrinth.app.settings.updates.app-commit": {
+		"message": "Коммит"
+	},
 	"astralrinth.app.settings.updates.system-information-unavailable": {
 		"message": "Системная информация недоступна."
 	},
@@ -492,7 +504,7 @@
     "message": "Отмена"
   },
   "astralrinth.app.launcher-update-modal.update.description": {
-    "message": "Вы используете более старую версию. Рекомендуем обновиться сейчас, чтобы получить последние исправления и улучшения."
+    "message": "Ваш лаунчер не совпадает с актуальным релизом от Xorison Development. Рекомендуем обновиться сейчас."
   },
   "astralrinth.app.launcher-update-modal.update.download-action": {
     "message": "Скачать обновление"
